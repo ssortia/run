@@ -25,4 +25,20 @@ class NotificationPermissionTest {
         assertFalse(needsNotificationRequest(sdkInt = 32, granted = false))
         assertFalse(needsNotificationRequest(sdkInt = 26, granted = false))
     }
+
+    @Test
+    fun `остановка при открытом запросе считается уходом`() {
+        assertTrue(abandonsPermissionRequest(pending = true, changingConfigurations = false))
+    }
+
+    @Test
+    fun `поворот телефона при открытом запросе уходом не считается`() {
+        assertFalse(abandonsPermissionRequest(pending = true, changingConfigurations = true))
+    }
+
+    @Test
+    fun `без открытого запроса уходить не от чего`() {
+        assertFalse(abandonsPermissionRequest(pending = false, changingConfigurations = false))
+        assertFalse(abandonsPermissionRequest(pending = false, changingConfigurations = true))
+    }
 }

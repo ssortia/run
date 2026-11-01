@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssortia.runtimer.ui.RunTimerTheme
 import com.ssortia.runtimer.ui.WorkoutScreen
@@ -31,6 +32,10 @@ private const val TAG = "MainActivity"
 /** Разрешение на уведомления существует с Android 13, на старых версиях запрашивать нечего. */
 fun needsNotificationRequest(sdkInt: Int, granted: Boolean): Boolean =
     sdkInt >= Build.VERSION_CODES.TIRAMISU && !granted
+
+/** Остановка при открытом запросе означает уход пользователя, если это не поворот телефона. */
+fun abandonsPermissionRequest(pending: Boolean, changingConfigurations: Boolean): Boolean =
+    pending && !changingConfigurations
 
 class MainActivity : ComponentActivity() {
     private val store by lazy { SettingsStore(this) }
@@ -43,14 +48,24 @@ class MainActivity : ComponentActivity() {
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
+            // Уход фиксируется в момент ухода: ответ приходит при возвращении, когда activity
+            // снова запущена, а отмена выглядит как отказ, поэтому в обработчике их не отличить
+            var requestAbandoned by rememberSaveable { mutableStateOf(false) }
+            LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                if (abandonsPermissionRequest(permissionPending, isChangingConfigurations)) {
+                    requestAbandoned = true
+                }
+            }
             // Вне WorkoutScreen: запрос должен пережить смену экрана и поворот телефона.
             // Результат не важен: без разрешения таймер работает, просто уведомления не видно
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission(),
             ) {
+                val abandoned = requestAbandoned
                 permissionPending = false
-                // Пользователь мог уйти из приложения с открытым диалогом
-                if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) startWorkout()
+                requestAbandoned = false
+                // Если пользователь ушёл от запроса, «Старт» нажимается заново
+                if (!abandoned) startWorkout()
             }
 
             // Значки следуют за цветом экрана: тёмный фон ходьбы бывает и в светлой теме
