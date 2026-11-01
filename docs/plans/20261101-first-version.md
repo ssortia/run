@@ -1,0 +1,284 @@
+# Первая версия RunTimer
+
+## Overview
+- Android-приложение: интервальный таймер для бега с чередованием бега и ходьбы.
+- Решает задачу тренировки без взгляда на телефон: сигнал при смене отрезка и отдельный сигнал в конце, в том числе при заблокированном экране.
+- Длительность отрезков и число повторов настраиваются.
+- Объём версии: US-1…US-8 из `USER_STORIES.md`. Пауза, вибрация, шаблоны, GPS и история в план не входят.
+
+## Context (from discovery)
+- Проект: Kotlin, Jetpack Compose, minSdk 26, targetSdk 35. Сборка из командной строки, Android Studio не нужна.
+- Уже есть: `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `app/build.gradle.kts`, `AndroidManifest.xml`, `Workout.kt`, `README.md`, `USER_STORIES.md`.
+- Паттерны: логика в чистых Kotlin-классах без Android API, комментарии на русском, KDoc только там, где поведение неочевидно.
+- На машине нет JDK и Android SDK, папка не под git.
+- Зависимости: Compose BOM, Material 3, `activity-compose`, `lifecycle-runtime-compose`, JUnit 4.
+
+## Development Approach
+- **testing approach**: Regular, сначала код, затем тесты в той же задаче.
+- complete each task fully before moving to the next
+- make small, focused changes
+- **CRITICAL: every task MUST include new/updated tests** for code changes in that task
+  - tests are not optional - they are a required part of the checklist
+  - write unit tests for new functions/methods
+  - write unit tests for modified functions/methods
+  - add new test cases for new code paths
+  - update existing test cases if behavior changes
+  - tests cover both success and error scenarios
+- **CRITICAL: all tests must pass before starting next task** - no exceptions
+- **CRITICAL: update this plan file when scope changes during implementation**
+- run tests after each change
+- Задачи только с Android API (сервис, Compose, `AudioTrack`) не покрываются unit-тестами. Их логика выносится в чистые функции с тестами, остальное проверяется сборкой и вручную на телефоне.
+
+## Testing Strategy
+- **unit tests**: JUnit 4, `./gradlew test`. Покрывают `Workout`, настройки и валидацию, форматирование времени, выбор сигнала, синтез тонов, расчёт прогресса.
+- **e2e tests**: не используются. Эмулятора и устройства в окружении нет, а главные риски (звук, работа при выключенном экране) инструментальные тесты всё равно не закрывают. Вместо них есть ручной сценарий в Post-Completion.
+
+## Progress Tracking
+- mark completed items with `[x]` immediately when done
+- add newly discovered tasks with ➕ prefix
+- document issues/blockers with ⚠️ prefix
+- update plan if implementation deviates from original scope
+- keep plan in sync with actual work done
+
+## Solution Overview
+Три слоя с однонаправленным потоком данных:
+
+- **UI**: `MainActivity` и Compose-экраны отправляют команды старт/стоп и отображают состояние.
+- **Сервис**: `WorkoutService` (foreground service + partial wake lock) ведёт тренировку и публикует `StateFlow<WorkoutState>`.
+- **Логика и звук**: `Workout` считает позицию, `Beeper` проигрывает сигналы.
+
+Ключевые решения:
+- Нативное приложение, а не PWA: при выключенном экране браузер усыпляет JS-таймеры.
+- Позиция вычисляется из времени от старта (`SystemClock.elapsedRealtime`), поэтому ошибка не накапливается.
+- Сигналы генерируются в коде и идут через канал будильника (`USAGE_ALARM`), поэтому не зависят от громкости медиа.
+- Состояние живёт в сервисе, поэтому экран можно закрыть и открыть заново.
+- ViewModel, DI, навигация и модули не вводятся: экран один, сервис один.
+
+Оформление: цвет фона зависит от отрезка (бег и ходьба различаются издалека), общий прогресс тренировки, своя иконка, светлая и тёмная темы.
+
+## Technical Details
+
+### Данные
+```kotlin
+// Настройки как их вводит пользователь
+data class WorkoutSettings(
+    val runMin: Int = 2, val runSec: Int = 0,
+    val walkMin: Int = 2, val walkSec: Int = 0,
+    val rounds: Int = 7,
+) {
+    fun validate(): SettingsError?   // null, если всё верно
+    fun toWorkout(): Workout         // вызывается только после успешной validate()
+}
+
+enum class SettingsError { RUN_ZERO, WALK_ZERO, ROUNDS_RANGE, SECONDS_RANGE, MINUTES_RANGE }
+
+sealed interface WorkoutState {
+    data object Idle : WorkoutState
+    data class Active(val position: Position, val rounds: Int, val progress: Float) : WorkoutState
+}
+
+enum class Signal { INTERVAL, FINISH }
+```
+
+### Цикл сервиса
+1. Каждые 250 мс: `elapsed = now - startedAt`, `position = workout.at(elapsed)`.
+2. `signalFor(previousIndex, position)` решает, какой сигнал подать. Первый отрезок сигнала не даёт.
+3. Состояние публикуется в `StateFlow`, уведомление обновляется только при смене отображаемой секунды.
+4. Если `position == null`: публикуется `Active` с последней позицией, `remainingMs = 0` и `progress = 1f`, звучит `FINISH`, сервис ждёт окончания звука и выполняет `cleanup()`.
+
+Цикл и финал выполняются одной отменяемой корутиной. Сервис владеет своим `CoroutineScope` и отменяет его в `onDestroy`.
+
+### Контракт сервиса
+- **Доступ к состоянию:** `companion object` с `private val _state` и публичным `state: StateFlow<WorkoutState>`. Экран читает его через `collectAsStateWithLifecycle`, привязка к сервису не нужна.
+- **Параметры:** длительности и число повторов передаются через extras интента.
+- **Старт:** UI вызывает `startForegroundService()`. Первым действием в ветке старта сервис вызывает `ServiceCompat.startForeground(..., FOREGROUND_SERVICE_TYPE_SPECIAL_USE)`.
+- **Повторный старт:** проверка стоит после `startForeground`. Если тренировка уже идёт, новый запрос игнорируется.
+- **Порядок:** `Active` публикуется только после `startForeground`, поэтому кнопка «Стоп» не может появиться раньше.
+- **Стоп:** UI вызывает `stopService()`, а не `startForegroundService()`. Иначе возможен крэш.
+- **Завершение:** единая `cleanup()` для «Стоп», финала и `onDestroy`, её можно вызвать повторно. Она отменяет цикл, освобождает `Beeper`, снимает wake lock (проверка `isHeld`) и ставит `Idle`.
+- **Перезапуск:** `onStartCommand` возвращает `START_NOT_STICKY`. Если система убьёт процесс, тренировка теряется. Для первой версии это принято.
+
+### Wake lock
+`setReferenceCounted(false)`, `acquire(totalMs + 1 минута)` при старте. Таймаут страхует от разряда батареи при ошибке в логике.
+
+### Уведомление
+- Канал `IMPORTANCE_LOW`, чтобы обновления не издавали звука.
+- `setOngoing(true)`, `setOnlyAlertOnce(true)`, `setShowWhen(false)`, `setForegroundServiceBehavior(FOREGROUND_SERVICE_IMMEDIATE)`.
+- Нажатие открывает приложение через `packageManager.getLaunchIntentForPackage(packageName)` и `PendingIntent.FLAG_IMMUTABLE`. Ссылка на `MainActivity` не нужна, поэтому Task 5 собирается раньше Task 7.
+- Обновление через платформенный `NotificationManager`.
+
+### Сигналы
+- `INTERVAL`: два коротких тона 880 Гц.
+- `FINISH`: три восходящих тона 660, 880 и 1100 Гц, последний длинный.
+- Синтез: моно PCM 16 бит, 44100 Гц, с короткой огибающей против щелчков.
+- Проигрывание: один `AudioTrack` в `MODE_STATIC` на сигнал, размер буфера равен размеру PCM, `write()` до `play()`.
+- Перед повторным проигрыванием обязательны `stop()` и `reloadStaticData()`, иначе второй сигнал будет беззвучным.
+- `IllegalStateException` перехватывается: потерянный сигнал не должен останавливать тренировку.
+- `release()` сразу прекращает звук (US-4).
+
+### Настройки
+Хранятся в `SharedPreferences`, сохраняются при успешном нажатии «Старт». Значения по умолчанию 2 мин / 2 мин / 7 повторов.
+
+Ограничения: минуты 0–99, секунды 0–59, повторы 1–99, время бега и ходьбы больше нуля. Пустое поле считается нулём, поэтому пустые минуты и 30 секунд дают верное значение. Верхние пределы также исключают переполнение `Int` в `Workout`.
+
+### Разрешения
+`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`, `POST_NOTIFICATIONS`, `WAKE_LOCK` объявлены в манифесте.
+
+Сценарий «Старт»: проверить настройки и сохранить их. На Android 13+ без разрешения запустить запрос через `rememberLauncherForActivityResult`, иначе сразу запустить сервис. В обработчике ответа сервис запускается при любом результате: если пользователь откажет, таймер работает, но уведомление не видно.
+
+### Экран
+- `enableEdgeToEdge()` до `setContent`, `safeDrawingPadding()` на экранах.
+- `imePadding()` и `verticalScroll` на форме, `android:windowSoftInputMode="adjustResize"` в манифесте, чтобы клавиатура не закрывала кнопку.
+- `formatTime()` округляет секунды вверх: отображение начинается с `2:00` и не показывает `0:00` внутри отрезка.
+- Темы окна в `values/themes.xml` и `values-night/themes.xml`, чтобы в тёмной теме не было белой вспышки при запуске.
+
+## What Goes Where
+- **Implementation Steps** (`[ ]` checkboxes): tasks achievable within this codebase - code changes, tests, documentation updates
+- **Post-Completion** (no checkboxes): items requiring external action - manual testing, changes in consuming projects, deployment configs, third-party verifications
+
+## Implementation Steps
+
+### Task 1: Подготовить окружение и сборку
+
+**Files:**
+- Create: `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`, `gradle/wrapper/gradle-wrapper.properties`
+- Create: `local.properties` (не в git)
+- Modify: `.gitignore`
+- Create: `app/src/main/res/values/strings.xml`, `app/src/main/res/values/colors.xml`
+- Create: `app/src/main/res/values/themes.xml`, `app/src/main/res/values-night/themes.xml`
+- Create: `app/src/main/res/drawable/ic_notification.xml`, `app/src/main/res/drawable/ic_launcher_foreground.xml`
+- Create: `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+- Modify: `app/src/main/AndroidManifest.xml`
+- Create: `app/src/test/java/com/ssortia/runtimer/WorkoutTest.kt`
+
+- [ ] выполнить `git init`, если репозиторий ещё не создан, и добавить `.kotlin/` в `.gitignore`
+- [ ] установить JDK 17 в домашнюю папку и задать `JAVA_HOME`
+- [ ] установить `cmdline-tools` в `~/Android/Sdk`, затем `sdkmanager "platforms;android-35" "build-tools;34.0.0" "platform-tools"` и `sdkmanager --licenses`
+- [ ] создать `local.properties` с путём к SDK: это нужно сделать до генерации wrapper
+- [ ] скачать Gradle 8.11.1 во временную папку и выполнить `gradle wrapper --gradle-version 8.11.1`
+- [ ] добавить `strings.xml`, `colors.xml`, темы окна, значок уведомления и адаптивную иконку, указать тему в манифесте
+- [ ] убедиться, что `./gradlew assembleDebug` проходит (APK пока не запускается, это ожидаемо до Task 7)
+- [ ] написать тесты `Workout`: первый отрезок, переход бег → ходьба, переход между повторами, номер повтора, остаток времени
+- [ ] написать тесты граничных случаев: последняя миллисекунда, момент окончания, время после окончания, один повтор
+- [ ] run tests - must pass before next task
+
+### Task 2: Добавить настройки тренировки и их валидацию
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/WorkoutSettings.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/WorkoutSettingsTest.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
+
+- [ ] реализовать `WorkoutSettings` со значениями по умолчанию, `validate()`, `toWorkout()` и `SettingsError`
+- [ ] реализовать `SettingsStore`: чтение и запись через `SharedPreferences`
+- [ ] написать тесты верных настроек, включая пример 2/2/7: `at(1_679_999)?.index == 13` и `at(1_680_000) == null`, то есть 14 отрезков и 28 минут
+- [ ] написать тест каждого значения `SettingsError`, включая граничные: 99 минут, 100 минут, 59 и 60 секунд, 99 и 100 повторов
+- [ ] run tests - must pass before next task
+
+### Task 3: Добавить состояние тренировки и выбор сигнала
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/WorkoutState.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/WorkoutStateTest.kt`
+- Modify: `app/src/main/java/com/ssortia/runtimer/Workout.kt`
+
+- [ ] добавить в `Workout` общую длительность и расчёт прогресса
+- [ ] реализовать `WorkoutState`, `Signal`, `signalFor()` и `formatTime()`
+- [ ] написать тесты `signalFor()`: старт без сигнала, тот же отрезок, смена отрезка, финал
+- [ ] написать тесты `formatTime()` и прогресса: начало, середина, значения вблизи нуля, округление секунд вверх
+- [ ] написать тест, который имитирует цикл с шагом 250 мс для 10/10/2 и получает ровно 3 `INTERVAL`, а затем 1 `FINISH`
+- [ ] run tests - must pass before next task
+
+### Task 4: Реализовать звуковые сигналы
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/Tones.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/TonesTest.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/Beeper.kt`
+
+- [ ] реализовать чистый синтез PCM в `Tones.kt`
+- [ ] реализовать `Beeper` по разделу «Сигналы»: повторное проигрывание, перехват ошибок, возврат длительности, `release()`
+- [ ] написать тесты синтеза: длина буфера, нули в паузе, плавное начало и конец
+- [ ] написать тест, что `INTERVAL` и `FINISH` различаются и финальный сигнал длиннее
+- [ ] run tests - must pass before next task
+
+### Task 5: Реализовать фоновый сервис тренировки
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/NotificationText.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/NotificationTextTest.kt`
+
+- [ ] реализовать старт и повторный старт строго по разделу «Контракт сервиса»
+- [ ] реализовать канал и уведомление по разделу «Уведомление», включая открытие приложения по нажатию
+- [ ] реализовать wake lock с таймаутом
+- [ ] реализовать цикл времени, сигналы и публикацию `StateFlow` через `companion object`
+- [ ] реализовать финал и единую `cleanup()` для всех путей завершения
+- [ ] вынести текст уведомления в чистую функцию верхнего уровня, подписи передавать параметрами
+- [ ] написать тесты текста уведомления: бег, ходьба, номер повтора, остаток времени
+- [ ] убедиться, что `./gradlew assembleDebug` проходит
+- [ ] run tests - must pass before next task
+
+### Task 6: Сделать тему и экран настроек
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/ui/Theme.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/ui/SettingsInputTest.kt`
+
+- [ ] реализовать светлую и тёмную тему, цвета бега и ходьбы
+- [ ] реализовать форму: начальные значения из параметра, бег, ходьба, повторы, кнопка «Старт», итоговая длительность
+- [ ] вынести разбор ввода из текстовых полей в чистую функцию: пустое поле считается нулём, в поле можно ввести только цифры
+- [ ] написать тесты разбора: пустое поле, не число, слишком большое значение даёт ошибку `validate()`
+- [ ] сопоставить каждому `SettingsError` строку и показывать её при неверных значениях (US-2), написать тест, что строка есть у каждого значения
+- [ ] run tests - must pass before next task
+
+### Task 7: Сделать экран тренировки и подключить интерфейс
+
+**Files:**
+- Create: `app/src/main/java/com/ssortia/runtimer/ui/ActiveContent.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
+- Create: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
+- Modify: `app/src/main/AndroidManifest.xml`
+
+- [ ] реализовать экран тренировки: отрезок, крупное время, повтор, прогресс, цвет фона, кнопка «Стоп»
+- [ ] реализовать `WorkoutScreen`: выбор экрана по `WorkoutState`
+- [ ] реализовать `MainActivity`: Compose, сценарий «Старт» из раздела «Разрешения», стоп сервиса
+- [ ] загружать настройки в форму из `SettingsStore`, в том числе при возврате в `Idle`, и сохранять их при успешном старте (US-3)
+- [ ] применить отступы из раздела «Экран» и добавить `windowSoftInputMode="adjustResize"` в манифест
+- [ ] покрыть новую чистую логику экрана тестами, если она появится
+- [ ] убедиться, что `./gradlew assembleDebug` проходит
+- [ ] run tests - must pass before next task
+
+### Task 8: Verify acceptance criteria
+- [ ] проверить по коду, что US-1…US-8 реализованы, и отметить критерии, требующие проверки на телефоне
+- [ ] сверить код с разделом «Контракт сервиса»: стоп сразу после старта, стоп во время финального сигнала, повторный старт, повторное открытие экрана
+- [ ] run full test suite: `./gradlew test`
+- [ ] run lint: `./gradlew lintDebug`
+- [ ] собрать APK: `./gradlew assembleDebug`
+
+### Task 9: [Final] Update documentation
+- [ ] обновить статус, структуру проекта и инструкции в `README.md`
+- [ ] create `CLAUDE.md` с командами сборки и принятыми соглашениями, если появились неочевидные
+- [ ] move this plan to `docs/plans/completed/`
+
+## Post-Completion
+*Items requiring manual intervention or external systems - no checkboxes, informational only*
+
+**Manual verification** на реальном телефоне:
+- Установить APK и разрешить уведомления.
+- Короткая тренировка 10 с / 10 с / 2 повтора при открытом экране: 3 обычных сигнала и 1 финальный.
+- Та же тренировка при заблокированном экране и при свёрнутом приложении.
+- Тренировка 2 / 2 / 7 целиком при заблокированном экране, телефон в кармане: сигналы вовремя, финальный звучит на 28-й минуте.
+- Нажать «Стоп» посреди тренировки и во время финального сигнала: звук сразу прекращается, новых сигналов нет, уведомление исчезает.
+- Ввести неверные значения: появляется понятное сообщение, тренировка не запускается.
+- Изменить настройки, запустить тренировку, закрыть и снова открыть приложение: значения сохранились.
+- Выключить звук медиа и проверить, что сигналы слышно.
+- Проверить в наушниках с играющей музыкой: сигнал слышно, музыка не прерывается надолго, при необходимости решить, нужно ли приглушать её.
+- Переключиться на другое приложение во время тренировки: сигналы продолжают звучать вовремя.
+- Закрыть экран приложения во время тренировки, открыть из уведомления: виден текущий ход.
+- Запретить уведомления: таймер всё равно работает.
+- Повернуть экран на форме и во время тренировки: ничего не теряется и не обрывается.
+- Открыть клавиатуру на форме: кнопка «Старт» доступна, содержимое не заходит под системные панели.
+- Проверить светлую и тёмную тему системы.
+- Если таймер останавливается при выключенном экране, отключить для приложения экономию батареи и зафиксировать это для прошивки телефона.
