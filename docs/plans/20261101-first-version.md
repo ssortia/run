@@ -151,16 +151,16 @@ enum class Signal { INTERVAL, FINISH }
 - Modify: `app/src/main/AndroidManifest.xml`
 - Create: `app/src/test/java/com/ssortia/runtimer/WorkoutTest.kt`
 
-- [ ] выполнить `git init`, если репозиторий ещё не создан, и добавить `.kotlin/` в `.gitignore`
-- [ ] установить JDK 17 в домашнюю папку и задать `JAVA_HOME`
-- [ ] установить `cmdline-tools` в `~/Android/Sdk`, затем `sdkmanager "platforms;android-35" "build-tools;34.0.0" "platform-tools"` и `sdkmanager --licenses`
-- [ ] создать `local.properties` с путём к SDK: это нужно сделать до генерации wrapper
-- [ ] скачать Gradle 8.11.1 во временную папку и выполнить `gradle wrapper --gradle-version 8.11.1`
-- [ ] добавить `strings.xml`, `colors.xml`, темы окна, значок уведомления и адаптивную иконку, указать тему в манифесте
-- [ ] убедиться, что `./gradlew assembleDebug` проходит (APK пока не запускается, это ожидаемо до Task 7)
-- [ ] написать тесты `Workout`: первый отрезок, переход бег → ходьба, переход между повторами, номер повтора, остаток времени
-- [ ] написать тесты граничных случаев: последняя миллисекунда, момент окончания, время после окончания, один повтор
-- [ ] run tests - must pass before next task
+- [x] выполнить `git init`, если репозиторий ещё не создан, и добавить `.kotlin/` в `.gitignore`
+- [x] установить JDK 17 в домашнюю папку и задать `JAVA_HOME`
+- [x] установить `cmdline-tools` в `~/Android/Sdk`, затем `sdkmanager "platforms;android-35" "build-tools;34.0.0" "platform-tools"` и `sdkmanager --licenses`
+- [x] создать `local.properties` с путём к SDK: это нужно сделать до генерации wrapper
+- [x] скачать Gradle 8.11.1 во временную папку и выполнить `gradle wrapper --gradle-version 8.11.1`
+- [x] добавить `strings.xml`, `colors.xml`, темы окна, значок уведомления и адаптивную иконку, указать тему в манифесте
+- [x] убедиться, что `./gradlew assembleDebug` проходит (APK пока не запускается, это ожидаемо до Task 7)
+- [x] написать тесты `Workout`: первый отрезок, переход бег → ходьба, переход между повторами, номер повтора, остаток времени
+- [x] написать тесты граничных случаев: последняя миллисекунда, момент окончания, время после окончания, один повтор
+- [x] run tests - must pass before next task
 
 ### Task 2: Добавить настройки тренировки и их валидацию
 
