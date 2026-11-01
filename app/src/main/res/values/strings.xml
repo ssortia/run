@@ -5,4 +5,14 @@
     <string name="segment_run">Бег</string>
     <string name="segment_walk">Ходьба</string>
     <string name="round_label">Повтор</string>
+    <string name="field_minutes">Минуты</string>
+    <string name="field_seconds">Секунды</string>
+    <string name="field_rounds">Повторы</string>
+    <string name="button_start">Старт</string>
+    <string name="total_duration">Всего: %1$s</string>
+    <string name="error_run_zero">Время бега должно быть больше нуля</string>
+    <string name="error_walk_zero">Время ходьбы должно быть больше нуля</string>
+    <string name="error_rounds_range">Число повторов должно быть от 1 до 99</string>
+    <string name="error_seconds_range">Секунды должны быть от 0 до 59</string>
+    <string name="error_minutes_range">Минуты должны быть от 0 до 99</string>
 </resources>
