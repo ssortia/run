@@ -169,11 +169,11 @@ enum class Signal { INTERVAL, FINISH }
 - Create: `app/src/test/java/com/ssortia/runtimer/WorkoutSettingsTest.kt`
 - Create: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
 
-- [ ] реализовать `WorkoutSettings` со значениями по умолчанию, `validate()`, `toWorkout()` и `SettingsError`
-- [ ] реализовать `SettingsStore`: чтение и запись через `SharedPreferences`
-- [ ] написать тесты верных настроек, включая пример 2/2/7: `at(1_679_999)?.index == 13` и `at(1_680_000) == null`, то есть 14 отрезков и 28 минут
-- [ ] написать тест каждого значения `SettingsError`, включая граничные: 99 минут, 100 минут, 59 и 60 секунд, 99 и 100 повторов
-- [ ] run tests - must pass before next task
+- [x] реализовать `WorkoutSettings` со значениями по умолчанию, `validate()`, `toWorkout()` и `SettingsError`
+- [x] реализовать `SettingsStore`: чтение и запись через `SharedPreferences`
+- [x] написать тесты верных настроек, включая пример 2/2/7: `at(1_679_999)?.index == 13` и `at(1_680_000) == null`, то есть 14 отрезков и 28 минут
+- [x] написать тест каждого значения `SettingsError`, включая граничные: 99 минут, 100 минут, 59 и 60 секунд, 99 и 100 повторов
+- [x] run tests - must pass before next task
 
 ### Task 3: Добавить состояние тренировки и выбор сигнала
 
