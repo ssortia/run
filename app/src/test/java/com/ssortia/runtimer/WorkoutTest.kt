@@ -89,4 +89,19 @@ class WorkoutTest {
         assertNotNull(single.at(4_999))
         assertNull(single.at(5_000))
     }
+
+    @Test
+    fun `верные параметры дают тренировку`() {
+        assertEquals(Workout(1, 1, 1), workoutOrNull(runSec = 1, walkSec = 1, rounds = 1))
+    }
+
+    @Test
+    fun `нулевые и отрицательные параметры отклоняются`() {
+        assertNull(workoutOrNull(runSec = 0, walkSec = 1, rounds = 1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = 0, rounds = 1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = 0))
+        assertNull(workoutOrNull(runSec = -1, walkSec = 1, rounds = 1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = -1, rounds = 1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = -1))
+    }
 }

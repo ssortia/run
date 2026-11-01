@@ -7,50 +7,47 @@ import android.util.Log
 
 /** Проигрывает сигналы через канал будильника, поэтому они слышны при выключенном звуке медиа. */
 class Beeper {
-    private class Sound(val track: AudioTrack, val durationMs: Long)
+    private val tracks: Map<Signal, AudioTrack?> = Signal.entries.associateWith(::createTrack)
 
-    private val sounds: Map<Signal, Sound?> = Signal.entries.associateWith(::createSound)
+    /** false, если хотя бы один сигнал не удалось подготовить: о такой тренировке надо предупредить. */
+    val isReady: Boolean get() = tracks.values.all { it != null }
 
-    /**
-     * Проигрывает сигнал с начала и возвращает его длительность в миллисекундах.
-     * Если сигнал проиграть не удалось, возвращает 0: ждать окончания звука незачем.
-     */
-    fun play(signal: Signal): Long {
-        val sound = sounds[signal] ?: return 0
-        return try {
+    /** Проигрывает сигнал с начала. Потерянный сигнал не должен останавливать тренировку. */
+    fun play(signal: Signal) {
+        val track = tracks[signal] ?: return
+        try {
             // Без stop() и reloadStaticData() второй запуск будет беззвучным
-            sound.track.stop()
-            val reloaded = sound.track.reloadStaticData()
-            check(reloaded == AudioTrack.SUCCESS) { "reloadStaticData: $reloaded" }
-            sound.track.play()
-            sound.durationMs
+            track.stop()
+            val reloaded = track.reloadStaticData()
+            if (reloaded == AudioTrack.SUCCESS) {
+                track.play()
+            } else {
+                Log.w(TAG, "Сигнал $signal не проигран: reloadStaticData вернул $reloaded")
+            }
         } catch (e: IllegalStateException) {
-            // Потерянный сигнал не должен останавливать тренировку
             Log.w(TAG, "Не удалось проиграть сигнал $signal", e)
-            0
         }
     }
 
     /** Сразу прекращает звук. Вызывать можно повторно, после этого [play] ничего не проигрывает. */
     fun release() {
-        sounds.values.forEach { it?.track?.release() }
+        tracks.values.forEach { it?.release() }
     }
 
-    private fun createSound(signal: Signal): Sound? {
+    private fun createTrack(signal: Signal): AudioTrack? {
         val pcm = synthesize(tonesFor(signal))
-        return try {
-            val track = buildTrack(pcm)
+        var track: AudioTrack? = null
+        try {
+            track = buildTrack(pcm)
             val written = track.write(pcm, 0, pcm.size)
-            if (written != pcm.size) {
-                track.release()
-                error("write: $written из ${pcm.size}")
-            }
-            Sound(track, durationMs(pcm))
+            if (written == pcm.size) return track
+            Log.w(TAG, "Сигнал $signal не подготовлен: записано $written из ${pcm.size}")
         } catch (e: RuntimeException) {
             // Builder бросает разные исключения, а без одного сигнала тренировка всё равно идёт
             Log.w(TAG, "Не удалось подготовить сигнал $signal", e)
-            null
         }
+        track?.release()
+        return null
     }
 
     private fun buildTrack(pcm: ShortArray): AudioTrack = AudioTrack.Builder()

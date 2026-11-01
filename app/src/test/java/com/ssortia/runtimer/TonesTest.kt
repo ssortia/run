@@ -91,13 +91,32 @@ class TonesTest {
         val finish = synthesize(tonesFor(Signal.FINISH))
 
         assertFalse(interval.contentEquals(finish))
-        assertTrue(durationMs(finish) > durationMs(interval))
+        assertTrue(soundDurationMs(Signal.FINISH) > soundDurationMs(Signal.INTERVAL))
     }
 
     @Test
-    fun `длительность буфера считается по числу сэмплов`() {
-        assertEquals(400, durationMs(synthesize(tonesFor(Signal.INTERVAL))))
-        assertEquals(1260, durationMs(synthesize(tonesFor(Signal.FINISH))))
-        assertEquals(0, durationMs(ShortArray(0)))
+    fun `длительность сигнала равна сумме его тонов и совпадает с буфером`() {
+        assertEquals(400, soundDurationMs(Signal.INTERVAL))
+        assertEquals(1260, soundDurationMs(Signal.FINISH))
+        for (signal in Signal.entries) {
+            val samples = synthesize(tonesFor(signal)).size
+
+            assertEquals(soundDurationMs(signal), samples * 1000L / SAMPLE_RATE_HZ)
+        }
+    }
+
+    @Test
+    fun `в тоне короче двух затуханий огибающая не даёт скачка`() {
+        // 264 сэмпла: нарастание и затухание по 220 сэмплов перекрываются
+        val pcm = synthesize(listOf(Tone(1000, 6)))
+
+        assertEquals(0, pcm.first().toInt())
+        assertEquals(0, pcm.last().toInt())
+        for (i in pcm.indices) {
+            val fromEdge = minOf(i, pcm.size - 1 - i)
+            val limit = PEAK_AMPLITUDE * fromEdge / FADE_SAMPLES + 1
+
+            assertTrue("сэмпл $i", abs(pcm[i].toInt()) <= limit)
+        }
     }
 }

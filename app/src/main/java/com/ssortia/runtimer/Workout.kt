@@ -13,7 +13,6 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
     private val cycleMs = (runSec + walkSec) * 1000L
 
-    /** Общая длительность тренировки. */
     val totalMs = cycleMs * rounds
 
     /** Возвращает позицию на момент elapsedMs от старта или null, если тренировка закончилась. */
@@ -34,3 +33,7 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     fun progressAt(elapsedMs: Long): Float =
         (elapsedMs.toDouble() / totalMs).toFloat().coerceIn(0f, 1f)
 }
+
+/** Возвращает null, если параметры не дают корректную тренировку: сервис такой запрос отклоняет. */
+fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
+    if (runSec > 0 && walkSec > 0 && rounds > 0) Workout(runSec, walkSec, rounds) else null

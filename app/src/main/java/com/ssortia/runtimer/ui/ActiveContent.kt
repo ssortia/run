@@ -23,6 +23,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssortia.runtimer.R
@@ -80,6 +81,13 @@ fun ActiveContent(
                         text = stringResource(R.string.round_progress, position.round, state.rounds),
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    if (state.soundFailed) {
+                        Text(
+                            text = stringResource(R.string.warning_no_sound),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
 

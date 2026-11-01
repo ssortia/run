@@ -79,6 +79,15 @@ class WorkoutSettingsTest {
     }
 
     @Test
+    fun `диапазоны проверяются раньше нулевых отрезков и в заданном порядке`() {
+        assertEquals(SettingsError.MINUTES_RANGE, WorkoutSettings(runMin = -1, runSec = 60).validate())
+        assertEquals(
+            SettingsError.ROUNDS_RANGE,
+            WorkoutSettings(runMin = 0, runSec = 0, rounds = 0).validate(),
+        )
+    }
+
+    @Test
     fun `максимальные значения не переполняют Int`() {
         val workout = WorkoutSettings(99, 59, 99, 59, 99).toWorkout()
 

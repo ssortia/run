@@ -42,7 +42,6 @@ fun synthesize(tones: List<Tone>): ShortArray {
     return pcm
 }
 
-/** Длительность PCM-буфера в миллисекундах. */
-fun durationMs(pcm: ShortArray): Long = pcm.size * 1000L / SAMPLE_RATE_HZ
+fun soundDurationMs(signal: Signal): Long = tonesFor(signal).sumOf { it.durationMs.toLong() }
 
 private fun sampleCount(durationMs: Int): Int = (SAMPLE_RATE_HZ * durationMs.toLong() / 1000).toInt()

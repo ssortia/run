@@ -1,11 +1,14 @@
 package com.ssortia.runtimer
 
 import android.content.Context
+import android.content.SharedPreferences
 
-/** Хранит последние настройки в SharedPreferences. */
-class SettingsStore(context: Context) {
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+class SettingsStore(private val prefs: SharedPreferences) {
+    constructor(context: Context) : this(
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+    )
 
+    /** Возвращает сохранённое как есть: проверка значений остаётся за [WorkoutSettings.validate]. */
     fun load(): WorkoutSettings {
         val defaults = WorkoutSettings()
         return WorkoutSettings(

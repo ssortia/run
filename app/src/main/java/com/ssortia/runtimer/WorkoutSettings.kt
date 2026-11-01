@@ -1,8 +1,8 @@
 package com.ssortia.runtimer
 
-private const val MAX_MINUTES = 99
-private const val MAX_SECONDS = 59
-private const val MAX_ROUNDS = 99
+const val MAX_MINUTES = 99
+const val MAX_SECONDS = 59
+const val MAX_ROUNDS = 99
 
 /** Настройки в том виде, в каком их вводит пользователь. */
 data class WorkoutSettings(

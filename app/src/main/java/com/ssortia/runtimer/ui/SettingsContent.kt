@@ -32,10 +32,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.ssortia.runtimer.MAX_MINUTES
+import com.ssortia.runtimer.MAX_ROUNDS
+import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WorkoutSettings
-import com.ssortia.runtimer.formatTime
+import com.ssortia.runtimer.formatTotal
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -68,13 +71,12 @@ data class SettingsInput(
 fun digitsOnly(text: String): String = text.filter { it in '0'..'9' }
 
 /**
- * Пустое поле считается нулём. Число, не вмещающееся в Int, заменяется на [Int.MAX_VALUE]:
- * пользователь получит ошибку диапазона из [WorkoutSettings.validate], а не ноль.
+ * Текст приходит из поля, уже прошедшего [digitsOnly]. Пустое поле считается нулём. Число,
+ * не вмещающееся в Int, заменяется на [Int.MAX_VALUE]: пользователь получит ошибку диапазона
+ * из [WorkoutSettings.validate], а не ноль.
  */
-fun parseField(text: String): Int {
-    val digits = digitsOnly(text)
-    return if (digits.isEmpty()) 0 else digits.toIntOrNull() ?: Int.MAX_VALUE
-}
+fun parseField(text: String): Int =
+    if (text.isEmpty()) 0 else text.toIntOrNull() ?: Int.MAX_VALUE
 
 @StringRes
 fun SettingsError.messageRes(): Int = when (this) {
@@ -85,7 +87,15 @@ fun SettingsError.messageRes(): Int = when (this) {
     SettingsError.MINUTES_RANGE -> R.string.error_minutes_range
 }
 
-private val SettingsInputSaver = listSaver<SettingsInput, String>(
+/** Аргументы строки из [messageRes]: пределы подставляются из тех же констант, что и в проверке. */
+fun SettingsError.messageArgs(): Array<Any> = when (this) {
+    SettingsError.RUN_ZERO, SettingsError.WALK_ZERO -> emptyArray()
+    SettingsError.ROUNDS_RANGE -> arrayOf(MAX_ROUNDS)
+    SettingsError.SECONDS_RANGE -> arrayOf(MAX_SECONDS)
+    SettingsError.MINUTES_RANGE -> arrayOf(MAX_MINUTES)
+}
+
+internal val SettingsInputSaver = listSaver<SettingsInput, String>(
     save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds) },
     restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
 )
@@ -97,7 +107,7 @@ fun SettingsContent(
     onStart: (WorkoutSettings) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var input by rememberSaveable(initial, stateSaver = SettingsInputSaver) {
+    var input by rememberSaveable(stateSaver = SettingsInputSaver) {
         mutableStateOf(SettingsInput.from(initial))
     }
     val settings = input.toSettings()
@@ -137,7 +147,7 @@ fun SettingsContent(
         // Ошибка и итог занимают одно место: итог неверных настроек не имеет смысла
         if (error != null) {
             Text(
-                text = stringResource(error.messageRes()),
+                text = stringResource(error.messageRes(), *error.messageArgs()),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyLarge,
             )
@@ -145,7 +155,7 @@ fun SettingsContent(
             Text(
                 text = stringResource(
                     R.string.total_duration,
-                    formatTime(settings.toWorkout().totalMs),
+                    formatTotal(settings.toWorkout().totalMs),
                 ),
                 style = MaterialTheme.typography.titleLarge,
             )

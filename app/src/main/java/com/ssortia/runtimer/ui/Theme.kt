@@ -26,15 +26,11 @@ private val WalkDark = SegmentColors(background = Color(0xFF0F3556), content = C
 private val LightScheme = lightColorScheme(
     primary = Color(0xFFB83A12),
     onPrimary = Color.White,
-    secondary = WalkLight.background,
-    onSecondary = WalkLight.content,
 )
 
 private val DarkScheme = darkColorScheme(
     primary = Color(0xFFFFB59B),
     onPrimary = Color(0xFF5A1B00),
-    secondary = Color(0xFF9CCBFF),
-    onSecondary = Color(0xFF00325A),
 )
 
 fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {

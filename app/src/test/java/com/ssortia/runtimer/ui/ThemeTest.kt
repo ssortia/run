@@ -28,7 +28,10 @@ class ThemeTest {
             for (isRun in listOf(false, true)) {
                 val colors = segmentColors(isRun, darkTheme)
 
-                assertTrue(contrast(colors.background, colors.content) >= 4.5f)
+                assertTrue(
+                    "контраст текста: тёмная тема $darkTheme, бег $isRun",
+                    contrast(colors.background, colors.content) >= 4.5f,
+                )
             }
         }
     }
@@ -39,7 +42,7 @@ class ThemeTest {
             val run = segmentColors(isRun = true, darkTheme).background
             val walk = segmentColors(isRun = false, darkTheme).background
 
-            assertTrue(contrast(run, walk) >= 3f)
+            assertTrue("контраст отрезков: тёмная тема $darkTheme", contrast(run, walk) >= 3f)
         }
     }
 
@@ -67,7 +70,11 @@ class ThemeTest {
                 val background = segmentColors(isRun, darkTheme).background
                 val darkIsBetter = contrast(background, Color.Black) > contrast(background, Color.White)
 
-                assertEquals(darkIsBetter, darkStatusIcons(active(isRun), darkTheme))
+                assertEquals(
+                    "значки: тёмная тема $darkTheme, бег $isRun",
+                    darkIsBetter,
+                    darkStatusIcons(active(isRun), darkTheme),
+                )
             }
         }
     }

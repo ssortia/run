@@ -13,10 +13,8 @@ import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,10 +24,15 @@ import kotlinx.coroutines.launch
 
 /**
  * Ведёт тренировку при выключенном экране. Цикл и все методы сервиса работают в главном потоке,
- * поэтому после [cleanup] цикл уже не может подать сигнал или обновить уведомление.
+ * поэтому после [onDestroy] цикл уже не может подать сигнал или обновить уведомление.
+ *
+ * Завершение одно на все пути: «Стоп» вызывает stopService(), финал вызывает stopSelf(),
+ * ресурсы освобождает только [onDestroy].
  */
 class WorkoutService : Service() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val scope = MainScope()
+
+    // Остаётся заполненным и после финала: до onDestroy новый запрос не должен запустить тренировку
     private var job: Job? = null
     private var beeper: Beeper? = null
 
@@ -40,9 +43,8 @@ class WorkoutService : Service() {
             .apply { setReferenceCounted(false) }
     }
     private val openAppIntent by lazy {
-        packageManager.getLaunchIntentForPackage(packageName)?.let {
-            PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE)
-        }
+        val launchIntent = checkNotNull(packageManager.getLaunchIntentForPackage(packageName))
+        PendingIntent.getActivity(this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
     override fun onCreate() {
@@ -60,7 +62,7 @@ class WorkoutService : Service() {
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
-            buildNotification(currentText()),
+            buildNotification(getString(R.string.app_name)),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
         if (job != null) return START_NOT_STICKY
@@ -77,73 +79,54 @@ class WorkoutService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        cleanup()
         scope.cancel()
+        beeper?.release()
+        if (wakeLock.isHeld) wakeLock.release()
+        // Шаг цикла из очереди мог вернуть уведомление уже после того, как stopService() его снял
+        notificationManager.cancel(NOTIFICATION_ID)
+        _state.value = WorkoutState.Idle
         super.onDestroy()
     }
 
     private fun startWorkout(workout: Workout) {
         // Таймаут страхует от разряда батареи при ошибке в логике
         wakeLock.acquire(workout.totalMs + WAKE_LOCK_MARGIN_MS)
-        val sounds = Beeper().also { beeper = it }
-        val startedAt = SystemClock.elapsedRealtime()
-        job = scope.launch { runLoop(workout, startedAt, sounds) }
+        beeper = Beeper()
+        job = scope.launch { runLoop(workout) }
     }
 
-    private suspend fun runLoop(workout: Workout, startedAt: Long, sounds: Beeper) {
+    private suspend fun runLoop(workout: Workout) {
+        val startedAt = SystemClock.elapsedRealtime()
+        val soundFailed = beeper?.isReady != true
         var previousIndex: Int? = null
-        // Запасное значение нужно, если первый шаг цикла запоздал дольше всей тренировки
-        var lastPosition = checkNotNull(workout.at(0))
         var shownText: String? = null
 
         while (true) {
             val elapsedMs = SystemClock.elapsedRealtime() - startedAt
-            val position = workout.at(elapsedMs)
-            val state = if (position != null) {
-                WorkoutState.Active(position, workout.rounds, workout.progressAt(elapsedMs))
-            } else {
-                WorkoutState.Active(lastPosition.copy(remainingMs = 0), workout.rounds, 1f)
-            }
-            _state.value = state
+            val tick = tickAt(workout, elapsedMs, previousIndex, soundFailed)
+            _state.value = tick.state
 
             // Сравнивается весь текст: при отрезках в 1 с секунды совпадают, а отрезок уже другой
-            val text = textFor(state)
+            val text = textFor(tick.state)
             if (text != shownText) {
                 notificationManager.notify(NOTIFICATION_ID, buildNotification(text))
                 shownText = text
             }
 
-            val soundMs = signalFor(previousIndex, position)?.let(sounds::play) ?: 0
-            if (position == null) {
-                // Звук выходит из динамика с задержкой, release() без запаса обрежет конец сигнала
-                delay(soundMs + FINISH_TAIL_MS)
-                break
-            }
-            previousIndex = position.index
-            lastPosition = position
+            tick.signal?.let { beeper?.play(it) }
+            if (tick.finished) break
+            previousIndex = tick.state.position.index
             delay(TICK_MS)
         }
 
-        cleanup()
+        // Звук выходит из динамика с задержкой, release() без запаса обрежет конец сигнала
+        delay(soundDurationMs(Signal.FINISH) + FINISH_TAIL_MS)
         stopSelf()
     }
 
-    /** Единое завершение для «Стоп», финала и onDestroy. Вызывать можно повторно. */
-    private fun cleanup() {
-        job?.cancel()
-        job = null
-        beeper?.release()
-        beeper = null
-        if (wakeLock.isHeld) wakeLock.release()
-        _state.value = WorkoutState.Idle
-    }
-
-    private fun currentText(): String =
-        (state.value as? WorkoutState.Active)?.let(::textFor) ?: getString(R.string.app_name)
-
-    private fun textFor(state: WorkoutState.Active): String = notificationText(
-        position = state.position,
-        rounds = state.rounds,
+    private fun textFor(active: WorkoutState.Active): String = notificationText(
+        position = active.position,
+        rounds = active.rounds,
         runLabel = getString(R.string.segment_run),
         walkLabel = getString(R.string.segment_walk),
         roundLabel = getString(R.string.round_label),
@@ -157,16 +140,16 @@ class WorkoutService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
+            // Текст нужен на заблокированном экране: телефон лежит в кармане или на руке
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
-    /** Возвращает null, если параметры не дают корректную тренировку. */
-    private fun Intent.toWorkout(): Workout? {
-        val runSec = getIntExtra(EXTRA_RUN_SEC, 0)
-        val walkSec = getIntExtra(EXTRA_WALK_SEC, 0)
-        val rounds = getIntExtra(EXTRA_ROUNDS, 0)
-        return if (runSec > 0 && walkSec > 0 && rounds > 0) Workout(runSec, walkSec, rounds) else null
-    }
+    private fun Intent.toWorkout(): Workout? = workoutOrNull(
+        runSec = getIntExtra(EXTRA_RUN_SEC, 0),
+        walkSec = getIntExtra(EXTRA_WALK_SEC, 0),
+        rounds = getIntExtra(EXTRA_ROUNDS, 0),
+    )
 
     companion object {
         private const val CHANNEL_ID = "workout"

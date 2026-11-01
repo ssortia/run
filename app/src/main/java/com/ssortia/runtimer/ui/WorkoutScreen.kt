@@ -1,6 +1,5 @@
 package com.ssortia.runtimer.ui
 
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -8,7 +7,6 @@ import androidx.compose.ui.Modifier
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
 
-/** Выбирает экран по состоянию сервиса. */
 @Composable
 fun WorkoutScreen(
     state: WorkoutState,
@@ -23,9 +21,8 @@ fun WorkoutScreen(
             SettingsContent(
                 initial = initial,
                 onStart = onStart,
-                modifier = Modifier
-                    .safeDrawingPadding()
-                    .imePadding(),
+                // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
+                modifier = Modifier.safeDrawingPadding(),
             )
         }
 
