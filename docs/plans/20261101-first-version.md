@@ -289,9 +289,9 @@ enum class Signal { INTERVAL, FINISH }
 ⚠️ Lint без ошибок, 8 предупреждений: 3 `InlinedApi` (безопасны), 3 `GradleDependency`, `ObsoleteSdkInt`, `MonochromeLauncherIcon`. На работу версии не влияют, оставлены.
 
 ### Task 9: [Final] Update documentation
-- [ ] обновить статус, структуру проекта и инструкции в `README.md`
-- [ ] create `CLAUDE.md` с командами сборки и принятыми соглашениями, если появились неочевидные
-- [ ] move this plan to `docs/plans/completed/`
+- [x] обновить статус, структуру проекта и инструкции в `README.md`
+- [x] create `CLAUDE.md` с командами сборки и принятыми соглашениями, если появились неочевидные
+- [x] move this plan to docs/plans/completed/ (отложено: выполняется после ревью)
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
