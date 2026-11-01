@@ -241,16 +241,18 @@ enum class Signal { INTERVAL, FINISH }
 - Create: `app/src/main/java/com/ssortia/runtimer/ui/ActiveContent.kt`
 - Create: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Create: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/NotificationPermissionTest.kt`
 - Modify: `app/src/main/AndroidManifest.xml`
+- Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] реализовать экран тренировки: отрезок, крупное время, повтор, прогресс, цвет фона, кнопка «Стоп»
-- [ ] реализовать `WorkoutScreen`: выбор экрана по `WorkoutState`
-- [ ] реализовать `MainActivity`: Compose, сценарий «Старт» из раздела «Разрешения», стоп сервиса
-- [ ] загружать настройки в форму из `SettingsStore`, в том числе при возврате в `Idle`, и сохранять их при успешном старте (US-3)
-- [ ] применить отступы из раздела «Экран» и добавить `windowSoftInputMode="adjustResize"` в манифест
-- [ ] покрыть новую чистую логику экрана тестами, если она появится
-- [ ] убедиться, что `./gradlew assembleDebug` проходит
-- [ ] run tests - must pass before next task
+- [x] реализовать экран тренировки: отрезок, крупное время, повтор, прогресс, цвет фона, кнопка «Стоп»
+- [x] реализовать `WorkoutScreen`: выбор экрана по `WorkoutState`
+- [x] реализовать `MainActivity`: Compose, сценарий «Старт» из раздела «Разрешения», стоп сервиса
+- [x] загружать настройки в форму из `SettingsStore`, в том числе при возврате в `Idle`, и сохранять их при успешном старте (US-3)
+- [x] применить отступы из раздела «Экран» и добавить `windowSoftInputMode="adjustResize"` в манифест
+- [x] покрыть новую чистую логику экрана тестами, если она появится
+- [x] убедиться, что `./gradlew assembleDebug` проходит
+- [x] run tests - must pass before next task
 
 ### Task 8: Verify acceptance criteria
 - [ ] проверить по коду, что US-1…US-8 реализованы, и отметить критерии, требующие проверки на телефоне
