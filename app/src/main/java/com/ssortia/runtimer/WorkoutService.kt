@@ -115,7 +115,8 @@ class WorkoutService : Service() {
 
             val soundMs = signalFor(previousIndex, position)?.let(sounds::play) ?: 0
             if (position == null) {
-                delay(soundMs)
+                // Звук выходит из динамика с задержкой, release() без запаса обрежет конец сигнала
+                delay(soundMs + FINISH_TAIL_MS)
                 break
             }
             previousIndex = position.index
@@ -171,6 +172,7 @@ class WorkoutService : Service() {
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
         private const val TICK_MS = 250L
+        private const val FINISH_TAIL_MS = 300L
         private const val WAKE_LOCK_TAG = "RunTimer:workout"
         private const val WAKE_LOCK_MARGIN_MS = 60_000L
         private const val EXTRA_RUN_SEC = "runSec"

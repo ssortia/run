@@ -9,8 +9,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.colorResource
 import com.ssortia.runtimer.R
+import com.ssortia.runtimer.WorkoutState
 
 /** Цвета экрана во время отрезка: фон и текст поверх него. */
 data class SegmentColors(val background: Color, val content: Color)
@@ -38,6 +40,12 @@ private val DarkScheme = darkColorScheme(
 fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
     darkTheme -> if (isRun) RunDark else WalkDark
     else -> if (isRun) RunLight else WalkLight
+}
+
+/** Нужны ли тёмные значки в строке состояния: на экране тренировки они совпадают с цветом текста. */
+fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean): Boolean = when (state) {
+    WorkoutState.Idle -> !darkTheme
+    is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).content.luminance() < 0.5f
 }
 
 /** Тема следует за системой. Фон взят из темы окна, чтобы при запуске не было вспышки. */

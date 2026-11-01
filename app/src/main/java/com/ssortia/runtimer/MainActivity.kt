@@ -3,18 +3,23 @@ package com.ssortia.runtimer
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssortia.runtimer.ui.RunTimerTheme
 import com.ssortia.runtimer.ui.WorkoutScreen
+import com.ssortia.runtimer.ui.darkStatusIcons
 
 /** Разрешение на уведомления существует с Android 13, на старых версиях запрашивать нечего. */
 fun needsNotificationRequest(sdkInt: Int, granted: Boolean): Boolean =
@@ -33,6 +38,18 @@ class MainActivity : ComponentActivity() {
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission(),
             ) { startWorkout() }
+
+            // Значки следуют за цветом экрана: тёмный фон ходьбы бывает и в светлой теме
+            val darkIcons = darkStatusIcons(state, isSystemInDarkTheme())
+            LaunchedEffect(darkIcons) {
+                enableEdgeToEdge(
+                    statusBarStyle = if (darkIcons) {
+                        SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                    } else {
+                        SystemBarStyle.dark(Color.TRANSPARENT)
+                    },
+                )
+            }
 
             RunTimerTheme {
                 WorkoutScreen(
