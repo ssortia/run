@@ -13,9 +13,12 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
     private val cycleMs = (runSec + walkSec) * 1000L
 
+    /** Общая длительность тренировки. */
+    val totalMs = cycleMs * rounds
+
     /** Возвращает позицию на момент elapsedMs от старта или null, если тренировка закончилась. */
     fun at(elapsedMs: Long): Position? {
-        if (elapsedMs >= cycleMs * rounds) return null
+        if (elapsedMs >= totalMs) return null
         val round = (elapsedMs / cycleMs).toInt()
         val inCycle = elapsedMs % cycleMs
         val isRun = inCycle < runMs
@@ -26,4 +29,8 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
             remainingMs = (if (isRun) runMs else cycleMs) - inCycle,
         )
     }
+
+    /** Доля пройденного времени от 0 до 1. Значения вне тренировки прижимаются к границам. */
+    fun progressAt(elapsedMs: Long): Float =
+        (elapsedMs.toDouble() / totalMs).toFloat().coerceIn(0f, 1f)
 }

@@ -182,12 +182,12 @@ enum class Signal { INTERVAL, FINISH }
 - Create: `app/src/test/java/com/ssortia/runtimer/WorkoutStateTest.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/Workout.kt`
 
-- [ ] добавить в `Workout` общую длительность и расчёт прогресса
-- [ ] реализовать `WorkoutState`, `Signal`, `signalFor()` и `formatTime()`
-- [ ] написать тесты `signalFor()`: старт без сигнала, тот же отрезок, смена отрезка, финал
-- [ ] написать тесты `formatTime()` и прогресса: начало, середина, значения вблизи нуля, округление секунд вверх
-- [ ] написать тест, который имитирует цикл с шагом 250 мс для 10/10/2 и получает ровно 3 `INTERVAL`, а затем 1 `FINISH`
-- [ ] run tests - must pass before next task
+- [x] добавить в `Workout` общую длительность и расчёт прогресса
+- [x] реализовать `WorkoutState`, `Signal`, `signalFor()` и `formatTime()`
+- [x] написать тесты `signalFor()`: старт без сигнала, тот же отрезок, смена отрезка, финал
+- [x] написать тесты `formatTime()` и прогресса: начало, середина, значения вблизи нуля, округление секунд вверх
+- [x] написать тест, который имитирует цикл с шагом 250 мс для 10/10/2 и получает ровно 3 `INTERVAL`, а затем 1 `FINISH`
+- [x] run tests - must pass before next task
 
 ### Task 4: Реализовать звуковые сигналы
 
