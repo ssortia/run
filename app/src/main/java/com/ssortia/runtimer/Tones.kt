@@ -1,0 +1,48 @@
+package com.ssortia.runtimer
+
+import kotlin.math.PI
+import kotlin.math.min
+import kotlin.math.sin
+
+const val SAMPLE_RATE_HZ = 44_100
+
+// Запас по амплитуде: полный размах на динамике телефона даёт искажения
+internal const val PEAK_AMPLITUDE = 26_000
+internal const val FADE_SAMPLES = SAMPLE_RATE_HZ * 5 / 1000
+
+/** Отрезок сигнала. При нулевой частоте это пауза. */
+data class Tone(val frequencyHz: Int, val durationMs: Int)
+
+/** Состав сигнала: обычный звучит двумя короткими тонами, финальный тремя восходящими. */
+fun tonesFor(signal: Signal): List<Tone> = when (signal) {
+    Signal.INTERVAL -> listOf(Tone(880, 150), Tone(0, 100), Tone(880, 150))
+    Signal.FINISH -> listOf(
+        Tone(660, 200),
+        Tone(0, 80),
+        Tone(880, 200),
+        Tone(0, 80),
+        Tone(1100, 700),
+    )
+}
+
+/** Собирает тоны в моно PCM 16 бит. Каждый тон плавно нарастает и затухает, поэтому нет щелчков. */
+fun synthesize(tones: List<Tone>): ShortArray {
+    val pcm = ShortArray(tones.sumOf { sampleCount(it.durationMs) })
+    var offset = 0
+    for (tone in tones) {
+        val count = sampleCount(tone.durationMs)
+        for (i in 0 until count) {
+            // Первый и последний сэмплы тона равны нулю
+            val envelope = min(1.0, min(i, count - 1 - i).toDouble() / FADE_SAMPLES)
+            val wave = sin(2 * PI * tone.frequencyHz * i / SAMPLE_RATE_HZ)
+            pcm[offset + i] = (PEAK_AMPLITUDE * envelope * wave).toInt().toShort()
+        }
+        offset += count
+    }
+    return pcm
+}
+
+/** Длительность PCM-буфера в миллисекундах. */
+fun durationMs(pcm: ShortArray): Long = pcm.size * 1000L / SAMPLE_RATE_HZ
+
+private fun sampleCount(durationMs: Int): Int = (SAMPLE_RATE_HZ * durationMs.toLong() / 1000).toInt()

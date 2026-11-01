@@ -196,11 +196,11 @@ enum class Signal { INTERVAL, FINISH }
 - Create: `app/src/test/java/com/ssortia/runtimer/TonesTest.kt`
 - Create: `app/src/main/java/com/ssortia/runtimer/Beeper.kt`
 
-- [ ] реализовать чистый синтез PCM в `Tones.kt`
-- [ ] реализовать `Beeper` по разделу «Сигналы»: повторное проигрывание, перехват ошибок, возврат длительности, `release()`
-- [ ] написать тесты синтеза: длина буфера, нули в паузе, плавное начало и конец
-- [ ] написать тест, что `INTERVAL` и `FINISH` различаются и финальный сигнал длиннее
-- [ ] run tests - must pass before next task
+- [x] реализовать чистый синтез PCM в `Tones.kt`
+- [x] реализовать `Beeper` по разделу «Сигналы»: повторное проигрывание, перехват ошибок, возврат длительности, `release()`
+- [x] написать тесты синтеза: длина буфера, нули в паузе, плавное начало и конец
+- [x] написать тест, что `INTERVAL` и `FINISH` различаются и финальный сигнал длиннее
+- [x] run tests - must pass before next task
 
 ### Task 5: Реализовать фоновый сервис тренировки
 
