@@ -96,9 +96,9 @@ val totalMs = cycleMs * rounds - walkMs
 - [x] запустить тесты, они должны пройти
 
 ### Task 2: Проверить приёмочные критерии
-- [ ] убедиться, что `tickAt`, `signalFor`, `progressAt` и `WorkoutService` не требуют правок: финальный сигнал, прогресс 1 и экран верны, когда последний отрезок это бег
-- [ ] запустить полный набор: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] запустить lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] убедиться, что `tickAt`, `signalFor`, `progressAt` и `WorkoutService` не требуют правок: финальный сигнал, прогресс 1 и экран верны, когда последний отрезок это бег
+- [x] запустить полный набор: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] запустить lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 3: [Final] Обновить документацию
 
