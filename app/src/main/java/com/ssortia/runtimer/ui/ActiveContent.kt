@@ -28,9 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.WorkoutState
+import com.ssortia.runtimer.countdownSeconds
 import com.ssortia.runtimer.formatTime
 
-/** Экран тренировки. Фон уходит под системные панели, отступы применяются к содержимому. */
+/** Экран тренировки. */
 @Composable
 fun ActiveContent(
     state: WorkoutState.Active,
@@ -40,6 +41,67 @@ fun ActiveContent(
     val position = state.position
     val colors = segmentColors(position.isRun, isSystemInDarkTheme())
 
+    TimerLayout(
+        colors = colors,
+        modifier = modifier,
+        center = {
+            Text(
+                text = stringResource(
+                    if (position.isRun) R.string.segment_run else R.string.segment_walk,
+                ),
+                style = MaterialTheme.typography.displaySmall,
+            )
+            TimerText(formatTime(position.remainingMs))
+            Text(
+                text = stringResource(R.string.round_progress, position.round, state.rounds),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            if (state.soundFailed) SoundWarning()
+        },
+        bottom = {
+            LinearProgressIndicator(
+                progress = { state.progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = colors.content,
+                trackColor = colors.content.copy(alpha = 0.3f),
+            )
+            StopButton(colors, onStop)
+        },
+    )
+}
+
+/** Экран отсчёта до старта. Цвета бега сразу показывают первый отрезок, прогресса ещё нет. */
+@Composable
+fun CountdownContent(
+    state: WorkoutState.Countdown,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = segmentColors(isRun = true, isSystemInDarkTheme())
+
+    TimerLayout(
+        colors = colors,
+        modifier = modifier,
+        center = {
+            Text(
+                text = stringResource(R.string.countdown_label),
+                style = MaterialTheme.typography.displaySmall,
+            )
+            TimerText(countdownSeconds(state.remainingMs).toString())
+            if (state.soundFailed) SoundWarning()
+        },
+        bottom = { StopButton(colors, onStop) },
+    )
+}
+
+/** Фон уходит под системные панели, отступы применяются к содержимому. */
+@Composable
+private fun TimerLayout(
+    colors: SegmentColors,
+    modifier: Modifier = Modifier,
+    center: @Composable () -> Unit,
+    bottom: @Composable () -> Unit,
+) {
     CompositionLocalProvider(LocalContentColor provides colors.content) {
         Column(
             modifier = modifier
@@ -60,60 +122,55 @@ fun ActiveContent(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = stringResource(
-                            if (position.isRun) R.string.segment_run else R.string.segment_walk,
-                        ),
-                        style = MaterialTheme.typography.displaySmall,
-                    )
-                    Text(
-                        text = formatTime(position.remainingMs),
-                        // Цифры одной ширины: время не дрожит при смене секунд
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontSize = 88.sp,
-                            lineHeight = 104.sp,
-                            fontFeatureSettings = "tnum",
-                        ),
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                    Text(
-                        text = stringResource(R.string.round_progress, position.round, state.rounds),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    if (state.soundFailed) {
-                        Text(
-                            text = stringResource(R.string.warning_no_sound),
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+                    center()
                 }
             }
 
-            LinearProgressIndicator(
-                progress = { state.progress },
-                modifier = Modifier.fillMaxWidth(),
-                color = colors.content,
-                trackColor = colors.content.copy(alpha = 0.3f),
-            )
-
-            // Цвета поменяны местами: контраст этой пары проверен в ThemeTest
-            Button(
-                onClick = onStop,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.content,
-                    contentColor = colors.background,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.button_stop),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
+            bottom()
         }
+    }
+}
+
+@Composable
+private fun TimerText(text: String) {
+    Text(
+        text = text,
+        // Цифры одной ширины: время не дрожит при смене секунд
+        style = MaterialTheme.typography.displayLarge.copy(
+            fontSize = 88.sp,
+            lineHeight = 104.sp,
+            fontFeatureSettings = "tnum",
+        ),
+        maxLines = 1,
+        softWrap = false,
+    )
+}
+
+@Composable
+private fun SoundWarning() {
+    Text(
+        text = stringResource(R.string.warning_no_sound),
+        style = MaterialTheme.typography.bodyLarge,
+        textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
+private fun StopButton(colors: SegmentColors, onStop: () -> Unit) {
+    // Цвета поменяны местами: контраст этой пары проверен в ThemeTest
+    Button(
+        onClick = onStop,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colors.content,
+            contentColor = colors.background,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.button_stop),
+            style = MaterialTheme.typography.titleLarge,
+        )
     }
 }

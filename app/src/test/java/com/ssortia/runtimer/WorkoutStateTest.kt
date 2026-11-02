@@ -104,8 +104,26 @@ class WorkoutStateTest {
     }
 
     @Test
+    fun `отсчёт показывает целые секунды`() {
+        assertEquals(5L, countdownSeconds(5_000))
+    }
+
+    @Test
+    fun `секунды отсчёта округляются вверх`() {
+        assertEquals(5L, countdownSeconds(4_001))
+        assertEquals(4L, countdownSeconds(4_000))
+    }
+
+    @Test
+    fun `в конце отсчёта остаётся единица, а не ноль`() {
+        assertEquals(1L, countdownSeconds(1))
+    }
+
+    @Test
     fun `общая длительность равна сумме всех отрезков`() {
         assertEquals(30_000L, workout.totalMs)
+        assertEquals(40_000L, Workout(10, 5, 3).totalMs)
+        assertEquals(3_000L, Workout(3, 2, 1).totalMs)
         assertEquals(1_560_000L, WorkoutSettings().toWorkout().totalMs)
     }
 
@@ -119,7 +137,7 @@ class WorkoutStateTest {
 
     @Test
     fun `прогресс вблизи нуля положительный и мал`() {
-        assertEquals(0.000033f, workout.progressAt(1), 1e-6f)
+        assertEquals(1f / 30_000, workout.progressAt(1), 1e-7f)
     }
 
     @Test
@@ -225,6 +243,8 @@ class WorkoutStateTest {
             Position(index = 0, isRun = true, round = 1, remainingMs = 0),
             ticks.last().state.position,
         )
+        assertEquals(0.5f, ticks[6].state.progress, 0f)
+        assertEquals(1f, ticks.last().state.progress, 0f)
     }
 
     @Test

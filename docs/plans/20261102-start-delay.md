@@ -228,14 +228,14 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - Modify: `app/src/test/java/com/ssortia/runtimer/NotificationTextTest.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt`
 
-- [ ] добавить `WorkoutState.Countdown` и `countdownSeconds`
-- [ ] добавить `countdownNotificationText` и строки `countdown_label`, `seconds_short`
-- [ ] добавить ветку `Countdown` в `darkStatusIcons`, она совпадает со значками бега
-- [ ] вынести из `ActiveContent` приватный `TimerLayout` со слотами, добавить `CountdownContent` с подписью, секундами, предупреждением о звуке и «Стоп»
-- [ ] добавить ветку `Countdown` в `WorkoutScreen`
-- [ ] написать тесты `countdownSeconds`: 5000 даёт 5, 4001 даёт 5, 1 даёт 1
-- [ ] написать тесты текста уведомления и `darkStatusIcons` для `Countdown` в обеих темах
-- [ ] запустить тесты, они должны пройти
+- [x] добавить `WorkoutState.Countdown` и `countdownSeconds`
+- [x] добавить `countdownNotificationText` и строки `countdown_label`, `seconds_short`
+- [x] добавить ветку `Countdown` в `darkStatusIcons`, она совпадает со значками бега
+- [x] вынести из `ActiveContent` приватный `TimerLayout` со слотами, добавить `CountdownContent` с подписью, секундами, предупреждением о звуке и «Стоп»
+- [x] добавить ветку `Countdown` в `WorkoutScreen`
+- [x] написать тесты `countdownSeconds`: 5000 даёт 5, 4001 даёт 5, 1 даёт 1
+- [x] написать тесты текста уведомления и `darkStatusIcons` для `Countdown` в обеих темах
+- [x] запустить тесты, они должны пройти
 
 ### Task 4: Отсчёт в сервисе
 

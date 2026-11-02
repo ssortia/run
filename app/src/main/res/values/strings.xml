@@ -11,6 +11,8 @@
     <string name="field_start_delay">Задержка старта, секунды</string>
     <string name="button_start">Старт</string>
     <string name="button_stop">Стоп</string>
+    <string name="countdown_label">Старт через</string>
+    <string name="seconds_short">с</string>
     <string name="round_progress">Повтор %1$d из %2$d</string>
     <string name="total_duration">Всего: %1$s</string>
     <string name="error_run_zero">Время бега должно быть больше нуля</string>

@@ -7,6 +7,10 @@ private const val SECONDS_IN_HOUR = 3_600L
 /** Состояние тренировки, которое сервис публикует для экрана. */
 sealed interface WorkoutState {
     data object Idle : WorkoutState
+
+    /** Отсчёт до старта. Позиции и прогресса у него нет: тренировка ещё не началась. */
+    data class Countdown(val remainingMs: Long, val soundFailed: Boolean = false) : WorkoutState
+
     data class Active(
         val position: Position,
         val rounds: Int,
@@ -68,5 +72,8 @@ fun formatTotal(totalMs: Long): String {
     val minutes = totalSec % SECONDS_IN_HOUR / 60
     return "%d:%02d:%02d".format(Locale.ROOT, totalSec / SECONDS_IN_HOUR, minutes, totalSec % 60)
 }
+
+/** Секунды округляются вверх: отсчёт идёт 5, 4, 3, 2, 1 и не показывает 0. */
+fun countdownSeconds(remainingMs: Long): Long = wholeSeconds(remainingMs)
 
 private fun wholeSeconds(ms: Long): Long = (ms.coerceAtLeast(0) + 999) / 1000

@@ -41,6 +41,8 @@ fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
 /** Нужны ли тёмные значки в строке состояния: на экране тренировки они совпадают с цветом текста. */
 fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean): Boolean = when (state) {
     WorkoutState.Idle -> !darkTheme
+    // Отсчёт идёт в цветах бега
+    is WorkoutState.Countdown -> segmentColors(isRun = true, darkTheme).content.luminance() < 0.5f
     is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).content.luminance() < 0.5f
 }
 

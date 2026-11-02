@@ -7,6 +7,20 @@ class NotificationTextTest {
     private fun text(position: Position, rounds: Int = 7) =
         notificationText(position, rounds, runLabel = "Бег", walkLabel = "Ходьба", roundLabel = "Повтор")
 
+    private fun countdownText(remainingMs: Long) =
+        countdownNotificationText(remainingMs, countdownLabel = "Старт через", secondsLabel = "с")
+
+    @Test
+    fun `отсчёт показывает оставшиеся секунды`() {
+        assertEquals("Старт через 5 с", countdownText(5_000))
+    }
+
+    @Test
+    fun `в отсчёте секунды округляются вверх`() {
+        assertEquals("Старт через 5 с", countdownText(4_001))
+        assertEquals("Старт через 1 с", countdownText(1))
+    }
+
     @Test
     fun `отрезок бега`() {
         val position = Position(index = 0, isRun = true, round = 1, remainingMs = 120_000)
@@ -44,7 +58,7 @@ class NotificationTextTest {
 
     @Test
     fun `финальная позиция показывает ноль`() {
-        val position = Position(index = 12, isRun = true, round = 7, remainingMs = 0)
+        val position = tickAt(WorkoutSettings().toWorkout(), 1_560_000, 12).state.position
 
         assertEquals("Бег · 0:00 · Повтор 7/7", text(position))
     }

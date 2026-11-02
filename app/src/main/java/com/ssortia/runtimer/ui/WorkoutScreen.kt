@@ -26,6 +26,8 @@ fun WorkoutScreen(
             )
         }
 
+        is WorkoutState.Countdown -> CountdownContent(state = state, onStop = onStop)
+
         is WorkoutState.Active -> ActiveContent(state = state, onStop = onStop)
     }
 }

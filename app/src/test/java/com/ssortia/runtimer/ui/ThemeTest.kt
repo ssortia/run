@@ -64,6 +64,17 @@ class ThemeTest {
     }
 
     @Test
+    fun `на отсчёте значки те же, что на беге, в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            assertEquals(
+                "значки отсчёта: тёмная тема $darkTheme",
+                darkStatusIcons(active(isRun = true), darkTheme),
+                darkStatusIcons(WorkoutState.Countdown(remainingMs = 5_000), darkTheme),
+            )
+        }
+    }
+
+    @Test
     fun `значки контрастнее фона отрезка, чем значки противоположного цвета`() {
         for (darkTheme in listOf(false, true)) {
             for (isRun in listOf(false, true)) {
