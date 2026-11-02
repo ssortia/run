@@ -12,11 +12,7 @@ PACKAGE=com.ssortia.runtimer
 APK=app/build/outputs/apk/debug/app-debug.apk
 BOOT_TIMEOUT_SEC=180
 
-if [[ -z "${JAVA_HOME:-}" ]] && ! command -v java >/dev/null; then
-    export JAVA_HOME="$HOME/.local/jdk-17"
-fi
-
-./gradlew assembleDebug
+./build-apk.sh
 
 if ! "$ADB" devices | grep -q '^emulator-'; then
     echo "Запуск эмулятора $AVD..."
