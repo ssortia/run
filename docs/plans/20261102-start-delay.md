@@ -192,17 +192,17 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - Modify: `app/src/test/java/com/ssortia/runtimer/SettingsStoreTest.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/SettingsInputTest.kt`
 
-- [ ] добавить `MAX_START_DELAY_SEC`, поле `startDelaySec` и ошибку `SettingsError.START_DELAY_RANGE`, проверять диапазон в `validate()` раньше проверок на ноль
-- [ ] сохранять и читать значение в `SettingsStore` с ключом `start_delay_sec`
-- [ ] добавить поле в `SettingsInput`, `toSettings`, `from` и `SettingsInputSaver`
-- [ ] добавить `messageRes` и `messageArgs` для новой ошибки, строки `error_start_delay_range` и `field_start_delay`
-- [ ] добавить поле на форму после повторов, `ImeAction.Done` перенести на него
-- [ ] написать тесты `WorkoutSettings`: значение по умолчанию 5, границы 0 и 60 верны, -1 и 61 дают ошибку, задержка не меняет `toWorkout().totalMs`
-- [ ] написать тесты `SettingsStore`: при отсутствии ключа возвращается 5; в тесте сохранения задать `startDelaySec` со значением, отличным от остальных полей
-- [ ] написать тесты `SettingsInput`: преобразование в обе стороны, пустое поле даёт 0, число больше `Int` даёт ошибку диапазона
-- [ ] обновить помощник `input()` и тест Saver в `SettingsInputTest.kt`: Saver сохраняет шестое поле
-- [ ] написать тесты `messageRes` и `messageArgs` для `START_DELAY_RANGE`
-- [ ] запустить тесты, они должны пройти
+- [x] добавить `MAX_START_DELAY_SEC`, поле `startDelaySec` и ошибку `SettingsError.START_DELAY_RANGE`, проверять диапазон в `validate()` раньше проверок на ноль
+- [x] сохранять и читать значение в `SettingsStore` с ключом `start_delay_sec`
+- [x] добавить поле в `SettingsInput`, `toSettings`, `from` и `SettingsInputSaver`
+- [x] добавить `messageRes` и `messageArgs` для новой ошибки, строки `error_start_delay_range` и `field_start_delay`
+- [x] добавить поле на форму после повторов, `ImeAction.Done` перенести на него
+- [x] написать тесты `WorkoutSettings`: значение по умолчанию 5, границы 0 и 60 верны, -1 и 61 дают ошибку, задержка не меняет `toWorkout().totalMs`
+- [x] написать тесты `SettingsStore`: при отсутствии ключа возвращается 5; в тесте сохранения задать `startDelaySec` со значением, отличным от остальных полей
+- [x] написать тесты `SettingsInput`: преобразование в обе стороны, пустое поле даёт 0, число больше `Int` даёт ошибку диапазона
+- [x] обновить помощник `input()` и тест Saver в `SettingsInputTest.kt`: Saver сохраняет шестое поле
+- [x] написать тесты `messageRes` и `messageArgs` для `START_DELAY_RANGE`
+- [x] запустить тесты, они должны пройти
 
 ### Task 2: Сигнал START
 

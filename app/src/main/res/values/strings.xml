@@ -8,6 +8,7 @@
     <string name="field_minutes">Минуты</string>
     <string name="field_seconds">Секунды</string>
     <string name="field_rounds">Повторы</string>
+    <string name="field_start_delay">Задержка старта, секунды</string>
     <string name="button_start">Старт</string>
     <string name="button_stop">Стоп</string>
     <string name="round_progress">Повтор %1$d из %2$d</string>
@@ -17,5 +18,6 @@
     <string name="error_rounds_range">Число повторов должно быть от 1 до %1$d</string>
     <string name="error_seconds_range">Секунды должны быть от 0 до %1$d</string>
     <string name="error_minutes_range">Минуты должны быть от 0 до %1$d</string>
+    <string name="error_start_delay_range">Задержка должна быть от 0 до %1$d секунд</string>
     <string name="warning_no_sound">Сигналы недоступны, следите за временем на экране</string>
 </resources>

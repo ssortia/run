@@ -17,7 +17,14 @@ class SettingsStoreTest {
     @Test
     fun `сохранённые настройки читаются без перестановки полей`() {
         // Все значения разные: перепутанный ключ сразу виден
-        val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
+        val settings = WorkoutSettings(
+            runMin = 3,
+            runSec = 15,
+            walkMin = 4,
+            walkSec = 45,
+            rounds = 9,
+            startDelaySec = 20,
+        )
 
         store.save(settings)
 
@@ -38,6 +45,13 @@ class SettingsStoreTest {
         prefs.values["run_min"] = 5
 
         assertEquals(WorkoutSettings(runMin = 5), store.load())
+    }
+
+    @Test
+    fun `без сохранённой задержки возвращается 5 секунд`() {
+        prefs.values["rounds"] = 9
+
+        assertEquals(5, store.load().startDelaySec)
     }
 
     @Test

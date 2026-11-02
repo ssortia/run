@@ -17,6 +17,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
             walkMin = prefs.getInt(KEY_WALK_MIN, defaults.walkMin),
             walkSec = prefs.getInt(KEY_WALK_SEC, defaults.walkSec),
             rounds = prefs.getInt(KEY_ROUNDS, defaults.rounds),
+            startDelaySec = prefs.getInt(KEY_START_DELAY_SEC, defaults.startDelaySec),
         )
     }
 
@@ -27,6 +28,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .putInt(KEY_WALK_MIN, settings.walkMin)
             .putInt(KEY_WALK_SEC, settings.walkSec)
             .putInt(KEY_ROUNDS, settings.rounds)
+            .putInt(KEY_START_DELAY_SEC, settings.startDelaySec)
             .apply()
     }
 
@@ -37,5 +39,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_WALK_MIN = "walk_min"
         const val KEY_WALK_SEC = "walk_sec"
         const val KEY_ROUNDS = "rounds"
+        const val KEY_START_DELAY_SEC = "start_delay_sec"
     }
 }

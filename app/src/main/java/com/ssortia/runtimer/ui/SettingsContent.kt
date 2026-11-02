@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
 import com.ssortia.runtimer.MAX_SECONDS
+import com.ssortia.runtimer.MAX_START_DELAY_SEC
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WorkoutSettings
@@ -47,6 +48,7 @@ data class SettingsInput(
     val walkMin: String,
     val walkSec: String,
     val rounds: String,
+    val startDelaySec: String,
 ) {
     fun toSettings() = WorkoutSettings(
         runMin = parseField(runMin),
@@ -54,6 +56,7 @@ data class SettingsInput(
         walkMin = parseField(walkMin),
         walkSec = parseField(walkSec),
         rounds = parseField(rounds),
+        startDelaySec = parseField(startDelaySec),
     )
 
     companion object {
@@ -63,6 +66,7 @@ data class SettingsInput(
             walkMin = settings.walkMin.toString(),
             walkSec = settings.walkSec.toString(),
             rounds = settings.rounds.toString(),
+            startDelaySec = settings.startDelaySec.toString(),
         )
     }
 }
@@ -85,6 +89,7 @@ fun SettingsError.messageRes(): Int = when (this) {
     SettingsError.ROUNDS_RANGE -> R.string.error_rounds_range
     SettingsError.SECONDS_RANGE -> R.string.error_seconds_range
     SettingsError.MINUTES_RANGE -> R.string.error_minutes_range
+    SettingsError.START_DELAY_RANGE -> R.string.error_start_delay_range
 }
 
 /** Аргументы строки из [messageRes]: пределы подставляются из тех же констант, что и в проверке. */
@@ -93,11 +98,12 @@ fun SettingsError.messageArgs(): Array<Any> = when (this) {
     SettingsError.ROUNDS_RANGE -> arrayOf(MAX_ROUNDS)
     SettingsError.SECONDS_RANGE -> arrayOf(MAX_SECONDS)
     SettingsError.MINUTES_RANGE -> arrayOf(MAX_MINUTES)
+    SettingsError.START_DELAY_RANGE -> arrayOf(MAX_START_DELAY_SEC)
 }
 
 internal val SettingsInputSaver = listSaver<SettingsInput, String>(
-    save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds) },
-    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
+    save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds, it.startDelaySec) },
+    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4], it[5]) },
 )
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
@@ -140,6 +146,12 @@ fun SettingsContent(
             label = stringResource(R.string.field_rounds),
             value = input.rounds,
             onValueChange = { input = input.copy(rounds = it) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        NumberField(
+            label = stringResource(R.string.field_start_delay),
+            value = input.startDelaySec,
+            onValueChange = { input = input.copy(startDelaySec = it) },
             imeAction = ImeAction.Done,
             modifier = Modifier.fillMaxWidth(),
         )
