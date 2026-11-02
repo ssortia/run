@@ -117,4 +117,14 @@ class WorkoutTest {
     fun `отрицательная задержка отклоняется`() {
         assertNull(startDelayMsOrNull(-1))
     }
+
+    @Test
+    fun `таймаут wake lock покрывает тренировку, задержку и запас`() {
+        assertEquals(1_560_000L + 60_000L + 60_000L, wakeLockTimeoutMs(1_560_000, 60_000))
+    }
+
+    @Test
+    fun `без задержки таймаут wake lock покрывает тренировку и запас`() {
+        assertEquals(1_560_000L + 60_000L, wakeLockTimeoutMs(1_560_000, 0))
+    }
 }

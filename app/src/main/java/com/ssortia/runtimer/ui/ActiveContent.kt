@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.WorkoutState
-import com.ssortia.runtimer.countdownSeconds
 import com.ssortia.runtimer.formatTime
 
 /** Экран тренировки. */
@@ -70,14 +69,14 @@ fun ActiveContent(
     )
 }
 
-/** Экран отсчёта до старта. Цвета бега сразу показывают первый отрезок, прогресса ещё нет. */
+/** Экран отсчёта до старта. Прогресса ещё нет. */
 @Composable
 fun CountdownContent(
     state: WorkoutState.Countdown,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = segmentColors(isRun = true, isSystemInDarkTheme())
+    val colors = countdownColors(isSystemInDarkTheme())
 
     TimerLayout(
         colors = colors,
@@ -87,7 +86,7 @@ fun CountdownContent(
                 text = stringResource(R.string.countdown_label),
                 style = MaterialTheme.typography.displaySmall,
             )
-            TimerText(countdownSeconds(state.remainingMs).toString())
+            TimerText(state.seconds.toString())
             if (state.soundFailed) SoundWarning()
         },
         bottom = { StopButton(colors, onStop) },

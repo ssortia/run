@@ -35,6 +35,7 @@ class WorkoutService : Service() {
     // Остаётся заполненным и после финала: до onDestroy новый запрос не должен запустить тренировку
     private var job: Job? = null
     private var beeper: Beeper? = null
+    private var shownText: String? = null
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
     private val wakeLock by lazy {
@@ -90,8 +91,7 @@ class WorkoutService : Service() {
     }
 
     private fun startWorkout(workout: Workout, delayMs: Long) {
-        // Таймаут страхует от разряда батареи при ошибке в логике
-        wakeLock.acquire(workout.totalMs + delayMs + WAKE_LOCK_MARGIN_MS)
+        wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
         beeper = Beeper()
         job = scope.launch { runLoop(workout, delayMs) }
     }
@@ -106,19 +106,12 @@ class WorkoutService : Service() {
         }
 
         var previousIndex: Int? = null
-        var shownText: String? = null
 
         while (true) {
             val elapsedMs = SystemClock.elapsedRealtime() - startedAt
             val tick = tickAt(workout, elapsedMs, previousIndex, soundFailed)
             _state.value = tick.state
-
-            // Сравнивается весь текст: при отрезках в 1 с секунды совпадают, а отрезок уже другой
-            val text = textFor(tick.state)
-            if (text != shownText) {
-                notificationManager.notify(NOTIFICATION_ID, buildNotification(text))
-                shownText = text
-            }
+            showNotification(textFor(tick.state))
 
             tick.signal?.let { beeper?.play(it) }
             if (tick.finished) break
@@ -132,25 +125,19 @@ class WorkoutService : Service() {
     }
 
     private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
-        var shownText: String? = null
         while (true) {
-            val remainingMs = startedAt - SystemClock.elapsedRealtime()
-            if (remainingMs <= 0) break
-            _state.value = WorkoutState.Countdown(remainingMs, soundFailed)
-
-            val text = countdownNotificationText(
-                remainingMs = remainingMs,
-                countdownLabel = getString(R.string.countdown_label),
-                secondsLabel = getString(R.string.seconds_short),
-            )
-            if (text != shownText) {
-                notificationManager.notify(NOTIFICATION_ID, buildNotification(text))
-                shownText = text
-            }
-
-            // Ожидание короче шага, чтобы START не опоздал
-            delay(minOf(TICK_MS, remainingMs))
+            val tick = countdownTickAt(startedAt, SystemClock.elapsedRealtime(), soundFailed) ?: break
+            _state.value = tick.state
+            showNotification(countdownText(tick.state))
+            delay(tick.waitMs)
         }
+    }
+
+    // Сравнивается весь текст: при отрезках в 1 с секунды совпадают, а отрезок уже другой
+    private fun showNotification(text: String) {
+        if (text == shownText) return
+        notificationManager.notify(NOTIFICATION_ID, buildNotification(text))
+        shownText = text
     }
 
     private fun textFor(active: WorkoutState.Active): String = notificationText(
@@ -159,6 +146,12 @@ class WorkoutService : Service() {
         runLabel = getString(R.string.segment_run),
         walkLabel = getString(R.string.segment_walk),
         roundLabel = getString(R.string.round_label),
+    )
+
+    private fun countdownText(countdown: WorkoutState.Countdown): String = countdownNotificationText(
+        seconds = countdown.seconds,
+        countdownLabel = getString(R.string.countdown_label),
+        secondsLabel = getString(R.string.seconds_short),
     )
 
     private fun buildNotification(text: String): Notification =
@@ -187,10 +180,8 @@ class WorkoutService : Service() {
     companion object {
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
-        private const val TICK_MS = 250L
         private const val FINISH_TAIL_MS = 300L
         private const val WAKE_LOCK_TAG = "RunTimer:workout"
-        private const val WAKE_LOCK_MARGIN_MS = 60_000L
         private const val EXTRA_RUN_SEC = "runSec"
         private const val EXTRA_WALK_SEC = "walkSec"
         private const val EXTRA_ROUNDS = "rounds"

@@ -4,12 +4,15 @@ import java.util.Locale
 
 private const val SECONDS_IN_HOUR = 3_600L
 
+/** Шаг цикла сервиса. */
+const val TICK_MS = 250L
+
 /** Состояние тренировки, которое сервис публикует для экрана. */
 sealed interface WorkoutState {
     data object Idle : WorkoutState
 
     /** Отсчёт до старта. Позиции и прогресса у него нет: тренировка ещё не началась. */
-    data class Countdown(val remainingMs: Long, val soundFailed: Boolean = false) : WorkoutState
+    data class Countdown(val seconds: Long, val soundFailed: Boolean = false) : WorkoutState
 
     data class Active(
         val position: Position,
@@ -27,6 +30,22 @@ data class WorkoutTick(
     val signal: Signal?,
     val finished: Boolean,
 )
+
+/** Результат одного шага отсчёта: что показать и сколько ждать до следующего шага. */
+data class CountdownTick(val state: WorkoutState.Countdown, val waitMs: Long)
+
+/**
+ * Считает шаг отсчёта на момент [now] или возвращает null, если [startedAt] уже наступил.
+ * Ожидание не длиннее остатка, чтобы `START` не опоздал на шаг цикла.
+ */
+fun countdownTickAt(startedAt: Long, now: Long, soundFailed: Boolean = false): CountdownTick? {
+    val remainingMs = startedAt - now
+    if (remainingMs <= 0) return null
+    return CountdownTick(
+        state = WorkoutState.Countdown(wholeSeconds(remainingMs), soundFailed),
+        waitMs = minOf(TICK_MS, remainingMs),
+    )
+}
 
 /**
  * Считает шаг цикла на момент [elapsedMs]. На следующий шаг [previousIndex] берётся из
@@ -74,6 +93,4 @@ fun formatTotal(totalMs: Long): String {
 }
 
 /** Секунды округляются вверх: отсчёт идёт 5, 4, 3, 2, 1 и не показывает 0. */
-fun countdownSeconds(remainingMs: Long): Long = wholeSeconds(remainingMs)
-
-private fun wholeSeconds(ms: Long): Long = (ms.coerceAtLeast(0) + 999) / 1000
+internal fun wholeSeconds(ms: Long): Long = (ms.coerceAtLeast(0) + 999) / 1000

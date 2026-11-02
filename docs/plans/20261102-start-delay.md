@@ -90,19 +90,31 @@ startDelaySec !in 0..MAX_START_DELAY_SEC -> SettingsError.START_DELAY_RANGE
 
 `WorkoutState.kt`:
 ```kotlin
-data class Countdown(val remainingMs: Long, val soundFailed: Boolean = false) : WorkoutState
+data class Countdown(val seconds: Long, val soundFailed: Boolean = false) : WorkoutState
 
 enum class Signal { START, INTERVAL, FINISH }
 
-/** Секунды округляются вверх: отсчёт идёт 5, 4, 3, 2, 1 и не показывает 0. */
-fun countdownSeconds(remainingMs: Long): Long = wholeSeconds(remainingMs)
+data class CountdownTick(val state: WorkoutState.Countdown, val waitMs: Long)
+
+fun countdownTickAt(startedAt: Long, now: Long, soundFailed: Boolean = false): CountdownTick? {
+    val remainingMs = startedAt - now
+    if (remainingMs <= 0) return null
+    return CountdownTick(
+        state = WorkoutState.Countdown(wholeSeconds(remainingMs), soundFailed),
+        waitMs = minOf(TICK_MS, remainingMs),
+    )
+}
 ```
+
+После ревью `countdownSeconds` заменена на `internal wholeSeconds`, поэтому её упоминания в Task 3 относятся к исходной реализации. В состоянии лежат секунды: `StateFlow` отбрасывает равные значения, и экран перерисовывается раз в секунду, а не четыре раза. Расчёт шага вынесен из сервиса в `countdownTickAt` с тестами, `TICK_MS` переехал рядом с ним.
 
 `Workout.kt`, рядом с `workoutOrNull`:
 ```kotlin
 /** Возвращает null для отрицательной задержки: сервис такой запрос отклоняет. */
 fun startDelayMsOrNull(delaySec: Int): Long? =
-    if (delaySec >= 0) delaySec * 1_000L else null
+    if (delaySec >= 0) delaySec * 1000L else null
+
+fun wakeLockTimeoutMs(totalMs: Long, delayMs: Long): Long = totalMs + delayMs + WAKE_LOCK_MARGIN_MS
 ```
 
 `Tones.kt`: один длинный высокий тон, в отличие от двух коротких `INTERVAL` и трёх восходящих `FINISH`.
@@ -113,10 +125,10 @@ Signal.START -> listOf(Tone(1320, 600))
 `NotificationText.kt`:
 ```kotlin
 fun countdownNotificationText(
-    remainingMs: Long,
+    seconds: Long,
     countdownLabel: String,
     secondsLabel: String,
-): String = "$countdownLabel ${countdownSeconds(remainingMs)} $secondsLabel"
+): String = "$countdownLabel $seconds $secondsLabel"
 ```
 
 `WorkoutService.kt`:
@@ -132,22 +144,12 @@ private suspend fun runLoop(workout: Workout, delayMs: Long) {
 }
 
 private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
-    var shownText: String? = null
     while (true) {
-        val remainingMs = startedAt - SystemClock.elapsedRealtime()
-        if (remainingMs <= 0) break
-        _state.value = WorkoutState.Countdown(remainingMs, soundFailed)
-        // тот же приём со сравнением текста, что и в основном цикле
-        val text = countdownNotificationText(
-            remainingMs = remainingMs,
-            countdownLabel = getString(R.string.countdown_label),
-            secondsLabel = getString(R.string.seconds_short),
-        )
-        if (text != shownText) {
-            notificationManager.notify(NOTIFICATION_ID, buildNotification(text))
-            shownText = text
-        }
-        delay(minOf(TICK_MS, remainingMs))
+        val tick = countdownTickAt(startedAt, SystemClock.elapsedRealtime(), soundFailed) ?: break
+        _state.value = tick.state
+        // сравнение текста общее с основным циклом
+        showNotification(countdownText(tick.state))
+        delay(tick.waitMs)
     }
 }
 ```
@@ -276,7 +278,7 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - [x] в контракте сервиса в `CLAUDE.md` распространить правило публикации `Active` на `Countdown`
 - [x] добавить в планы паузы и громкости заметки из раздела «Связь с другими планами»; если какой-то из них уже реализован, вместо заметки внести правки в код в рамках этого плана
 - [x] отметить пункты задачи в `docs/tasks/20261101-start-delay.md`, кроме проверки на телефоне
-- [x] перенести этот план в `docs/plans/completed/` (`mkdir -p`, каталога ещё нет) (отложено: выполняется вручную после /planning:exec)
+- [ ] перенести этот план в `docs/plans/completed/` (`mkdir -p`, каталога ещё нет) ⚠️ оставлено до завершения /planning:exec, выполняется вручную
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*

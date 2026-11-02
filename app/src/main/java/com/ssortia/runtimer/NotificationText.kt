@@ -12,9 +12,8 @@ fun notificationText(
     return "$segment · ${formatTime(position.remainingMs)} · $roundLabel ${position.round}/$rounds"
 }
 
-/** Текст уведомления во время отсчёта до старта. */
 fun countdownNotificationText(
-    remainingMs: Long,
+    seconds: Long,
     countdownLabel: String,
     secondsLabel: String,
-): String = "$countdownLabel ${countdownSeconds(remainingMs)} $secondsLabel"
+): String = "$countdownLabel $seconds $secondsLabel"

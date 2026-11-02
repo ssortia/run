@@ -7,6 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
 
+private const val MIN_SEGMENT_MS = 1000L
+
 class TonesTest {
     @Test
     fun `длина буфера равна сумме длительностей`() {
@@ -98,8 +100,7 @@ class TonesTest {
     @Test
     fun `стартовый сигнал короче минимального отрезка`() {
         // Иначе он наложится на смену отрезка при длине бега в 1 секунду
-        assertEquals(600, soundDurationMs(Signal.START))
-        assertTrue(soundDurationMs(Signal.START) < 1000)
+        assertTrue(soundDurationMs(Signal.START) < MIN_SEGMENT_MS)
     }
 
     @Test

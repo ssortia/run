@@ -7,18 +7,12 @@ class NotificationTextTest {
     private fun text(position: Position, rounds: Int = 7) =
         notificationText(position, rounds, runLabel = "Бег", walkLabel = "Ходьба", roundLabel = "Повтор")
 
-    private fun countdownText(remainingMs: Long) =
-        countdownNotificationText(remainingMs, countdownLabel = "Старт через", secondsLabel = "с")
-
     @Test
     fun `отсчёт показывает оставшиеся секунды`() {
-        assertEquals("Старт через 5 с", countdownText(5_000))
-    }
-
-    @Test
-    fun `в отсчёте секунды округляются вверх`() {
-        assertEquals("Старт через 5 с", countdownText(4_001))
-        assertEquals("Старт через 1 с", countdownText(1))
+        assertEquals(
+            "Старт через 5 с",
+            countdownNotificationText(5, countdownLabel = "Старт через", secondsLabel = "с"),
+        )
     }
 
     @Test

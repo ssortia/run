@@ -61,6 +61,14 @@ class SettingsStoreTest {
         assertNotNull(store.load().validate())
     }
 
+    @Test
+    fun `неверная сохранённая задержка видна проверке`() {
+        prefs.values["start_delay_sec"] = 61
+
+        assertEquals(61, store.load().startDelaySec)
+        assertEquals(SettingsError.START_DELAY_RANGE, store.load().validate())
+    }
+
     /** Хранит значения в памяти, поддерживает только то, что нужно настройкам. */
     private class FakePreferences : SharedPreferences {
         val values = mutableMapOf<String, Int>()

@@ -82,7 +82,7 @@
 - План паузы тоже добавляет параметр в `tickAt` и строки в `SettingsContent`. Какая задача пойдёт второй, та учтёт изменения первой.
 - У `tickAt` станет три булевых параметра подряд, поэтому `runLoop` передаёт `soundMuted` и `paused` по имени.
 - План паузы оставляет `warning_no_sound` на месте, а здесь проверка заменяется на `soundWarningRes()`: сдвиг при реализации учитывается.
-- Оба плана добавляют истории в `USER_STORIES.md`, а план паузы занимает US-9 и US-10. Вторая задача сдвигает свои номера.
+- Оба плана добавляют истории в `USER_STORIES.md`: каждый занимает следующие свободные номера, вторая задача учитывает номера первой.
 - Если план паузы уже перенесён в `docs/plans/completed/`, Task 6 правит его там.
 - Строка «Атрибуты `USAGE_ALARM`, как у звука» в его Technical Details устареет: у звука атрибуты станут другими. Вибрация остаётся на `USAGE_ALARM`, правится только обоснование.
 - Перенести ползунок на отдельный экран можно будет заменой места вызова: значение лежит в `SettingsStore`, а не в `SettingsInput`.
@@ -127,12 +127,12 @@ fun sliderToPercent(value: Float): Int = clampVolume(value.roundToInt())
 - `track.setVolume(volumeGain(volumePercent))` в `createTrack` внутри существующего `try`, код возврата не `SUCCESS` пишется в лог;
 - таймер на `Handler(Looper.getMainLooper())`, `play()` и `release()` вызываются только из главного потока.
 
-`tickAt` получает параметр `soundMuted: Boolean = false` и передаёт его в `WorkoutState.Active`.
+`tickAt` и `countdownTickAt` получают параметр `soundMuted: Boolean = false` и передают его в `WorkoutState.Active` и `WorkoutState.Countdown`.
 
 `ui/ActiveContent.kt`:
 ```kotlin
 @StringRes
-fun WorkoutState.Active.soundWarningRes(): Int? = when {
+fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
     soundFailed -> R.string.warning_no_sound
     soundMuted -> R.string.warning_muted
     else -> null
@@ -144,7 +144,7 @@ fun WorkoutState.Active.soundWarningRes(): Int? = when {
 Поток данных:
 1. Форма: отпускание ползунка → `onVolumeChange(percent)` → `MainActivity` сохраняет значение и играет пробный сигнал.
 2. Старт: `WorkoutService.startWorkout` → `Beeper(audioManager, store.loadSignalVolume())`.
-3. Шаг цикла: `getStreamVolume(STREAM_MUSIC) == 0` → `tickAt(..., soundMuted)` → `ActiveContent`.
+3. Шаг цикла и отсчёта: `getStreamVolume(STREAM_MUSIC) == 0` → `tickAt(..., soundMuted)` или `countdownTickAt(..., soundMuted)` → `ActiveContent` или `CountdownContent`.
 4. Завершение: `onDestroy` → `beeper.release()` → фокус отпущен. Между сигналами фокус возвращает таймер `Beeper`.
 
 ## What Goes Where
@@ -196,9 +196,12 @@ fun WorkoutState.Active.soundWarningRes(): Int? = when {
 - Create: `app/src/test/java/com/ssortia/runtimer/ui/SoundWarningTest.kt`
 
 - [ ] добавить `soundMuted` в `WorkoutState.Active` и параметр в `tickAt`
+- [ ] добавить `soundMuted` в `WorkoutState.Countdown` и параметр в `countdownTickAt`
 - [ ] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runLoop`, передавать `soundMuted` в `tickAt` по имени
-- [ ] добавить `soundWarningRes()`, вывести предупреждение в `ActiveContent` вместо прямой проверки `soundFailed`, добавить строку `warning_muted`
+- [ ] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runCountdown`, передавать `soundMuted` в `countdownTickAt` по имени
+- [ ] добавить `soundWarningRes()`, вывести предупреждение в `ActiveContent` и `CountdownContent` вместо прямой проверки `soundFailed`, добавить строку `warning_muted`
 - [ ] написать тесты `tickAt`: `soundMuted` доходит до состояния, по умолчанию `false`, меняется между шагами без лишнего сигнала
+- [ ] написать тесты `countdownTickAt`: `soundMuted` доходит до состояния, по умолчанию `false`
 - [ ] написать тесты `soundWarningRes()`: нет предупреждения, каждое по отдельности, `soundFailed` важнее `soundMuted`
 - [ ] запустить тесты, они должны пройти
 

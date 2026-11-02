@@ -1,5 +1,7 @@
 package com.ssortia.runtimer
 
+const val WAKE_LOCK_MARGIN_MS = 60_000L
+
 /** Где мы находимся внутри тренировки в данный момент. */
 data class Position(
     val index: Int,
@@ -43,4 +45,7 @@ fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
 
 /** Возвращает null для отрицательной задержки: сервис такой запрос отклоняет. */
 fun startDelayMsOrNull(delaySec: Int): Long? =
-    if (delaySec >= 0) delaySec * 1_000L else null
+    if (delaySec >= 0) delaySec * 1000L else null
+
+/** Таймаут wake lock страхует от разряда батареи при ошибке в логике. */
+fun wakeLockTimeoutMs(totalMs: Long, delayMs: Long): Long = totalMs + delayMs + WAKE_LOCK_MARGIN_MS

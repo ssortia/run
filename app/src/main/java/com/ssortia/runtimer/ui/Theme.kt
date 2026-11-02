@@ -38,13 +38,17 @@ fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
     else -> if (isRun) RunLight else WalkLight
 }
 
+/** Отсчёт идёт в цветах бега: бегун сразу видит цвет первого отрезка. */
+fun countdownColors(darkTheme: Boolean): SegmentColors = segmentColors(isRun = true, darkTheme)
+
 /** Нужны ли тёмные значки в строке состояния: на экране тренировки они совпадают с цветом текста. */
 fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean): Boolean = when (state) {
     WorkoutState.Idle -> !darkTheme
-    // Отсчёт идёт в цветах бега
-    is WorkoutState.Countdown -> segmentColors(isRun = true, darkTheme).content.luminance() < 0.5f
-    is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).content.luminance() < 0.5f
+    is WorkoutState.Countdown -> countdownColors(darkTheme).needsDarkIcons()
+    is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).needsDarkIcons()
 }
+
+private fun SegmentColors.needsDarkIcons(): Boolean = content.luminance() < 0.5f
 
 /** Тема следует за системой. Фон взят из темы окна, чтобы при запуске не было вспышки. */
 @Composable

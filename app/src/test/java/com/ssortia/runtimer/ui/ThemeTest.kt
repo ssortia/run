@@ -69,7 +69,21 @@ class ThemeTest {
             assertEquals(
                 "значки отсчёта: тёмная тема $darkTheme",
                 darkStatusIcons(active(isRun = true), darkTheme),
-                darkStatusIcons(WorkoutState.Countdown(remainingMs = 5_000), darkTheme),
+                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme),
+            )
+        }
+    }
+
+    @Test
+    fun `значки контрастнее фона отсчёта, чем значки противоположного цвета`() {
+        for (darkTheme in listOf(false, true)) {
+            val background = countdownColors(darkTheme).background
+            val darkIsBetter = contrast(background, Color.Black) > contrast(background, Color.White)
+
+            assertEquals(
+                "значки отсчёта: тёмная тема $darkTheme",
+                darkIsBetter,
+                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme),
             )
         }
     }

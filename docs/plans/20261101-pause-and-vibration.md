@@ -80,7 +80,7 @@ class WorkoutClock(private val totalMs: Long, private val startedAt: Long) {
 ### Сервис
 - `onStartCommand`: после `startForeground` ветка `if (job != null)` выполняет `handlePauseAction(intent?.action)`. Без активной тренировки команда не содержит параметров, `toWorkout()` вернёт null, и сработает существующий `stopSelf(startId)`. Новый путь завершения не нужен.
 - `startForeground` сейчас всегда ставит заголовок `app_name`. Для команд паузы это нужно исправить: цикл обновляет уведомление только при смене текста, а на паузе текст не меняется, поэтому после повторной команды в шторке навсегда останется «RunTimer». В `onStartCommand` заголовок берётся из текущего состояния: `(state.value as? WorkoutState.Active)?.let(::textFor) ?: getString(R.string.app_name)`.
-- `WorkoutClock` создаётся в начале `runLoop` вместо `startedAt` и хранится в поле `clock`. Команда может прийти раньше первого шага цикла, поэтому обращение идёт через `clock?.`.
+- `WorkoutClock` создаётся в `runLoop` после отсчёта, от `startedAt`, и хранится в поле `clock`. Команда может прийти раньше первого шага цикла, поэтому обращение идёт через `clock?.`.
 - Пауза: `clock.pause(now)`, затем снятие wake lock, если часы действительно на паузе.
 - Продолжение: если `clock.isPaused`, то `clock.resume(now)` и `wakeLock.acquire(clock.remainingAt(now) + WAKE_LOCK_MARGIN_MS)`.
 - Почему нужен wake lock заново: таймаут рассчитан на длительность тренировки и истёк бы во время долгой паузы, а после неё сигналы стали бы опаздывать. На паузе процессору не над чем работать, замершему времени сон не вредит, а `delay` после пробуждения продолжится сам.
@@ -168,7 +168,7 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 
 - [ ] добавить `ACTION_PAUSE`, `ACTION_RESUME`, `pauseIntent()`, `resumeIntent()`
-- [ ] перевести `runLoop` на `WorkoutClock` и передавать `paused` в `tickAt`
+- [ ] перевести `runLoop` на `WorkoutClock`, созданный после отсчёта от `startedAt`, и передавать `paused` в `tickAt`
 - [ ] добавить `handlePauseAction` в ветку `job != null`, не меняя порядок с `startForeground`
 - [ ] снимать wake lock на паузе и брать заново на `remainingAt + WAKE_LOCK_MARGIN_MS` при продолжении
 - [ ] брать заголовок для `startForeground` в `onStartCommand` из текущего состояния
@@ -199,7 +199,7 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SettingsStoreTest.kt`
 
-- [ ] создать `vibrationFor(signal)` и `vibrationDurationMs(signal)`
+- [ ] создать `vibrationFor(signal)` с веткой `Signal.START` и `vibrationDurationMs(signal)`
 - [ ] добавить `loadVibration()` и `saveVibration()` в `SettingsStore`, по умолчанию `true`
 - [ ] написать тесты: паттерны начинаются без задержки, имеют чётную длину и заканчиваются вибрацией
 - [ ] написать тесты: финальный паттерн отличается от обычного, длительность считается верно
@@ -217,6 +217,7 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - [ ] создать `Buzzer` с `play(signal)` и `release()`, атрибуты `USAGE_ALARM`, без вибромотора `play` ничего не делает
 - [ ] создавать `Buzzer` в `startWorkout` только при включённой настройке, хранить в поле рядом с `beeper`
 - [ ] подавать вибрацию вместе со звуком, в конце ждать большую из длительностей плюс `FINISH_TAIL_MS`
+- [ ] добавить `buzzer?.play(Signal.START)` рядом с `beeper?.play(Signal.START)`: `START` идёт мимо `tick.signal`
 - [ ] вызывать `buzzer?.release()` в `onDestroy`
 - [ ] тестов нет, код только с Android API: логика покрыта в Task 5
 - [ ] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
@@ -245,7 +246,7 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - [ ] запустить `./gradlew lintDebug`, новых предупреждений быть не должно, кроме устаревшей перегрузки `vibrate` и описанного в `CLAUDE.md` `InlinedApi`
 
 ### Task 9: [Final] Документация
-- [ ] `USER_STORIES.md`: добавить US-9 (пауза) и US-10 (вибрация) с критериями приёмки, убрать оба пункта из «Вне первой версии»
+- [ ] `USER_STORIES.md`: добавить истории о паузе и вибрации на следующие свободные номера с критериями приёмки, убрать оба пункта из «Вне первой версии»
 - [ ] `README.md`: обновить абзацы «Звук», «Сон процессора», «Финал» (ожидание по большей из длительностей), «Настройки», раздел статуса, известные ограничения и таблицу файлов (`WorkoutClock.kt`, `Vibration.kt`, `Buzzer.kt`, `ui/AppSettingsContent.kt`), добавить паузу, вибрацию и экран настроек
 - [ ] `CLAUDE.md`: переписать правило об освобождении ресурсов: окончательно освобождает только `onDestroy` (цикл, `Beeper`, `Buzzer`, wake lock), на паузе wake lock снимается временно
 - [ ] `CLAUDE.md`: дополнить контракт сервиса: команды паузы идут через `startService()` и безопасны при повторе, заголовок `startForeground` берётся из состояния

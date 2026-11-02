@@ -105,18 +105,69 @@ class WorkoutStateTest {
 
     @Test
     fun `отсчёт показывает целые секунды`() {
-        assertEquals(5L, countdownSeconds(5_000))
+        assertEquals(5L, wholeSeconds(5_000))
     }
 
     @Test
     fun `секунды отсчёта округляются вверх`() {
-        assertEquals(5L, countdownSeconds(4_001))
-        assertEquals(4L, countdownSeconds(4_000))
+        assertEquals(5L, wholeSeconds(4_001))
+        assertEquals(4L, wholeSeconds(4_000))
     }
 
     @Test
     fun `в конце отсчёта остаётся единица, а не ноль`() {
-        assertEquals(1L, countdownSeconds(1))
+        assertEquals(1L, wholeSeconds(1))
+    }
+
+    // Отсчёт с произвольным началом: значения elapsedRealtime не обязаны начинаться с нуля
+    private fun countdownTick(remainingMs: Long, soundFailed: Boolean = false) =
+        countdownTickAt(startedAt = 100_000 + remainingMs, now = 100_000, soundFailed)
+
+    @Test
+    fun `отсчёт заканчивается, когда остаток дошёл до нуля`() {
+        assertNull(countdownTick(remainingMs = 0))
+    }
+
+    @Test
+    fun `при задержке 0 отсчёта нет`() {
+        val now = 100_000L
+
+        assertNull(countdownTickAt(startedAt = now + 0, now = now))
+    }
+
+    @Test
+    fun `опоздавший шаг тоже заканчивает отсчёт`() {
+        assertNull(countdownTick(remainingMs = -1))
+    }
+
+    @Test
+    fun `ожидание не длиннее остатка`() {
+        assertEquals(1L, countdownTick(remainingMs = 1)?.waitMs)
+        assertEquals(249L, countdownTick(remainingMs = 249)?.waitMs)
+    }
+
+    @Test
+    fun `ожидание не длиннее шага цикла`() {
+        assertEquals(TICK_MS, countdownTick(remainingMs = 250)?.waitMs)
+        assertEquals(TICK_MS, countdownTick(remainingMs = 251)?.waitMs)
+    }
+
+    @Test
+    fun `шаг отсчёта публикует секунды с округлением вверх`() {
+        assertEquals(1L, countdownTick(remainingMs = 1)?.state?.seconds)
+        assertEquals(4L, countdownTick(remainingMs = 4_000)?.state?.seconds)
+        assertEquals(5L, countdownTick(remainingMs = 4_001)?.state?.seconds)
+    }
+
+    @Test
+    fun `внутри одной секунды состояние отсчёта не меняется`() {
+        assertEquals(countdownTick(remainingMs = 4_750)?.state, countdownTick(remainingMs = 4_001)?.state)
+    }
+
+    @Test
+    fun `сбой звука доходит до состояния отсчёта`() {
+        assertTrue(countdownTick(remainingMs = 1_000, soundFailed = true)!!.state.soundFailed)
+        assertFalse(countdownTick(remainingMs = 1_000)!!.state.soundFailed)
     }
 
     @Test

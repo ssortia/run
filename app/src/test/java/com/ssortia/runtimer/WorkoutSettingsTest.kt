@@ -91,6 +91,10 @@ class WorkoutSettingsTest {
             SettingsError.START_DELAY_RANGE,
             WorkoutSettings(runMin = 0, runSec = 0, startDelaySec = 61).validate(),
         )
+        assertEquals(
+            SettingsError.START_DELAY_RANGE,
+            WorkoutSettings(walkMin = 0, walkSec = 0, startDelaySec = 61).validate(),
+        )
     }
 
     @Test
