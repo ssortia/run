@@ -21,7 +21,7 @@
 - `SettingsStoreTest` использует фейк `FakePreferences`. Он хранит только `Int`, а `getBoolean` и `putBoolean` бросают исключение, поэтому фейк нужно расширить.
 - `CLAUDE.md` (раздел «Архитектура») говорит, что навигация не используется, потому что экран один. Отдельный экран настроек это меняет: библиотеку навигации по-прежнему не подключаем, переход делается флагом, а строку в `CLAUDE.md` обновляем в Task 9.
 - Завершение: ресурсы освобождает только `onDestroy`, финал вызывает `stopSelf()`, `job` после финала не обнуляется.
-- Открытая задача `docs/tasks/20261101-remove-last-walk.md` меняет `totalMs`. С этим планом она не конфликтует: `WorkoutClock` получает `totalMs` параметром.
+- Задача `docs/tasks/20261101-remove-last-walk.md` выполнена и изменила `totalMs`. С этим планом она не конфликтует: `WorkoutClock` получает `totalMs` параметром.
 
 ## Development Approach
 - **testing approach**: Regular, сначала код, затем тесты в той же задаче.
@@ -119,6 +119,15 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - `ActiveContent` получает `onPause` и `onResume`, `MainActivity` отправляет интенты `WorkoutService.pauseIntent(context)` и `resumeIntent(context)` через `startService()` с тем же перехватом `IllegalStateException`, что и в `startWorkout()`.
 - «Стоп» работает и на паузе: `stopService()` приводит к `onDestroy`, а `wakeLock.isHeld` там уже проверяется.
 - Предупреждение `warning_no_sound` остаётся на месте: вибрация не заменяет сигнал.
+
+### Связь с планом задержки старта
+Задержка старта (`docs/plans/20261102-start-delay.md`) реализована раньше этого плана. Заметка уточняет разделы выше, где они расходятся с ней.
+
+- `vibrationFor` нужна ветка `Signal.START`: без неё `when` по `Signal` не скомпилируется.
+- `START` подаётся отдельным вызовом, а не через `tick.signal`, поэтому рядом с `beeper?.play(Signal.START)` нужен и `buzzer?.play(Signal.START)`. Компилятор этого не поймает.
+- Паузы на экране отсчёта нет, отсчёт останавливается кнопкой «Стоп». Ряд кнопок паузы меняет только нижний слот `TimerLayout` на `Active`.
+- `WorkoutClock` создаётся после отсчёта, от `startedAt`, а не в начале `runLoop`: иначе прошедшее время до старта будет отрицательным.
+- Номер US-9 занят задержкой старта, поэтому пауза и вибрация получают следующие свободные номера, а не US-9 и US-10.
 
 ## What Goes Where
 - **Implementation Steps**: код, тесты и документация в этом репозитории.
