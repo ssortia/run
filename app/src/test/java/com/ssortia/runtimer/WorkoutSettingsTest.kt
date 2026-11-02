@@ -14,11 +14,11 @@ class WorkoutSettingsTest {
     }
 
     @Test
-    fun `пример 2 2 7 даёт 14 отрезков и 28 минут`() {
+    fun `пример 2 2 7 даёт 13 отрезков и 26 минут`() {
         val workout = WorkoutSettings().toWorkout()
 
-        assertEquals(13, workout.at(1_679_999)?.index)
-        assertNull(workout.at(1_680_000))
+        assertEquals(12, workout.at(1_559_999)?.index)
+        assertNull(workout.at(1_560_000))
     }
 
     @Test
@@ -91,8 +91,8 @@ class WorkoutSettingsTest {
     fun `максимальные значения не переполняют Int`() {
         val workout = WorkoutSettings(99, 59, 99, 59, 99).toWorkout()
 
-        // 99 повторов по 11 998 с: 198 отрезков с индексами 0..197
-        assertEquals(197, workout.at(11_998_000L * 99 - 1)?.index)
-        assertNull(workout.at(11_998_000L * 99))
+        // 99 повторов по 11 998 с без последней ходьбы: 197 отрезков с индексами 0..196
+        assertEquals(196, workout.at(1_181_803_000L - 1)?.index)
+        assertNull(workout.at(1_181_803_000L))
     }
 }

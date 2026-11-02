@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WorkoutTest {
-    // 10 с бега, 5 с ходьбы, 3 повтора: всего 45 с и 6 отрезков
+    // 10 с бега, 5 с ходьбы, 3 повтора: всего 40 с и 5 отрезков
     private val workout = Workout(runSec = 10, walkSec = 5, rounds = 3)
 
     @Test
@@ -43,7 +43,7 @@ class WorkoutTest {
 
     @Test
     fun `номер повтора считается с единицы и растёт после ходьбы`() {
-        val rounds = listOf(0L, 14_999, 15_000, 29_999, 30_000, 44_999).map { workout.at(it)?.round }
+        val rounds = listOf(0L, 14_999, 15_000, 29_999, 30_000, 39_999).map { workout.at(it)?.round }
 
         assertEquals(listOf(1, 1, 2, 2, 3, 3), rounds)
     }
@@ -58,36 +58,32 @@ class WorkoutTest {
     @Test
     fun `последняя миллисекунда ещё внутри последнего отрезка`() {
         assertEquals(
-            Position(index = 5, isRun = false, round = 3, remainingMs = 1),
-            workout.at(44_999),
+            Position(index = 4, isRun = true, round = 3, remainingMs = 1),
+            workout.at(39_999),
         )
     }
 
     @Test
     fun `в момент окончания позиции нет`() {
-        assertNull(workout.at(45_000))
+        assertNull(workout.at(40_000))
     }
 
     @Test
     fun `после окончания позиции нет`() {
-        assertNull(workout.at(45_001))
+        assertNull(workout.at(40_001))
         assertNull(workout.at(Long.MAX_VALUE))
     }
 
     @Test
-    fun `один повтор состоит из двух отрезков`() {
+    fun `один повтор состоит из одного отрезка бега`() {
         val single = Workout(runSec = 3, walkSec = 2, rounds = 1)
 
         assertEquals(
             Position(index = 0, isRun = true, round = 1, remainingMs = 3_000),
             single.at(0),
         )
-        assertEquals(
-            Position(index = 1, isRun = false, round = 1, remainingMs = 2_000),
-            single.at(3_000),
-        )
-        assertNotNull(single.at(4_999))
-        assertNull(single.at(5_000))
+        assertNotNull(single.at(2_999))
+        assertNull(single.at(3_000))
     }
 
     @Test

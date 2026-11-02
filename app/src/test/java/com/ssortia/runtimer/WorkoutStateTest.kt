@@ -11,7 +11,7 @@ class WorkoutStateTest {
     private val run = Position(index = 0, isRun = true, round = 1, remainingMs = 10_000)
     private val walk = Position(index = 1, isRun = false, round = 1, remainingMs = 10_000)
 
-    // 10 с бега, 10 с ходьбы, 2 повтора: всего 40 с и 4 отрезка
+    // 10 с бега, 10 с ходьбы, 2 повтора: всего 30 с и 3 отрезка
     private val workout = Workout(runSec = 10, walkSec = 10, rounds = 2)
 
     @Test
@@ -71,7 +71,7 @@ class WorkoutStateTest {
 
     @Test
     fun `итог меньше часа показывается как минуты и секунды`() {
-        assertEquals("28:00", formatTotal(1_680_000))
+        assertEquals("26:00", formatTotal(1_560_000))
         assertEquals("59:59", formatTotal(3_599_000))
         assertEquals("0:00", formatTotal(0))
     }
@@ -85,7 +85,7 @@ class WorkoutStateTest {
 
     @Test
     fun `итог максимальной тренировки читается`() {
-        assertEquals("329:56:42", formatTotal(WorkoutSettings(99, 59, 99, 59, 99).toWorkout().totalMs))
+        assertEquals("328:16:43", formatTotal(WorkoutSettings(99, 59, 99, 59, 99).toWorkout().totalMs))
     }
 
     @Test
@@ -105,27 +105,27 @@ class WorkoutStateTest {
 
     @Test
     fun `общая длительность равна сумме всех отрезков`() {
-        assertEquals(40_000L, workout.totalMs)
-        assertEquals(1_680_000L, WorkoutSettings().toWorkout().totalMs)
+        assertEquals(30_000L, workout.totalMs)
+        assertEquals(1_560_000L, WorkoutSettings().toWorkout().totalMs)
     }
 
     @Test
     fun `прогресс растёт от нуля до единицы`() {
         assertEquals(0f, workout.progressAt(0), 0f)
-        assertEquals(0.25f, workout.progressAt(10_000), 0f)
-        assertEquals(0.5f, workout.progressAt(20_000), 0f)
-        assertEquals(1f, workout.progressAt(40_000), 0f)
+        assertEquals(1f / 3, workout.progressAt(10_000), 1e-6f)
+        assertEquals(2f / 3, workout.progressAt(20_000), 1e-6f)
+        assertEquals(1f, workout.progressAt(30_000), 0f)
     }
 
     @Test
     fun `прогресс вблизи нуля положительный и мал`() {
-        assertEquals(0.000025f, workout.progressAt(1), 1e-7f)
+        assertEquals(0.000033f, workout.progressAt(1), 1e-6f)
     }
 
     @Test
     fun `прогресс не выходит за границы`() {
         assertEquals(0f, workout.progressAt(-1), 0f)
-        assertEquals(1f, workout.progressAt(40_001), 0f)
+        assertEquals(1f, workout.progressAt(30_001), 0f)
         assertEquals(1f, workout.progressAt(Long.MAX_VALUE), 0f)
     }
 
@@ -145,24 +145,23 @@ class WorkoutStateTest {
         }
     }
 
-    private val threeIntervalsAndFinish =
-        listOf(Signal.INTERVAL, Signal.INTERVAL, Signal.INTERVAL, Signal.FINISH)
+    private val twoIntervalsAndFinish = listOf(Signal.INTERVAL, Signal.INTERVAL, Signal.FINISH)
 
     @Test
-    fun `цикл с шагом 250 мс даёт три обычных сигнала и один финальный`() {
-        assertEquals(threeIntervalsAndFinish, simulate(workout, 250).mapNotNull { it.signal })
+    fun `цикл с шагом 250 мс даёт два обычных сигнала и один финальный`() {
+        assertEquals(twoIntervalsAndFinish, simulate(workout, 250).mapNotNull { it.signal })
     }
 
     @Test
     fun `шаги не попадают на границы отрезков, а сигналы те же`() {
-        assertEquals(threeIntervalsAndFinish, simulate(workout, 253).mapNotNull { it.signal })
+        assertEquals(twoIntervalsAndFinish, simulate(workout, 253).mapNotNull { it.signal })
     }
 
     @Test
     fun `неровные шаги дают те же сигналы`() {
         val ticks = simulate(workout, 137, 251, 499, 73, 1_210)
 
-        assertEquals(threeIntervalsAndFinish, ticks.mapNotNull { it.signal })
+        assertEquals(twoIntervalsAndFinish, ticks.mapNotNull { it.signal })
     }
 
     @Test
@@ -192,7 +191,7 @@ class WorkoutStateTest {
             WorkoutState.Active(
                 position = Position(index = 1, isRun = false, round = 1, remainingMs = 7_500),
                 rounds = 2,
-                progress = 0.3125f,
+                progress = 12_500f / 30_000,
             ),
             tick.state,
         )
@@ -202,12 +201,12 @@ class WorkoutStateTest {
 
     @Test
     fun `финал показывает последний отрезок с нулевым остатком`() {
-        // Предыдущий шаг был в беге: запоздавший финал всё равно показывает последнюю ходьбу
-        val tick = tickAt(workout, 45_000, previousIndex = 2)
+        // Предыдущий шаг был в ходьбе: запоздавший финал всё равно показывает последний бег
+        val tick = tickAt(workout, 45_000, previousIndex = 1)
 
         assertEquals(
             WorkoutState.Active(
-                position = Position(index = 3, isRun = false, round = 2, remainingMs = 0),
+                position = Position(index = 2, isRun = true, round = 2, remainingMs = 0),
                 rounds = 2,
                 progress = 1f,
             ),
@@ -218,10 +217,21 @@ class WorkoutStateTest {
     }
 
     @Test
+    fun `при одном повторе звучит только финальный сигнал и показан бег с нулём`() {
+        val ticks = simulate(Workout(runSec = 3, walkSec = 2, rounds = 1), 250)
+
+        assertEquals(listOf(Signal.FINISH), ticks.mapNotNull { it.signal })
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 0),
+            ticks.last().state.position,
+        )
+    }
+
+    @Test
     fun `первый шаг уже после конца тренировки сразу завершает её`() {
         val tick = tickAt(workout, 50_000, previousIndex = null)
 
-        assertEquals(3, tick.state.position.index)
+        assertEquals(2, tick.state.position.index)
         assertEquals(Signal.FINISH, tick.signal)
         assertTrue(tick.finished)
     }
@@ -230,6 +240,6 @@ class WorkoutStateTest {
     fun `признак сбоя звука доходит до состояния`() {
         assertFalse(tickAt(workout, 0, null).state.soundFailed)
         assertTrue(tickAt(workout, 0, null, soundFailed = true).state.soundFailed)
-        assertTrue(tickAt(workout, 40_000, 3, soundFailed = true).state.soundFailed)
+        assertTrue(tickAt(workout, 30_000, 2, soundFailed = true).state.soundFailed)
     }
 }

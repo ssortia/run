@@ -8,12 +8,16 @@ data class Position(
     val remainingMs: Long,
 )
 
-/** Тренировка: rounds повторов пары «бег + ходьба». Длительности должны быть больше нуля. */
+/**
+ * Тренировка: rounds повторов пары «бег + ходьба», в последнем повторе только бег.
+ * Длительности должны быть больше нуля.
+ */
 data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
-    private val cycleMs = (runSec + walkSec) * 1000L
+    private val walkMs = walkSec * 1000L
+    private val cycleMs = runMs + walkMs
 
-    val totalMs = cycleMs * rounds
+    val totalMs = cycleMs * rounds - walkMs
 
     /** Возвращает позицию на момент elapsedMs от старта или null, если тренировка закончилась. */
     fun at(elapsedMs: Long): Position? {

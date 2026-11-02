@@ -37,15 +37,15 @@ class NotificationTextTest {
 
     @Test
     fun `позиция из тренировки`() {
-        val position = Workout(runSec = 10, walkSec = 20, rounds = 2).at(45_000)!!
+        val position = Workout(runSec = 10, walkSec = 20, rounds = 3).at(45_000)!!
 
-        assertEquals("Ходьба · 0:15 · Повтор 2/2", text(position, rounds = 2))
+        assertEquals("Ходьба · 0:15 · Повтор 2/3", text(position, rounds = 3))
     }
 
     @Test
     fun `финальная позиция показывает ноль`() {
-        val position = Position(index = 13, isRun = false, round = 7, remainingMs = 0)
+        val position = Position(index = 12, isRun = true, round = 7, remainingMs = 0)
 
-        assertEquals("Ходьба · 0:00 · Повтор 7/7", text(position))
+        assertEquals("Бег · 0:00 · Повтор 7/7", text(position))
     }
 }
