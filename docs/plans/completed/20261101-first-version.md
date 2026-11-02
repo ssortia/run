@@ -301,7 +301,7 @@ enum class Signal { INTERVAL, FINISH }
 ### Task 9: [Final] Update documentation
 - [x] обновить статус, структуру проекта и инструкции в `README.md`
 - [x] create `CLAUDE.md` с командами сборки и принятыми соглашениями, если появились неочевидные
-- [ ] move this plan to docs/plans/completed/
+- [x] move this plan to docs/plans/completed/
   - ⚠️ Отложено: выполняется после ревью, пока не сделано.
 
 ## Post-Completion

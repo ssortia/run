@@ -52,8 +52,8 @@
 
 ## Technical Details
 ```kotlin
-private val walkMs = walkSec * 1000L
-val totalMs = cycleMs * rounds - walkMs
+private val cycleMs = (runSec + walkSec) * 1000L
+val totalMs = cycleMs * (rounds - 1) + runMs
 ```
 
 - Обновляется KDoc `Workout`: в последнем повторе только бег.

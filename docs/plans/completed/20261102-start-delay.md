@@ -278,7 +278,7 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - [x] в контракте сервиса в `CLAUDE.md` распространить правило публикации `Active` на `Countdown`
 - [x] добавить в планы паузы и громкости заметки из раздела «Связь с другими планами»; если какой-то из них уже реализован, вместо заметки внести правки в код в рамках этого плана
 - [x] отметить пункты задачи в `docs/tasks/20261101-start-delay.md`, кроме проверки на телефоне
-- [ ] перенести этот план в `docs/plans/completed/` (`mkdir -p`, каталога ещё нет) ⚠️ оставлено до завершения /planning:exec, выполняется вручную
+- [x] перенести этот план в `docs/plans/completed/`
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*

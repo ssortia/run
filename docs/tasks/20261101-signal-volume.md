@@ -14,7 +14,7 @@
 - Modify: `app/src/main/res/values/strings.xml`
 - Modify: `USER_STORIES.md`
 - Modify: `README.md`
-- Modify: `docs/plans/20261101-first-version.md`
+- Modify: `docs/plans/completed/20261101-first-version.md`
 
 - [ ] перевести `Beeper` на `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE` и запрашивать аудиофокус `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` на время сигнала, чтобы музыка приглушалась
 - [ ] отпускать аудиофокус после окончания сигнала и при «Стоп», чтобы музыка не оставалась приглушённой
