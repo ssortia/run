@@ -2,6 +2,7 @@ package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
@@ -86,6 +87,22 @@ class TonesTest {
     }
 
     @Test
+    fun `стартовый сигнал отличается по составу от остальных`() {
+        val start = tonesFor(Signal.START)
+
+        assertEquals(listOf(Tone(1320, 600)), start)
+        assertNotEquals(tonesFor(Signal.INTERVAL), start)
+        assertNotEquals(tonesFor(Signal.FINISH), start)
+    }
+
+    @Test
+    fun `стартовый сигнал короче минимального отрезка`() {
+        // Иначе он наложится на смену отрезка при длине бега в 1 секунду
+        assertEquals(600, soundDurationMs(Signal.START))
+        assertTrue(soundDurationMs(Signal.START) < 1000)
+    }
+
+    @Test
     fun `сигналы различаются и финальный длиннее`() {
         val interval = synthesize(tonesFor(Signal.INTERVAL))
         val finish = synthesize(tonesFor(Signal.FINISH))
@@ -96,6 +113,7 @@ class TonesTest {
 
     @Test
     fun `длительность сигнала равна сумме его тонов и совпадает с буфером`() {
+        assertEquals(600, soundDurationMs(Signal.START))
         assertEquals(400, soundDurationMs(Signal.INTERVAL))
         assertEquals(1260, soundDurationMs(Signal.FINISH))
         for (signal in Signal.entries) {

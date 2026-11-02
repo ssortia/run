@@ -13,8 +13,12 @@ internal const val FADE_SAMPLES = SAMPLE_RATE_HZ * 5 / 1000
 /** Отрезок сигнала. При нулевой частоте это пауза. */
 data class Tone(val frequencyHz: Int, val durationMs: Int)
 
-/** Состав сигнала: обычный звучит двумя короткими тонами, финальный тремя восходящими. */
+/**
+ * Состав сигнала: стартовый звучит одним длинным высоким тоном, обычный двумя короткими,
+ * финальный тремя восходящими.
+ */
 fun tonesFor(signal: Signal): List<Tone> = when (signal) {
+    Signal.START -> listOf(Tone(1320, 600))
     Signal.INTERVAL -> listOf(Tone(880, 150), Tone(0, 100), Tone(880, 150))
     Signal.FINISH -> listOf(
         Tone(660, 200),

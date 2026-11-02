@@ -15,7 +15,7 @@ sealed interface WorkoutState {
     ) : WorkoutState
 }
 
-enum class Signal { INTERVAL, FINISH }
+enum class Signal { START, INTERVAL, FINISH }
 
 /** Результат одного шага цикла тренировки. */
 data class WorkoutTick(

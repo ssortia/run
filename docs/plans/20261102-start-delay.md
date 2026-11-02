@@ -211,9 +211,9 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/Tones.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/TonesTest.kt`
 
-- [ ] добавить `Signal.START` и его тоны в `tonesFor`, обновить комментарий к функции
-- [ ] написать тесты: `START` отличается по составу от `INTERVAL` и `FINISH`, длительность равна сумме тонов и короче минимального отрезка в 1 секунду
-- [ ] запустить тесты, они должны пройти
+- [x] добавить `Signal.START` и его тоны в `tonesFor`, обновить комментарий к функции
+- [x] написать тесты: `START` отличается по составу от `INTERVAL` и `FINISH`, длительность равна сумме тонов и короче минимального отрезка в 1 секунду
+- [x] запустить тесты, они должны пройти
 
 ### Task 3: Состояние и экран отсчёта
 
