@@ -14,10 +14,9 @@ data class Position(
  */
 data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
-    private val walkMs = walkSec * 1000L
-    private val cycleMs = runMs + walkMs
+    private val cycleMs = (runSec + walkSec) * 1000L
 
-    val totalMs = cycleMs * rounds - walkMs
+    val totalMs = cycleMs * (rounds - 1) + runMs
 
     /** Возвращает позицию на момент elapsedMs от старта или null, если тренировка закончилась. */
     fun at(elapsedMs: Long): Position? {
@@ -41,3 +40,7 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
 /** Возвращает null, если параметры не дают корректную тренировку: сервис такой запрос отклоняет. */
 fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
     if (runSec > 0 && walkSec > 0 && rounds > 0) Workout(runSec, walkSec, rounds) else null
+
+/** Возвращает null для отрицательной задержки: сервис такой запрос отклоняет. */
+fun startDelayMsOrNull(delaySec: Int): Long? =
+    if (delaySec >= 0) delaySec * 1_000L else null

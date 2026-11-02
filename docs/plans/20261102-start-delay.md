@@ -245,14 +245,14 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/WorkoutTest.kt`
 
-- [ ] добавить `startDelayMsOrNull` рядом с `workoutOrNull`
-- [ ] добавить `EXTRA_START_DELAY_SEC` и третий аргумент `startIntent`, передавать `settings.startDelaySec` из `MainActivity.startWorkout()`
-- [ ] в `onStartCommand` отклонять запрос с неверной задержкой так же, как неверную тренировку, `startForeground` остаётся первым
-- [ ] добавить `runCountdown`, считать `startedAt` один раз, подавать `START` только при задержке больше нуля
-- [ ] увеличить таймаут wake lock на длительность задержки
-- [ ] обновить KDoc сервиса: «Стоп» завершает его и во время отсчёта
-- [ ] написать тесты `startDelayMsOrNull`: 0, 60 и -1
-- [ ] запустить тесты, они должны пройти
+- [x] добавить `startDelayMsOrNull` рядом с `workoutOrNull`
+- [x] добавить `EXTRA_START_DELAY_SEC` и третий аргумент `startIntent`, передавать `settings.startDelaySec` из `MainActivity.startWorkout()`
+- [x] в `onStartCommand` отклонять запрос с неверной задержкой так же, как неверную тренировку, `startForeground` остаётся первым
+- [x] добавить `runCountdown`, считать `startedAt` один раз, подавать `START` только при задержке больше нуля
+- [x] увеличить таймаут wake lock на длительность задержки
+- [x] обновить KDoc сервиса: «Стоп» завершает его и во время отсчёта
+- [x] написать тесты `startDelayMsOrNull`: 0, 60 и -1
+- [x] запустить тесты, они должны пройти
 
 ### Task 5: Verify acceptance criteria
 - [ ] проверить по коду, что все требования из Overview выполнены

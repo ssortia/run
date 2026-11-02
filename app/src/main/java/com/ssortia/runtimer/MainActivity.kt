@@ -114,7 +114,9 @@ class MainActivity : ComponentActivity() {
         val settings = store.load()
         if (settings.validate() != null) return
         try {
-            startForegroundService(WorkoutService.startIntent(this, settings.toWorkout()))
+            startForegroundService(
+                WorkoutService.startIntent(this, settings.toWorkout(), settings.startDelaySec),
+            )
         } catch (e: IllegalStateException) {
             // В том числе ForegroundServiceStartNotAllowedException на API 31+: форма остаётся
             // на экране, и «Старт» можно нажать снова

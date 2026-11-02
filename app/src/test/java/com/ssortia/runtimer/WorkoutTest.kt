@@ -1,7 +1,6 @@
 package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -82,7 +81,10 @@ class WorkoutTest {
             Position(index = 0, isRun = true, round = 1, remainingMs = 3_000),
             single.at(0),
         )
-        assertNotNull(single.at(2_999))
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 1),
+            single.at(2_999),
+        )
         assertNull(single.at(3_000))
     }
 
@@ -99,5 +101,20 @@ class WorkoutTest {
         assertNull(workoutOrNull(runSec = -1, walkSec = 1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = -1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = -1))
+    }
+
+    @Test
+    fun `нулевая задержка допустима`() {
+        assertEquals(0L, startDelayMsOrNull(0))
+    }
+
+    @Test
+    fun `задержка переводится в миллисекунды`() {
+        assertEquals(60_000L, startDelayMsOrNull(60))
+    }
+
+    @Test
+    fun `отрицательная задержка отклоняется`() {
+        assertNull(startDelayMsOrNull(-1))
     }
 }
