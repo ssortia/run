@@ -255,11 +255,11 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - [x] запустить тесты, они должны пройти
 
 ### Task 5: Verify acceptance criteria
-- [ ] проверить по коду, что все требования из Overview выполнены
-- [ ] проверить по коду, что при «Стоп» во время отсчёта `onDestroy` отменяет цикл, снимает уведомление и новых сигналов нет
-- [ ] проверить по коду, что при задержке 0 `Countdown` не публикуется и `START` не звучит
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] проверить по коду, что все требования из Overview выполнены
+- [x] проверить по коду, что при «Стоп» во время отсчёта `onDestroy` отменяет цикл, снимает уведомление и новых сигналов нет
+- [x] проверить по коду, что при задержке 0 `Countdown` не публикуется и `START` не звучит
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 6: [Final] Обновить документацию
 
