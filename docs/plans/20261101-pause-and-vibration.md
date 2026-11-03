@@ -99,7 +99,7 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 }
 ```
 - Формат `VibrationEffect.createWaveform(timings, -1)`: чётные элементы это ожидание, нечётные это вибрация.
-- Атрибуты `USAGE_ALARM`, как у звука. С другими атрибутами система может глушить вибрацию при выключенном экране или в беззвучном режиме. Перегрузка `vibrate(VibrationEffect, AudioAttributes)` есть с API 26, на API 33 она устарела, но работает. Ветку с `VibrationAttributes` не добавляем.
+- Атрибуты `USAGE_ALARM`. Звук с плана громкости сигналов идёт через канал навигации, но вибрации нужен канал будильника: с другими атрибутами система может глушить вибрацию при выключенном экране или в беззвучном режиме. Перегрузка `vibrate(VibrationEffect, AudioAttributes)` есть с API 26, на API 33 она устарела, но работает. Ветку с `VibrationAttributes` не добавляем.
 - `Buzzer.play(signal)` ничего не возвращает, как и `Beeper.play`. Без вибромотора вызов ничего не делает.
 - Цикл сейчас ждёт в конце `soundDurationMs(Signal.FINISH) + FINISH_TAIL_MS`. Финальная вибрация длиннее сигнала (1600 мс против 1260 мс), и `onDestroy` оборвала бы её, поэтому ждём `maxOf(soundDurationMs(Signal.FINISH), vibrationDurationMs(Signal.FINISH)) + FINISH_TAIL_MS`. При выключенной вибрации финал затянется на 340 мс, это незаметно и не стоит отдельной ветки.
 - `Buzzer.release()` вызывает `cancel()`: «Стоп» прекращает вибрацию сразу (US-4).
