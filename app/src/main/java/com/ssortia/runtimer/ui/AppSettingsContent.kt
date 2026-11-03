@@ -2,6 +2,7 @@ package com.ssortia.runtimer.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +17,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -68,77 +68,123 @@ fun AppSettingsContent(
     var duckMusic by remember { mutableStateOf(loadDuckMusic()) }
     var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val volumeLabel = stringResource(R.string.signal_volume, sliderToPercent(volume))
-            Text(text = volumeLabel, style = MaterialTheme.typography.titleMedium)
-            Slider(
-                value = volume,
-                onValueChange = { volume = it },
-                // Подпись над ползунком отдельный узел, без описания TalkBack назовёт ползунок безымянным
-                modifier = Modifier.semantics { contentDescription = volumeLabel },
-                valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
-                steps = VOLUME_SLIDER_STEPS,
-                onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
-            )
-        }
+    Column(modifier = modifier.fillMaxSize()) {
+        AppTopBar(title = stringResource(R.string.button_settings), onBack = onBack)
 
-        SwitchSettingRow(
-            label = stringResource(R.string.setting_vibration),
-            checked = vibration,
-            onCheckedChange = {
-                vibration = it
-                onVibrationChange(it)
-            },
-        )
-
-        SwitchSettingRow(
-            label = stringResource(R.string.setting_duck_music),
-            checked = duckMusic,
-            onCheckedChange = {
-                duckMusic = it
-                onDuckMusicChange(it)
-            },
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val delayLabel = stringResource(R.string.setting_start_delay, sliderToStartDelay(startDelay))
-            Text(text = delayLabel, style = MaterialTheme.typography.titleMedium)
-            Slider(
-                value = startDelay,
-                onValueChange = { startDelay = it },
-                // Подпись над ползунком отдельный узел, без описания TalkBack назовёт ползунок безымянным
-                modifier = Modifier.semantics { contentDescription = delayLabel },
-                // Ползунок ходит по индексам списка: шаг между значениями неравномерный
-                valueRange = 0f..START_DELAY_OPTIONS_SEC.lastIndex.toFloat(),
-                steps = START_DELAY_SLIDER_STEPS,
-                onValueChangeFinished = { onStartDelayChange(sliderToStartDelay(startDelay)) },
-            )
-        }
-
-        Column(Modifier.selectableGroup()) {
-            Text(text = stringResource(R.string.setting_theme), style = MaterialTheme.typography.titleMedium)
-            for (mode in ThemeMode.entries) {
-                RadioSettingRow(
-                    label = stringResource(mode.labelRes()),
-                    selected = mode == themeMode,
-                    onClick = { if (mode != themeMode) onThemeModeChange(mode) },
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionTitle(stringResource(R.string.group_signals))
+            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+                SliderSettingRow(
+                    label = stringResource(R.string.setting_volume),
+                    value = stringResource(R.string.value_percent, sliderToPercent(volume)),
+                    sliderValue = volume,
+                    onSliderValueChange = { volume = it },
+                    valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
+                    steps = VOLUME_SLIDER_STEPS,
+                    onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
+                )
+                SwitchSettingRow(
+                    label = stringResource(R.string.setting_vibration),
+                    checked = vibration,
+                    onCheckedChange = {
+                        vibration = it
+                        onVibrationChange(it)
+                    },
+                )
+                SwitchSettingRow(
+                    label = stringResource(R.string.setting_duck_music),
+                    checked = duckMusic,
+                    onCheckedChange = {
+                        duckMusic = it
+                        onDuckMusicChange(it)
+                    },
                 )
             }
-        }
 
-        TextButton(onClick = onBack) {
+            SectionTitle(
+                text = stringResource(R.string.group_workout),
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+                SliderSettingRow(
+                    label = stringResource(R.string.setting_start_delay),
+                    value = stringResource(R.string.value_seconds, sliderToStartDelay(startDelay)),
+                    sliderValue = startDelay,
+                    onSliderValueChange = { startDelay = it },
+                    // Ползунок ходит по индексам списка: шаг между значениями неравномерный
+                    valueRange = 0f..START_DELAY_OPTIONS_SEC.lastIndex.toFloat(),
+                    steps = START_DELAY_SLIDER_STEPS,
+                    onValueChangeFinished = { onStartDelayChange(sliderToStartDelay(startDelay)) },
+                )
+            }
+
+            SectionTitle(
+                text = stringResource(R.string.group_appearance),
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        text = stringResource(R.string.setting_theme),
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    for (mode in ThemeMode.entries) {
+                        RadioSettingRow(
+                            label = stringResource(mode.labelRes()),
+                            selected = mode == themeMode,
+                            onClick = { if (mode != themeMode) onThemeModeChange(mode) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Ползунок с подписью слева и значением справа. Подпись и значение отдельные узлы, поэтому
+ * описание ползунка содержит оба: иначе TalkBack назовёт ползунок безымянным или без значения.
+ */
+@Composable
+private fun SliderSettingRow(
+    label: String,
+    value: String,
+    sliderValue: Float,
+    onSliderValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChangeFinished: () -> Unit,
+) {
+    val description = stringResource(R.string.setting_value_description, label, value)
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = stringResource(R.string.button_back),
+                text = label,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
             )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.merge(TabularNumbers),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
+        Slider(
+            value = sliderValue,
+            onValueChange = onSliderValueChange,
+            modifier = Modifier.semantics { contentDescription = description },
+            valueRange = valueRange,
+            steps = steps,
+            onValueChangeFinished = onValueChangeFinished,
+        )
     }
 }
 
