@@ -25,7 +25,6 @@ class SettingsStoreTest {
             walkMin = 4,
             walkSec = 45,
             rounds = 9,
-            startDelaySec = 20,
         )
 
         store.save(settings)
@@ -50,13 +49,6 @@ class SettingsStoreTest {
     }
 
     @Test
-    fun `без сохранённой задержки возвращается 5 секунд`() {
-        prefs.values["rounds"] = 9
-
-        assertEquals(5, store.load().startDelaySec)
-    }
-
-    @Test
     fun `неверные сохранённые значения видны проверке`() {
         prefs.values["rounds"] = 0
 
@@ -64,11 +56,47 @@ class SettingsStoreTest {
     }
 
     @Test
-    fun `неверная сохранённая задержка видна проверке`() {
-        prefs.values["start_delay_sec"] = 61
+    fun `задержка старта по умолчанию 5 секунд`() {
+        assertEquals(DEFAULT_START_DELAY_SEC, store.loadStartDelaySec())
+        assertEquals(5, DEFAULT_START_DELAY_SEC)
+    }
 
-        assertEquals(61, store.load().startDelaySec)
-        assertEquals(SettingsError.START_DELAY_RANGE, store.load().validate())
+    @Test
+    fun `сохранённая задержка читается обратно`() {
+        store.saveStartDelaySec(20)
+
+        assertEquals(20, store.loadStartDelaySec())
+        assertEquals(20, SettingsStore(prefs).loadStartDelaySec())
+    }
+
+    @Test
+    fun `задержка, сохранённая прежней версией формы, читается под тем же ключом`() {
+        prefs.values["start_delay_sec"] = 7
+
+        assertEquals(7, store.loadStartDelaySec())
+    }
+
+    @Test
+    fun `задержка прижимается к диапазону при записи и чтении`() {
+        store.saveStartDelaySec(-5)
+        assertEquals(0, prefs.values["start_delay_sec"])
+
+        store.saveStartDelaySec(90)
+        assertEquals(60, prefs.values["start_delay_sec"])
+
+        prefs.values["start_delay_sec"] = 61
+        assertEquals(60, store.loadStartDelaySec())
+    }
+
+    @Test
+    fun `задержка не зависит от настроек тренировки`() {
+        val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
+
+        store.saveStartDelaySec(30)
+        store.save(settings)
+
+        assertEquals(30, store.loadStartDelaySec())
+        assertEquals(settings, store.load())
     }
 
     @Test

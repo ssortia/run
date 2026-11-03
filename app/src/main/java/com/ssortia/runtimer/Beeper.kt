@@ -1,5 +1,6 @@
 package com.ssortia.runtimer
 
+import android.content.res.Resources
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioFormat
@@ -8,6 +9,8 @@ import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.RawRes
+import java.io.IOException
 
 /**
  * Громкость медиа на нуле, и сигналов не будет слышно. Канал навигации на большинстве телефонов
@@ -20,14 +23,16 @@ fun AudioManager.isMediaMuted(): Boolean = getStreamVolume(AudioManager.STREAM_M
  * сигнала и следуют системной громкости, поэтому итоговая громкость равна [volumePercent],
  * умноженной на громкость канала.
  *
- * Аудиофокус берётся на каждый сигнал и возвращается по таймеру через [soundWithTailMs],
- * окончательно его отпускает [release]. [play] и [release] вызываются только из главного потока.
+ * Аудиофокус берётся заранее через [duck] и держится до сигнала, после сигнала возвращается
+ * по таймеру через [soundWithTailMs], окончательно его отпускает [release]. Все методы
+ * вызываются только из главного потока.
  *
- * Готовятся только [signals]: синтез и создание дорожек идут в конструкторе, в главном потоке,
- * поэтому пробному сигналу незачем готовить все три.
+ * Готовятся только [signals]: чтение файлов из `res/raw` и создание дорожек идут
+ * в конструкторе, в главном потоке, поэтому пробному сигналу незачем готовить все три.
  */
 class Beeper(
     private val audioManager: AudioManager,
+    private val resources: Resources,
     private val volumePercent: Int,
     signals: Collection<Signal> = Signal.entries,
 ) {
@@ -43,6 +48,9 @@ class Beeper(
     private val handler = Handler(Looper.getMainLooper())
     private val abandonFocus = Runnable { audioManager.abandonAudioFocusRequest(focusRequest) }
     private var released = false
+
+    // Фокус взят через duck() и держится без таймера до сигнала или stopDucking()
+    private var holding = false
 
     /** false, если хотя бы один из сигналов не удалось подготовить: о такой тренировке надо предупредить. */
     val isReady: Boolean get() = tracks.values.all { it != null }
@@ -66,9 +74,29 @@ class Beeper(
         }
     }
 
+    /**
+     * Заранее приглушает музыку перед сигналом: система снижает громкость плавно. Фокус держится
+     * до [play] или [stopDucking]. Повторный вызов ничего не меняет. Таймер возврата после
+     * прошлого сигнала снимается: на коротких отрезках музыка остаётся приглушённой.
+     */
+    fun duck() {
+        if (released || holding) return
+        handler.removeCallbacks(abandonFocus)
+        requestFocusLogged("заранее")
+        holding = true
+    }
+
+    /** Возвращает громкость музыки, если она приглушена через [duck], а сигнал ещё не прозвучал. */
+    fun stopDucking() {
+        if (!holding) return
+        holding = false
+        audioManager.abandonAudioFocusRequest(focusRequest)
+    }
+
     /** Сразу прекращает звук. Вызывать можно повторно, после этого [play] ничего не проигрывает. */
     fun release() {
         released = true
+        holding = false
         handler.removeCallbacks(abandonFocus)
         // Музыка не должна оставаться приглушённой после «Стоп»
         audioManager.abandonAudioFocusRequest(focusRequest)
@@ -81,17 +109,23 @@ class Beeper(
      */
     private fun requestFocus(signal: Signal) {
         handler.removeCallbacks(abandonFocus)
-        val result = audioManager.requestAudioFocus(focusRequest)
-        if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            Log.w(TAG, "Фокус для сигнала $signal не получен: $result")
-        }
+        // Если фокус уже взят через duck(), повторный запрос того же фокуса ничего не меняет
+        requestFocusLogged("для сигнала $signal")
+        holding = false
         handler.postDelayed(abandonFocus, soundWithTailMs(signal))
     }
 
+    private fun requestFocusLogged(purpose: String) {
+        val result = audioManager.requestAudioFocus(focusRequest)
+        if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            Log.w(TAG, "Фокус $purpose не получен: $result")
+        }
+    }
+
     private fun createTrack(signal: Signal): AudioTrack? {
-        val pcm = synthesize(tonesFor(signal))
         var track: AudioTrack? = null
         try {
+            val pcm = soundOf(signal) ?: return null
             track = buildTrack(pcm)
             val volumeResult = track.setVolume(volumeGain(volumePercent))
             if (volumeResult != AudioTrack.SUCCESS) {
@@ -103,9 +137,24 @@ class Beeper(
         } catch (e: RuntimeException) {
             // Builder бросает разные исключения, а без одного сигнала тренировка всё равно идёт
             Log.w(TAG, "Не удалось подготовить сигнал $signal", e)
+        } catch (e: IOException) {
+            Log.w(TAG, "Не удалось прочитать звук сигнала $signal", e)
         }
         track?.release()
         return null
+    }
+
+    // Старт звучит так же, как смена отрезка
+    private fun soundOf(signal: Signal): ShortArray? = when (signal) {
+        Signal.START, Signal.INTERVAL -> readSound(R.raw.signal_interval, signal)
+        Signal.FINISH -> readSound(R.raw.signal_finish, signal)
+    }
+
+    private fun readSound(@RawRes id: Int, signal: Signal): ShortArray? {
+        val bytes = resources.openRawResource(id).use { it.readBytes() }
+        return decodeWav(bytes).also {
+            if (it == null) Log.w(TAG, "Звук сигнала $signal не в формате PCM 16 бит моно $SAMPLE_RATE_HZ Гц")
+        }
     }
 
     private fun buildTrack(pcm: ShortArray): AudioTrack = AudioTrack.Builder()

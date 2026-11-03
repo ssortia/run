@@ -47,7 +47,7 @@ class VibrationTest {
     @Test
     fun `длительности паттернов`() {
         assertEquals(600L, vibrationDurationMs(Signal.START))
-        assertEquals(750L, vibrationDurationMs(Signal.INTERVAL))
+        assertEquals(400L, vibrationDurationMs(Signal.INTERVAL))
         assertEquals(1600L, vibrationDurationMs(Signal.FINISH))
     }
 
@@ -57,12 +57,12 @@ class VibrationTest {
     }
 
     @Test
-    fun `старт один импульс, смена отрезка два, финал три`() {
+    fun `старт и смена отрезка один импульс, финал три`() {
         // Импульсы стоят на нечётных местах паттерна
         fun pulses(signal: Signal) = vibrationFor(signal).size / 2
 
         assertEquals(1, pulses(Signal.START))
-        assertEquals(2, pulses(Signal.INTERVAL))
+        assertEquals(1, pulses(Signal.INTERVAL))
         assertEquals(3, pulses(Signal.FINISH))
     }
 

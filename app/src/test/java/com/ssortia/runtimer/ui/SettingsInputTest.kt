@@ -15,8 +15,7 @@ class SettingsInputTest {
         walkMin: String = "2",
         walkSec: String = "0",
         rounds: String = "7",
-        startDelaySec: String = "5",
-    ) = SettingsInput(runMin, runSec, walkMin, walkSec, rounds, startDelaySec)
+    ) = SettingsInput(runMin, runSec, walkMin, walkSec, rounds)
 
     @Test
     fun `пустое поле считается нулём`() {
@@ -57,18 +56,6 @@ class SettingsInputTest {
         assertEquals(SettingsError.MINUTES_RANGE, input(runMin = "100").toSettings().validate())
         assertEquals(SettingsError.SECONDS_RANGE, input(walkSec = "60").toSettings().validate())
         assertEquals(SettingsError.ROUNDS_RANGE, input(rounds = "100").toSettings().validate())
-        assertEquals(
-            SettingsError.START_DELAY_RANGE,
-            input(startDelaySec = "61").toSettings().validate(),
-        )
-    }
-
-    @Test
-    fun `пустая задержка считается нулём и верна`() {
-        val settings = input(startDelaySec = "").toSettings()
-
-        assertEquals(0, settings.startDelaySec)
-        assertNull(settings.validate())
     }
 
     @Test
@@ -80,10 +67,6 @@ class SettingsInputTest {
         assertEquals(SettingsError.ROUNDS_RANGE, input(rounds = huge).toSettings().validate())
         assertEquals(SettingsError.MINUTES_RANGE, input(walkMin = huge).toSettings().validate())
         assertEquals(SettingsError.SECONDS_RANGE, input(walkSec = huge).toSettings().validate())
-        assertEquals(
-            SettingsError.START_DELAY_RANGE,
-            input(startDelaySec = huge).toSettings().validate(),
-        )
     }
 
     @Test
@@ -118,10 +101,8 @@ class SettingsInputTest {
             walkMin = 1,
             walkSec = 45,
             rounds = 9,
-            startDelaySec = 20,
         )
 
-        assertEquals("20", SettingsInput.from(settings).startDelaySec)
         assertEquals(settings, SettingsInput.from(settings).toSettings())
     }
 
@@ -132,7 +113,6 @@ class SettingsInputTest {
         assertEquals(R.string.error_rounds_range, SettingsError.ROUNDS_RANGE.messageRes())
         assertEquals(R.string.error_seconds_range, SettingsError.SECONDS_RANGE.messageRes())
         assertEquals(R.string.error_minutes_range, SettingsError.MINUTES_RANGE.messageRes())
-        assertEquals(R.string.error_start_delay_range, SettingsError.START_DELAY_RANGE.messageRes())
     }
 
     @Test
@@ -142,12 +122,11 @@ class SettingsInputTest {
         assertEquals(listOf<Any>(99), SettingsError.ROUNDS_RANGE.messageArgs().toList())
         assertEquals(listOf<Any>(59), SettingsError.SECONDS_RANGE.messageArgs().toList())
         assertEquals(listOf<Any>(99), SettingsError.MINUTES_RANGE.messageArgs().toList())
-        assertEquals(listOf<Any>(60), SettingsError.START_DELAY_RANGE.messageArgs().toList())
     }
 
     @Test
     fun `форма восстанавливается после поворота без перестановки полей`() {
-        val original = SettingsInput("1", "2", "3", "", "5", "6")
+        val original = SettingsInput("1", "2", "3", "", "5")
 
         val saved = with(SettingsInputSaver) { SaverScope { true }.save(original) }
 

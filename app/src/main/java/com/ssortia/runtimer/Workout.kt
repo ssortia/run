@@ -43,9 +43,5 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
 fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
     if (runSec > 0 && walkSec > 0 && rounds > 0) Workout(runSec, walkSec, rounds) else null
 
-/** Возвращает null для отрицательной задержки: сервис такой запрос отклоняет. */
-fun startDelayMsOrNull(delaySec: Int): Long? =
-    if (delaySec >= 0) delaySec * 1000L else null
-
 /** Таймаут wake lock страхует от разряда батареи при ошибке в логике. */
 fun wakeLockTimeoutMs(totalMs: Long, delayMs: Long): Long = totalMs + delayMs + WAKE_LOCK_MARGIN_MS

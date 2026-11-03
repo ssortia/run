@@ -73,39 +73,6 @@ class WorkoutSettingsTest {
     }
 
     @Test
-    fun `задержка старта по умолчанию равна 5 секундам`() {
-        assertEquals(5, WorkoutSettings().startDelaySec)
-    }
-
-    @Test
-    fun `задержка старта верна от 0 до 60`() {
-        assertNull(WorkoutSettings(startDelaySec = 0).validate())
-        assertNull(WorkoutSettings(startDelaySec = 60).validate())
-        assertEquals(SettingsError.START_DELAY_RANGE, WorkoutSettings(startDelaySec = -1).validate())
-        assertEquals(SettingsError.START_DELAY_RANGE, WorkoutSettings(startDelaySec = 61).validate())
-    }
-
-    @Test
-    fun `задержка старта проверяется раньше нулевых отрезков`() {
-        assertEquals(
-            SettingsError.START_DELAY_RANGE,
-            WorkoutSettings(runMin = 0, runSec = 0, startDelaySec = 61).validate(),
-        )
-        assertEquals(
-            SettingsError.START_DELAY_RANGE,
-            WorkoutSettings(walkMin = 0, walkSec = 0, startDelaySec = 61).validate(),
-        )
-    }
-
-    @Test
-    fun `задержка старта не входит в длительность тренировки`() {
-        assertEquals(
-            WorkoutSettings(startDelaySec = 0).toWorkout().totalMs,
-            WorkoutSettings(startDelaySec = 60).toWorkout().totalMs,
-        )
-    }
-
-    @Test
     fun `отрицательные значения отклоняются`() {
         assertEquals(SettingsError.MINUTES_RANGE, WorkoutSettings(runMin = -1, runSec = 30).validate())
         assertEquals(SettingsError.SECONDS_RANGE, WorkoutSettings(walkMin = 1, walkSec = -1).validate())

@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,
+                    loadStartDelay = store::loadStartDelaySec,
                     onStart = { settings ->
                         store.save(settings)
                         when {
@@ -116,6 +117,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onVolumeChange = ::saveVolumeAndPreview,
                     onVibrationChange = store::saveVibration,
+                    onStartDelayChange = store::saveStartDelaySec,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                     onPause = { sendCommand(WorkoutService.pauseIntent(this)) },
                     onResume = { sendCommand(WorkoutService.resumeIntent(this)) },
@@ -137,7 +139,7 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, R.string.warning_muted, Toast.LENGTH_SHORT).show()
         }
         // Готовится только INTERVAL: дорожки создаются в главном потоке
-        val beeper = Beeper(audioManager, percent, setOf(Signal.INTERVAL))
+        val beeper = Beeper(audioManager, resources, percent, setOf(Signal.INTERVAL))
         if (!beeper.isReady) Log.w(TAG, "Пробный сигнал не подготовлен")
         beeper.play(Signal.INTERVAL)
         previewBeeper = beeper
@@ -170,7 +172,7 @@ class MainActivity : ComponentActivity() {
         if (settings.validate() != null) return
         try {
             startForegroundService(
-                WorkoutService.startIntent(this, settings.toWorkout(), settings.startDelaySec),
+                WorkoutService.startIntent(this, settings.toWorkout()),
             )
         } catch (e: IllegalStateException) {
             // В том числе ForegroundServiceStartNotAllowedException на API 31+: форма остаётся

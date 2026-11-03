@@ -19,9 +19,11 @@ fun WorkoutScreen(
     loadSettings: () -> WorkoutSettings,
     loadVolume: () -> Int,
     loadVibration: () -> Boolean,
+    loadStartDelay: () -> Int,
     onStart: (WorkoutSettings) -> Unit,
     onVolumeChange: (Int) -> Unit,
     onVibrationChange: (Boolean) -> Unit,
+    onStartDelayChange: (Int) -> Unit,
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
@@ -39,20 +41,20 @@ fun WorkoutScreen(
             if (showAppSettings) {
                 BackHandler { showAppSettings = false }
                 AppSettingsContent(
+                    loadVolume = loadVolume,
+                    onVolumeChange = onVolumeChange,
                     loadVibration = loadVibration,
                     onVibrationChange = onVibrationChange,
+                    loadStartDelay = loadStartDelay,
+                    onStartDelayChange = onStartDelayChange,
                     onBack = { showAppSettings = false },
                     modifier = Modifier.safeDrawingPadding(),
                 )
             } else {
                 formState.SaveableStateProvider("form") {
-                    // Внутри держателя: ползунок не saveable и при возврате читает хранилище заново
-                    val initialVolume = remember { loadVolume() }
                     SettingsContent(
                         initial = initial,
-                        initialVolume = initialVolume,
                         onStart = onStart,
-                        onVolumeChange = onVolumeChange,
                         onOpenSettings = { showAppSettings = true },
                         // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
                         modifier = Modifier.safeDrawingPadding(),

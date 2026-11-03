@@ -19,37 +19,27 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
 import com.ssortia.runtimer.MAX_SECONDS
-import com.ssortia.runtimer.MAX_START_DELAY_SEC
-import com.ssortia.runtimer.MAX_VOLUME_PERCENT
-import com.ssortia.runtimer.MIN_VOLUME_PERCENT
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
-import com.ssortia.runtimer.VOLUME_SLIDER_STEPS
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.formatTotal
-import com.ssortia.runtimer.sliderToPercent
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -58,7 +48,6 @@ data class SettingsInput(
     val walkMin: String,
     val walkSec: String,
     val rounds: String,
-    val startDelaySec: String,
 ) {
     fun toSettings() = WorkoutSettings(
         runMin = parseField(runMin),
@@ -66,7 +55,6 @@ data class SettingsInput(
         walkMin = parseField(walkMin),
         walkSec = parseField(walkSec),
         rounds = parseField(rounds),
-        startDelaySec = parseField(startDelaySec),
     )
 
     companion object {
@@ -76,7 +64,6 @@ data class SettingsInput(
             walkMin = settings.walkMin.toString(),
             walkSec = settings.walkSec.toString(),
             rounds = settings.rounds.toString(),
-            startDelaySec = settings.startDelaySec.toString(),
         )
     }
 }
@@ -99,7 +86,6 @@ fun SettingsError.messageRes(): Int = when (this) {
     SettingsError.ROUNDS_RANGE -> R.string.error_rounds_range
     SettingsError.SECONDS_RANGE -> R.string.error_seconds_range
     SettingsError.MINUTES_RANGE -> R.string.error_minutes_range
-    SettingsError.START_DELAY_RANGE -> R.string.error_start_delay_range
 }
 
 /** Аргументы строки из [messageRes]: пределы подставляются из тех же констант, что и в проверке. */
@@ -108,33 +94,24 @@ fun SettingsError.messageArgs(): Array<Any> = when (this) {
     SettingsError.ROUNDS_RANGE -> arrayOf(MAX_ROUNDS)
     SettingsError.SECONDS_RANGE -> arrayOf(MAX_SECONDS)
     SettingsError.MINUTES_RANGE -> arrayOf(MAX_MINUTES)
-    SettingsError.START_DELAY_RANGE -> arrayOf(MAX_START_DELAY_SEC)
 }
 
 internal val SettingsInputSaver = listSaver<SettingsInput, String>(
-    save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds, it.startDelaySec) },
-    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4], it[5]) },
+    save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds) },
+    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
 )
 
-/**
- * Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку.
- * [onVolumeChange] вызывается при отпускании ползунка, а не на каждом его сдвиге.
- */
+/** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
-    initialVolume: Int,
     onStart: (WorkoutSettings) -> Unit,
-    onVolumeChange: (Int) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
         mutableStateOf(SettingsInput.from(initial))
     }
-    // Не rememberSaveable: значение сохраняется только при отпускании, и прерванный поворотом сдвиг
-    // показывал бы несохранённую громкость. После пересоздания ползунок читает хранилище заново
-    var volume by remember { mutableFloatStateOf(initialVolume.toFloat()) }
     val settings = input.toSettings()
     val error = settings.validate()
 
@@ -165,28 +142,9 @@ fun SettingsContent(
             label = stringResource(R.string.field_rounds),
             value = input.rounds,
             onValueChange = { input = input.copy(rounds = it) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        NumberField(
-            label = stringResource(R.string.field_start_delay),
-            value = input.startDelaySec,
-            onValueChange = { input = input.copy(startDelaySec = it) },
             imeAction = ImeAction.Done,
             modifier = Modifier.fillMaxWidth(),
         )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val volumeLabel = stringResource(R.string.signal_volume, sliderToPercent(volume))
-            Text(text = volumeLabel, style = MaterialTheme.typography.titleMedium)
-            Slider(
-                value = volume,
-                onValueChange = { volume = it },
-                // Подпись над ползунком отдельный узел, без описания TalkBack назовёт ползунок безымянным
-                modifier = Modifier.semantics { contentDescription = volumeLabel },
-                valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
-                steps = VOLUME_SLIDER_STEPS,
-                onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
-            )
-        }
 
         // Ошибка и итог занимают одно место: итог неверных настроек не имеет смысла
         if (error != null) {

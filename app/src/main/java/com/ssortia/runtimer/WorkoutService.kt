@@ -84,12 +84,11 @@ class WorkoutService : Service() {
         }
 
         val workout = intent?.toWorkout()
-        val delayMs = intent?.toStartDelayMs()
-        if (workout == null || delayMs == null) {
+        if (workout == null) {
             stopSelf(startId)
             return START_NOT_STICKY
         }
-        startWorkout(workout, delayMs)
+        startWorkout(workout)
         return START_NOT_STICKY
     }
 
@@ -124,10 +123,11 @@ class WorkoutService : Service() {
         super.onDestroy()
     }
 
-    private fun startWorkout(workout: Workout, delayMs: Long) {
-        wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
+    private fun startWorkout(workout: Workout) {
         val settings = SettingsStore(this)
-        beeper = Beeper(audioManager, settings.loadSignalVolume())
+        val delayMs = settings.loadStartDelaySec() * 1000L
+        wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
+        beeper = Beeper(audioManager, resources, settings.loadSignalVolume())
         if (settings.loadVibration()) buzzer = Buzzer(getSystemService(Vibrator::class.java))
         job = scope.launch { runLoop(workout, delayMs) }
     }
@@ -165,6 +165,12 @@ class WorkoutService : Service() {
                 buzzer?.play(it)
             }
             if (tick.finished) break
+            // Каждый отрезок кончается сигналом: смена отрезка или финал
+            if (shouldDuck(tick.state.position.remainingMs, paused = clock.isPaused)) {
+                beeper?.duck()
+            } else {
+                beeper?.stopDucking()
+            }
             previousIndex = tick.state.position.index
             delay(TICK_MS)
         }
@@ -175,13 +181,16 @@ class WorkoutService : Service() {
 
     private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
         while (true) {
+            val now = SystemClock.elapsedRealtime()
             val tick = countdownTickAt(
                 startedAt,
-                SystemClock.elapsedRealtime(),
+                now,
                 soundFailed = soundFailed,
                 soundMuted = audioManager.isMediaMuted(),
             ) ?: break
             _state.value = tick.state
+            // Отсчёт кончается сигналом START
+            if (shouldDuck(startedAt - now)) beeper?.duck()
             showNotification(countdownText(tick.state))
             delay(tick.waitMs)
         }
@@ -229,9 +238,6 @@ class WorkoutService : Service() {
         rounds = getIntExtra(EXTRA_ROUNDS, 0),
     )
 
-    // Умолчание -1: интент без значения отклоняется, как и неверная тренировка
-    private fun Intent.toStartDelayMs(): Long? =
-        startDelayMsOrNull(getIntExtra(EXTRA_START_DELAY_SEC, -1))
 
     companion object {
         private const val CHANNEL_ID = "workout"
@@ -240,7 +246,6 @@ class WorkoutService : Service() {
         private const val EXTRA_RUN_SEC = "runSec"
         private const val EXTRA_WALK_SEC = "walkSec"
         private const val EXTRA_ROUNDS = "rounds"
-        private const val EXTRA_START_DELAY_SEC = "startDelaySec"
         private const val ACTION_PAUSE = "com.ssortia.runtimer.action.PAUSE"
         private const val ACTION_RESUME = "com.ssortia.runtimer.action.RESUME"
 
@@ -248,12 +253,11 @@ class WorkoutService : Service() {
         val state: StateFlow<WorkoutState> = _state.asStateFlow()
 
         /** Интент для startForegroundService(). Останавливать сервис нужно через stopService(). */
-        fun startIntent(context: Context, workout: Workout, startDelaySec: Int): Intent =
+        fun startIntent(context: Context, workout: Workout): Intent =
             Intent(context, WorkoutService::class.java)
                 .putExtra(EXTRA_RUN_SEC, workout.runSec)
                 .putExtra(EXTRA_WALK_SEC, workout.walkSec)
                 .putExtra(EXTRA_ROUNDS, workout.rounds)
-                .putExtra(EXTRA_START_DELAY_SEC, startDelaySec)
 
         /**
          * Команда паузы для startService(). Без активной тренировки сервис её отклонит, но если

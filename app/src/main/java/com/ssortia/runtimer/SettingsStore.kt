@@ -17,7 +17,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
             walkMin = prefs.getInt(KEY_WALK_MIN, defaults.walkMin),
             walkSec = prefs.getInt(KEY_WALK_SEC, defaults.walkSec),
             rounds = prefs.getInt(KEY_ROUNDS, defaults.rounds),
-            startDelaySec = prefs.getInt(KEY_START_DELAY_SEC, defaults.startDelaySec),
         )
     }
 
@@ -28,7 +27,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .putInt(KEY_WALK_MIN, settings.walkMin)
             .putInt(KEY_WALK_SEC, settings.walkSec)
             .putInt(KEY_ROUNDS, settings.rounds)
-            .putInt(KEY_START_DELAY_SEC, settings.startDelaySec)
             .apply()
     }
 
@@ -41,6 +39,19 @@ class SettingsStore(private val prefs: SharedPreferences) {
     fun saveSignalVolume(percent: Int) {
         prefs.edit()
             .putInt(KEY_SIGNAL_VOLUME, clampVolume(percent))
+            .apply()
+    }
+
+    /**
+     * Задержка старта хранится отдельно от тренировки под прежним ключом, поэтому сохранённое
+     * раньше значение сохраняется. Значение вне диапазона прижимается к нему.
+     */
+    fun loadStartDelaySec(): Int =
+        clampStartDelay(prefs.getInt(KEY_START_DELAY_SEC, DEFAULT_START_DELAY_SEC))
+
+    fun saveStartDelaySec(sec: Int) {
+        prefs.edit()
+            .putInt(KEY_START_DELAY_SEC, clampStartDelay(sec))
             .apply()
     }
 
