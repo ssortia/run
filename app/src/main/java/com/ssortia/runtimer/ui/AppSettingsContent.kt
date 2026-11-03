@@ -82,51 +82,23 @@ fun AppSettingsContent(
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Строка целиком переключает настройку, а сам Switch без обработчика
-                .toggleable(
-                    value = vibration,
-                    role = Role.Switch,
-                    onValueChange = {
-                        vibration = it
-                        onVibrationChange(it)
-                    },
-                )
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.setting_vibration),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = vibration, onCheckedChange = null)
-        }
+        SwitchSettingRow(
+            label = stringResource(R.string.setting_vibration),
+            checked = vibration,
+            onCheckedChange = {
+                vibration = it
+                onVibrationChange(it)
+            },
+        )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Строка целиком переключает настройку, а сам Switch без обработчика
-                .toggleable(
-                    value = duckAhead,
-                    role = Role.Switch,
-                    onValueChange = {
-                        duckAhead = it
-                        onDuckAheadChange(it)
-                    },
-                )
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.setting_duck_ahead),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = duckAhead, onCheckedChange = null)
-        }
+        SwitchSettingRow(
+            label = stringResource(R.string.setting_duck_ahead),
+            checked = duckAhead,
+            onCheckedChange = {
+                duckAhead = it
+                onDuckAheadChange(it)
+            },
+        )
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val delayLabel = stringResource(R.string.setting_start_delay, sliderToStartDelay(startDelay))
@@ -149,5 +121,24 @@ fun AppSettingsContent(
                 style = MaterialTheme.typography.titleMedium,
             )
         }
+    }
+}
+
+@Composable
+private fun SwitchSettingRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            // Строка целиком переключает настройку, а сам Switch без обработчика
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(checked = checked, onCheckedChange = null)
     }
 }

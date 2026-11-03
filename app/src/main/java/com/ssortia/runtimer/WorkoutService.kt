@@ -43,8 +43,7 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     // null, если вибрация выключена в настройках
     private var buzzer: Buzzer? = null
-    // Настройка «Приглушать музыку заранее». Поле, а не локальная переменная runLoop:
-    // её использует и handlePauseAction при продолжении
+    // «Приглушать музыку заранее»: поле, потому что её читает и handlePauseAction
     private var duckAhead = DEFAULT_DUCK_AHEAD
     // Создаётся после отсчёта, команда паузы может прийти раньше
     private var clock: WorkoutClock? = null

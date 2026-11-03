@@ -199,18 +199,26 @@ class SettingsStoreTest {
     }
 
     @Test
-    fun `вибрация не зависит от настроек тренировки и громкости`() {
+    fun `вибрация не зависит от остальных настроек`() {
         val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
 
         store.save(settings)
         store.saveSignalVolume(40)
+        store.saveDuckAhead(true)
+        store.saveStartDelaySec(20)
         store.saveVibration(false)
 
+        // Запись вибрации не меняет остальные настройки
         assertEquals(settings, store.load())
         assertEquals(40, store.loadSignalVolume())
+        assertTrue(store.loadDuckAhead())
+        assertEquals(20, store.loadStartDelaySec())
 
+        // Запись остальных настроек не меняет вибрацию
         store.save(WorkoutSettings())
         store.saveSignalVolume(60)
+        store.saveDuckAhead(true)
+        store.saveStartDelaySec(10)
 
         assertFalse(store.loadVibration())
     }
@@ -240,20 +248,21 @@ class SettingsStoreTest {
 
         store.save(settings)
         store.saveSignalVolume(40)
-        store.saveVibration(true)
+        store.saveVibration(false)
         store.saveStartDelaySec(20)
         store.saveDuckAhead(false)
 
         // Запись приглушения не меняет остальные настройки
         assertEquals(settings, store.load())
         assertEquals(40, store.loadSignalVolume())
-        assertTrue(store.loadVibration())
+        assertFalse(store.loadVibration())
         assertEquals(20, store.loadStartDelaySec())
 
         // Запись остальных настроек не меняет приглушение
         store.save(WorkoutSettings())
         store.saveSignalVolume(60)
-        store.saveVibration(false)
+        // Значение, противоположное приглушению: иначе запись не в тот ключ не была бы видна
+        store.saveVibration(true)
         store.saveStartDelaySec(10)
 
         assertFalse(store.loadDuckAhead())

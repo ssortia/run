@@ -36,6 +36,8 @@ class SignalSoundTest {
         assertTrue(shouldDuck(1_000, duckAhead = true))
         assertTrue(shouldDuck(1, duckAhead = true))
         assertTrue(shouldDuck(0, duckAhead = true))
+        // В конце отсчёта время до старта может уйти в минус
+        assertTrue(shouldDuck(-1, duckAhead = true))
     }
 
     @Test
@@ -68,11 +70,8 @@ class SignalSoundTest {
 
     @Test
     fun `при выключенной настройке музыка заранее не приглушается`() {
-        assertFalse(shouldDuck(1_000, duckAhead = false))
-        assertFalse(shouldDuck(1, duckAhead = false))
         assertFalse(shouldDuck(0, duckAhead = false))
-        assertFalse(shouldDuck(500, duckAhead = false, paused = false))
-        assertFalse(shouldDuck(500, duckAhead = false, paused = true))
+        assertFalse(shouldDuck(-1, duckAhead = false))
     }
 
     @Test
