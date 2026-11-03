@@ -167,7 +167,7 @@
 - [x] `README.md`: описать программу в «Как это работает», добавить `WorkoutPreset.kt` в структуру проекта; проверить строку `WorkoutSettings.kt` в структуре и описание проверки формы на правило про ходьбу
 - [x] отметить выполненные пункты в `docs/tasks/20261103-preset-weeks.md`
 - [x] удалить `plan.md`: источником программы становится `WorkoutPreset.kt`. Файл не в git, таблица остаётся в этом плане и в задаче
-- [ ] move this plan to `docs/plans/completed/` (после ревью, выполняет оркестратор)
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
