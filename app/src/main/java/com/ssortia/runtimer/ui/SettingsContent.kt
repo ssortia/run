@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
@@ -119,6 +121,8 @@ fun SettingsContent(
     onStart: (WorkoutSettings) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    showBackgroundWarning: Boolean,
+    onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
@@ -190,6 +194,22 @@ fun SettingsContent(
                 text = stringResource(R.string.button_start),
                 style = MaterialTheme.typography.titleLarge,
             )
+        }
+
+        // Цвет обычный: красный текст под «Старт» читался бы как ошибка формы, а старт
+        // предупреждение не блокирует. Меньший интервал связывает текст с кнопкой
+        if (showBackgroundWarning) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.warning_background),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedButton(onClick = onOpenAppDetails, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.button_open_app_details))
+                }
+            }
         }
 
         Row(

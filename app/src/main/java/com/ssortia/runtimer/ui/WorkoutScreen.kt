@@ -71,6 +71,8 @@ fun WorkoutScreen(
                         onOpenSettings = dropUnlessResumed {
                             navController.navigate(ROUTE_APP_SETTINGS)
                         },
+                        showBackgroundWarning = showBackgroundWarning,
+                        onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                     )
                 }
                 composable(ROUTE_APP_SETTINGS) {

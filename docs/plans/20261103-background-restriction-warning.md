@@ -108,18 +108,18 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строки `warning_background` и `button_open_app_details`
-- [ ] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `SettingsContent`, в маршруте `settings` у `WorkoutScreen` передать их, обернув колбэк в `dropUnlessResumed`
-- [ ] показать блок предупреждения под «Старт» при `showBackgroundWarning`: текст обычного цвета с `TextAlign.Center`, `OutlinedButton`
-- [ ] убедиться, что `Button` «Старт» не зависит от `showBackgroundWarning` (старт не блокируется)
-- [ ] тесты: новых нет (Compose); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug` проходит без новых предупреждений lint
+- [x] добавить строки `warning_background` и `button_open_app_details`
+- [x] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `SettingsContent`, в маршруте `settings` у `WorkoutScreen` передать их, обернув колбэк в `dropUnlessResumed`
+- [x] показать блок предупреждения под «Старт» при `showBackgroundWarning`: текст обычного цвета с `TextAlign.Center`, `OutlinedButton`
+- [x] убедиться, что `Button` «Старт» не зависит от `showBackgroundWarning` (старт не блокируется)
+- [x] тесты: новых нет (Compose); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug` проходит без новых предупреждений lint
 
 ### Task 3: Verify acceptance criteria
-- [ ] предупреждение показывается только при `isIgnoringBatteryOptimizations == false` и перечитывается на `ON_RESUME`
-- [ ] кнопка открывает страницу приложения, а не `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`; разрешение `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` в манифест не добавлено
-- [ ] `SettingsContent` не импортирует `PowerManager` и `android.provider.Settings`
-- [ ] текст не обещает, что сигналы точно будут звучать
-- [ ] полный прогон: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
+- [x] предупреждение показывается только при `isIgnoringBatteryOptimizations == false` и перечитывается на `ON_RESUME`
+- [x] кнопка открывает страницу приложения, а не `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`; разрешение `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` в манифест не добавлено
+- [x] `SettingsContent` не импортирует `PowerManager` и `android.provider.Settings`
+- [x] текст не обещает, что сигналы точно будут звучать
+- [x] полный прогон: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
 
 ### Task 4: [Final] Update documentation
 
