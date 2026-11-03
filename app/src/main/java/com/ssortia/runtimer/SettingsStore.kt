@@ -64,6 +64,15 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
+    /** Приглушение музыки заранее хранится отдельно от тренировки и по умолчанию включено. */
+    fun loadDuckAhead(): Boolean = prefs.getBoolean(KEY_DUCK_AHEAD, DEFAULT_DUCK_AHEAD)
+
+    fun saveDuckAhead(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_DUCK_AHEAD, enabled)
+            .apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "workout_settings"
         const val KEY_RUN_MIN = "run_min"
@@ -74,5 +83,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_START_DELAY_SEC = "start_delay_sec"
         const val KEY_SIGNAL_VOLUME = "signal_volume"
         const val KEY_VIBRATION = "vibration"
+        const val KEY_DUCK_AHEAD = "duck_ahead"
     }
 }

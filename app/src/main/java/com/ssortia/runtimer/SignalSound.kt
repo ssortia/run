@@ -9,6 +9,9 @@ const val FINISH_TAIL_MS = 300L
 // заранее, и к моменту сигнала музыка уже тише
 const val DUCK_AHEAD_MS = 1_000L
 
+// Приглушение заранее отключается настройкой приложения, по умолчанию оно включено
+const val DEFAULT_DUCK_AHEAD = true
+
 // Длительности звуков из res/raw: по ним держится фокус и ждёт финал, а сами файлы читаются
 // только с Android API. SignalFilesTest сверяет константы с файлами
 const val INTERVAL_SOUND_MS = 370L

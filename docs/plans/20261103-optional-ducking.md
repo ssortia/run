@@ -72,11 +72,11 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SettingsStoreTest.kt`
 
-- [ ] добавить `DEFAULT_DUCK_AHEAD` в `SignalSound.kt`, а `KEY_DUCK_AHEAD`, `loadDuckAhead()` и `saveDuckAhead()` в `SettingsStore` по образцу вибрации
-- [ ] написать тест: по умолчанию настройка включена (`DEFAULT_DUCK_AHEAD` и `loadDuckAhead()`)
-- [ ] написать тест: сохранённое значение читается обратно, в том числе новым экземпляром `SettingsStore`
-- [ ] написать тест: настройка не зависит от настроек тренировки, громкости, вибрации и задержки старта и сама их не меняет
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew testDebugUnitTest`, тесты должны пройти
+- [x] добавить `DEFAULT_DUCK_AHEAD` в `SignalSound.kt`, а `KEY_DUCK_AHEAD`, `loadDuckAhead()` и `saveDuckAhead()` в `SettingsStore` по образцу вибрации
+- [x] написать тест: по умолчанию настройка включена (`DEFAULT_DUCK_AHEAD` и `loadDuckAhead()`)
+- [x] написать тест: сохранённое значение читается обратно, в том числе новым экземпляром `SettingsStore`
+- [x] написать тест: настройка не зависит от настроек тренировки, громкости, вибрации и задержки старта и сама их не меняет
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew testDebugUnitTest`, тесты должны пройти
 
 ### Task 2: Признак настройки в чистых функциях приглушения и в сервисе
 

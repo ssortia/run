@@ -215,6 +215,50 @@ class SettingsStoreTest {
         assertFalse(store.loadVibration())
     }
 
+    @Test
+    fun `приглушение заранее по умолчанию включено`() {
+        assertTrue(DEFAULT_DUCK_AHEAD)
+        assertEquals(DEFAULT_DUCK_AHEAD, store.loadDuckAhead())
+    }
+
+    @Test
+    fun `сохранённое приглушение заранее читается обратно`() {
+        store.saveDuckAhead(false)
+
+        assertFalse(store.loadDuckAhead())
+        assertFalse(SettingsStore(prefs).loadDuckAhead())
+
+        store.saveDuckAhead(true)
+
+        assertTrue(store.loadDuckAhead())
+        assertTrue(SettingsStore(prefs).loadDuckAhead())
+    }
+
+    @Test
+    fun `приглушение заранее не зависит от остальных настроек`() {
+        val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
+
+        store.save(settings)
+        store.saveSignalVolume(40)
+        store.saveVibration(true)
+        store.saveStartDelaySec(20)
+        store.saveDuckAhead(false)
+
+        // Запись приглушения не меняет остальные настройки
+        assertEquals(settings, store.load())
+        assertEquals(40, store.loadSignalVolume())
+        assertTrue(store.loadVibration())
+        assertEquals(20, store.loadStartDelaySec())
+
+        // Запись остальных настроек не меняет приглушение
+        store.save(WorkoutSettings())
+        store.saveSignalVolume(60)
+        store.saveVibration(false)
+        store.saveStartDelaySec(10)
+
+        assertFalse(store.loadDuckAhead())
+    }
+
     /** Хранит значения в памяти, поддерживает только то, что нужно настройкам. */
     private class FakePreferences : SharedPreferences {
         val values = mutableMapOf<String, Any>()
