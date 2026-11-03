@@ -222,14 +222,14 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 - Modify: `app/src/main/AndroidManifest.xml`
 
-- [ ] добавить разрешение `android.permission.VIBRATE`
-- [ ] создать `Buzzer` с `play(signal)` и `release()`, атрибуты `USAGE_ALARM`, без вибромотора `play` ничего не делает
-- [ ] создавать `Buzzer` в `startWorkout` только при включённой настройке, хранить в поле рядом с `beeper`
-- [ ] подавать вибрацию вместе со звуком, в конце ждать большую из длительностей плюс `FINISH_TAIL_MS`
-- [ ] добавить `buzzer?.play(Signal.START)` рядом с `beeper?.play(Signal.START)`: `START` идёт мимо `tick.signal`
-- [ ] вызывать `buzzer?.release()` в `onDestroy`
-- [ ] тестов нет, код только с Android API: логика покрыта в Task 5
-- [ ] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
+- [x] добавить разрешение `android.permission.VIBRATE`
+- [x] создать `Buzzer` с `play(signal)` и `release()`, атрибуты `USAGE_ALARM`, без вибромотора `play` ничего не делает
+- [x] создавать `Buzzer` в `startWorkout` только при включённой настройке, хранить в поле рядом с `beeper`
+- [x] подавать вибрацию вместе со звуком, в конце ждать большую из длительностей плюс `FINISH_TAIL_MS`
+- [x] добавить `buzzer?.play(Signal.START)` рядом с `beeper?.play(Signal.START)`: `START` идёт мимо `tick.signal`
+- [x] вызывать `buzzer?.release()` в `onDestroy`
+- [x] тестов нет, код только с Android API: логика покрыта в Task 5
+- [x] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
 
 ### Task 7: Отдельный экран настроек
 

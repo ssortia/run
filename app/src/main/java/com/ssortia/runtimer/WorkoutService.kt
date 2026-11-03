@@ -12,6 +12,7 @@ import android.media.AudioManager
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
+import android.os.Vibrator
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.Job
@@ -39,6 +40,8 @@ class WorkoutService : Service() {
     // Остаётся заполненным и после финала: до onDestroy новый запрос не должен запустить тренировку
     private var job: Job? = null
     private var beeper: Beeper? = null
+    // null, если вибрация выключена в настройках
+    private var buzzer: Buzzer? = null
     // Создаётся после отсчёта, команда паузы может прийти раньше
     private var clock: WorkoutClock? = null
     private var shownText: String? = null
@@ -113,6 +116,7 @@ class WorkoutService : Service() {
     override fun onDestroy() {
         scope.cancel()
         beeper?.release()
+        buzzer?.release()
         if (wakeLock.isHeld) wakeLock.release()
         // Шаг цикла из очереди мог вернуть уведомление уже после того, как stopService() его снял
         notificationManager.cancel(NOTIFICATION_ID)
@@ -122,7 +126,9 @@ class WorkoutService : Service() {
 
     private fun startWorkout(workout: Workout, delayMs: Long) {
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
-        beeper = Beeper(audioManager, SettingsStore(this).loadSignalVolume())
+        val settings = SettingsStore(this)
+        beeper = Beeper(audioManager, settings.loadSignalVolume())
+        if (settings.loadVibration()) buzzer = Buzzer(getSystemService(Vibrator::class.java))
         job = scope.launch { runLoop(workout, delayMs) }
     }
 
@@ -132,7 +138,9 @@ class WorkoutService : Service() {
         val soundFailed = beeper?.isReady != true
         if (delayMs > 0) {
             runCountdown(startedAt, soundFailed)
+            // START идёт мимо tick.signal: всё, что реагирует на сигналы, нужно и здесь
             beeper?.play(Signal.START)
+            buzzer?.play(Signal.START)
         }
 
         // Создаётся после отсчёта: до старта прошедшее время было бы отрицательным
@@ -152,13 +160,17 @@ class WorkoutService : Service() {
             _state.value = tick.state
             showNotification(textFor(tick.state))
 
-            tick.signal?.let { beeper?.play(it) }
+            tick.signal?.let {
+                beeper?.play(it)
+                buzzer?.play(it)
+            }
             if (tick.finished) break
             previousIndex = tick.state.position.index
             delay(TICK_MS)
         }
 
-        delay(soundWithTailMs(Signal.FINISH))
+        // Финальная вибрация длиннее звука, и onDestroy оборвала бы её
+        delay(maxOf(soundDurationMs(Signal.FINISH), vibrationDurationMs(Signal.FINISH)) + FINISH_TAIL_MS)
         stopSelf()
     }
 
