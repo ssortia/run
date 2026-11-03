@@ -116,7 +116,7 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `нажатие на чип подсвечивает его неделю`() {
+    fun `выбор недели в шторке отмечает её неделю`() {
         WORKOUT_PRESETS.forEach {
             assertEquals(it.week, presetWeekOf(SettingsInput.from(it.settings).toSettings()))
         }

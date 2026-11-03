@@ -1,10 +1,8 @@
 package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible
@@ -20,37 +19,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,9 +58,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
@@ -72,9 +73,11 @@ import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
+import com.ssortia.runtimer.presetRowText
 import com.ssortia.runtimer.presetWeekOf
 import com.ssortia.runtimer.wheelOptions
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -162,7 +165,7 @@ private const val EXPANDED_RUN = "run"
 private const val EXPANDED_WALK = "walk"
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
@@ -178,6 +181,8 @@ fun SettingsContent(
     }
     // Раскрыта не больше одной карточки отрезка: null, EXPANDED_RUN или EXPANDED_WALK
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    // Шторка программы не маршрут, а состояние формы
+    var showProgram by rememberSaveable { mutableStateOf(false) }
     val settings = input.toSettings()
     val error = settings.validate()
     val selectedWeek = presetWeekOf(settings)
@@ -186,8 +191,7 @@ fun SettingsContent(
         AppTopBar(
             title = stringResource(R.string.app_name),
             actions = {
-                // Шторка программы подключается вместе с её появлением, пока кнопка ничего не делает
-                IconButton(onClick = {}) {
+                IconButton(onClick = { showProgram = true }) {
                     Icon(
                         imageVector = Icons.Outlined.DateRange,
                         contentDescription = stringResource(R.string.preset_title),
@@ -224,10 +228,6 @@ fun SettingsContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            PresetChips(
-                selectedWeek = selectedWeek,
-                onSelect = { input = SettingsInput.from(it.settings) },
-            )
             SegmentCard(
                 label = stringResource(R.string.segment_run),
                 isRun = true,
@@ -288,54 +288,120 @@ fun SettingsContent(
             }
         }
     }
+
+    if (showProgram) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val scope = rememberCoroutineScope()
+        ModalBottomSheet(
+            onDismissRequest = { showProgram = false },
+            sheetState = sheetState,
+        ) {
+            ProgramSheetContent(
+                selectedWeek = selectedWeek,
+                onSelect = { preset ->
+                    input = SettingsInput.from(preset.settings)
+                    // Флаг снимается только после скрытия, чтобы не разойтись с состоянием шторки
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) showProgram = false
+                    }
+                },
+            )
+        }
+    }
 }
 
-/**
- * Ряд недель программы. На экран помещается 3–4 чипа, поэтому при первом показе формы ряд
- * один раз прокручивается к подсвеченному чипу. Флаг в [rememberSaveable] не даёт повторить
- * прокрутку после поворота и возврата с других экранов, иначе она перебила бы позицию,
- * которую выбрал пользователь. При ручной правке и выборе ряд не прокручивается.
- */
-@OptIn(ExperimentalFoundationApi::class)
+/** Список недель программы в шторке. Выбранная неделя на фоне `secondaryContainer` с галочкой. */
 @Composable
-private fun PresetChips(
+private fun ProgramSheetContent(
     selectedWeek: Int?,
     onSelect: (WorkoutPreset) -> Unit,
 ) {
-    val selectedRequester = remember { BringIntoViewRequester() }
-    var scrolledToSelected by rememberSaveable { mutableStateOf(false) }
+    val runLabel = stringResource(R.string.segment_run)
+    val walkLabel = stringResource(R.string.segment_walk)
+    val minLabel = stringResource(R.string.minutes_short)
+    val secLabel = stringResource(R.string.seconds_short)
 
-    LaunchedEffect(Unit) {
-        if (scrolledToSelected) return@LaunchedEffect
-        scrolledToSelected = true
-        if (selectedWeek == null) return@LaunchedEffect
-        // Ждём следующий кадр: прокрутить можно только к уже размещённому чипу
-        withFrameNanos { }
-        selectedRequester.bringIntoView()
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
+            .padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(
             text = stringResource(R.string.preset_title),
-            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.titleLarge,
         )
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            WORKOUT_PRESETS.forEach { preset ->
-                val selected = selectedWeek == preset.week
-                FilterChip(
-                    selected = selected,
-                    onClick = { onSelect(preset) },
-                    label = { Text(stringResource(R.string.preset_week, preset.week)) },
-                    modifier = if (selected) {
-                        Modifier.bringIntoViewRequester(selectedRequester)
-                    } else {
-                        Modifier
-                    },
-                )
-            }
+        WORKOUT_PRESETS.forEach { preset ->
+            val selected = selectedWeek == preset.week
+            val row = presetRowText(
+                preset = preset,
+                weekTitle = stringResource(R.string.preset_week, preset.week),
+                runLabel = runLabel,
+                walkLabel = walkLabel,
+                minLabel = minLabel,
+                secLabel = secLabel,
+            )
+            PresetRow(
+                title = row.title,
+                details = row.details,
+                total = row.total,
+                selected = selected,
+                onClick = { onSelect(preset) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PresetRow(
+    title: String,
+    details: String,
+    total: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .then(if (selected) Modifier.background(colors.secondaryContainer) else Modifier)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        val textColor = if (selected) colors.onSecondaryContainer else colors.onSurface
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium, color = textColor)
+            Text(
+                text = details,
+                style = MaterialTheme.typography.bodyMedium.merge(TabularNumbers),
+                color = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
+            )
+        }
+        // Общее время в одну строку и без weight: колонка слева сжимается первой
+        Text(
+            text = total,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            style = MaterialTheme.typography.titleSmall.merge(TabularNumbers),
+            color = textColor,
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                tint = colors.onSecondaryContainer,
+            )
+        } else {
+            // Место под галочку держится всегда, чтобы общее время не прыгало
+            Box(Modifier.size(24.dp))
         }
     }
 }
