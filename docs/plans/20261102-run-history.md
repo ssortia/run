@@ -191,10 +191,10 @@ fun runRecordOrNull(
 - [x] run tests - must pass before next task
 
 ### Task 7: Verify acceptance criteria
-- [ ] verify all requirements from Overview are implemented
-- [ ] проверить по коду контракт сервиса: `startForeground` первым, `START_NOT_STICKY`, `Idle` последним в `onDestroy`, `job` не обнуляется
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify all requirements from Overview are implemented
+- [x] проверить по коду контракт сервиса: `startForeground` первым, `START_NOT_STICKY`, `Idle` последним в `onDestroy`, `job` не обнуляется
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 8: [Final] Update documentation
 
