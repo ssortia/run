@@ -7,7 +7,9 @@ import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.presetWeekOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsInputTest {
@@ -114,7 +116,7 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `нажатие на чип подсвечивает его неделю`() {
+    fun `настройки недели программы распознаются как её неделя`() {
         WORKOUT_PRESETS.forEach {
             assertEquals(it.week, presetWeekOf(SettingsInput.from(it.settings).toSettings()))
         }
@@ -145,5 +147,64 @@ class SettingsInputTest {
         val saved = with(SettingsInputSaver) { SaverScope { true }.save(original) }
 
         assertEquals(original, SettingsInputSaver.restore(saved!!))
+    }
+
+    @Test
+    fun `шаг повторов прибавляет и вычитает`() {
+        assertEquals("8", stepRounds("7", 1))
+        assertEquals("6", stepRounds("7", -1))
+        assertTrue(canDecreaseRounds("7"))
+        assertTrue(canIncreaseRounds("7"))
+    }
+
+    @Test
+    fun `пустое поле повторов считается одним повтором`() {
+        assertEquals("2", stepRounds("", 1))
+        assertEquals("1", stepRounds("", -1))
+        assertFalse(canDecreaseRounds(""))
+        assertTrue(canIncreaseRounds(""))
+    }
+
+    @Test
+    fun `ноль повторов считается одним повтором`() {
+        assertEquals("2", stepRounds("0", 1))
+        assertFalse(canDecreaseRounds("0"))
+    }
+
+    @Test
+    fun `меньше одного повтора не уходит`() {
+        assertEquals("1", stepRounds("1", -1))
+        assertFalse(canDecreaseRounds("1"))
+        assertTrue(canIncreaseRounds("1"))
+    }
+
+    @Test
+    fun `больше максимума повторов не уходит`() {
+        assertEquals("99", stepRounds("99", 1))
+        assertFalse(canIncreaseRounds("99"))
+        assertTrue(canDecreaseRounds("99"))
+    }
+
+    @Test
+    fun `значение вне диапазона сначала прижимается к максимуму`() {
+        assertEquals("98", stepRounds("150", -1))
+        assertFalse(canIncreaseRounds("150"))
+    }
+
+    @Test
+    fun `число больше Int прижимается без переполнения`() {
+        assertEquals("98", stepRounds("99999999999", -1))
+        assertEquals("99", stepRounds("99999999999", 1))
+    }
+
+    @Test
+    fun `неделя 11 без ходьбы ставит ходьбу на 0 и проходит проверку`() {
+        val week11 = WORKOUT_PRESETS.first { it.week == 11 }.settings
+        val input = SettingsInput.from(week11)
+        assertEquals("0", input.walkMin)
+        assertEquals("0", input.walkSec)
+        assertEquals("0:00", segmentTimeText(parseField(input.walkMin), parseField(input.walkSec)))
+        assertNull(input.toSettings().validate())
+        assertEquals(11, presetWeekOf(input.toSettings()))
     }
 }

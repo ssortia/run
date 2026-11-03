@@ -1,6 +1,7 @@
 package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -60,7 +62,7 @@ fun ActiveContent(
             TimerText(formatTime(position.remainingMs))
             Text(
                 text = stringResource(R.string.round_progress, position.round, state.rounds),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge.merge(TabularNumbers),
             )
             soundWarningRes(state.soundFailed, state.soundMuted)?.let { WarningText(it) }
         },
@@ -75,17 +77,19 @@ fun ActiveContent(
                 // В половине экрана «Продолжить» не помещается в titleLarge с обычными отступами
                 val rowStyle = MaterialTheme.typography.titleMedium
                 val rowPadding = PaddingValues(horizontal = 8.dp)
-                InvertedButton(
+                TimerButton(
                     text = stringResource(R.string.button_stop),
                     colors = colors,
+                    filled = false,
                     onClick = onStop,
                     textStyle = rowStyle,
                     contentPadding = rowPadding,
                     modifier = Modifier.weight(1f),
                 )
-                InvertedButton(
+                TimerButton(
                     text = stringResource(pauseButtonRes(state.paused)),
                     colors = colors,
+                    filled = true,
                     onClick = if (state.paused) onResume else onPause,
                     textStyle = rowStyle,
                     contentPadding = rowPadding,
@@ -118,9 +122,10 @@ fun CountdownContent(
             soundWarningRes(state.soundFailed, state.soundMuted)?.let { WarningText(it) }
         },
         bottom = {
-            InvertedButton(
+            TimerButton(
                 text = stringResource(R.string.button_stop),
                 colors = colors,
+                filled = false,
                 onClick = onStop,
                 textStyle = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.fillMaxWidth(),
@@ -171,11 +176,9 @@ private fun TimerText(text: String) {
     Text(
         text = text,
         // Цифры одной ширины: время не дрожит при смене секунд
-        style = MaterialTheme.typography.displayLarge.copy(
-            fontSize = 88.sp,
-            lineHeight = 104.sp,
-            fontFeatureSettings = "tnum",
-        ),
+        style = MaterialTheme.typography.displayLarge
+            .copy(fontSize = 88.sp, lineHeight = 104.sp)
+            .merge(TabularNumbers),
         maxLines = 1,
         softWrap = false,
     )
@@ -212,33 +215,57 @@ internal fun WarningText(@StringRes textRes: Int, modifier: Modifier = Modifier)
     )
 }
 
+/** Прозрачность недоступной залитой кнопки: «Пауза» после финального сигнала. */
+private const val DISABLED_ALPHA = 0.5f
+
+/**
+ * Кнопка на цветном фоне отрезка. Залитая кнопка меняет цвета отрезка местами, обведённая
+ * пишет текст цветом отрезка по его фону. Контраст пары симметричен, поэтому проверки
+ * в ThemeTest хватает обоим вариантам; рамка того же цвета, что и текст. Недоступной бывает
+ * только залитая кнопка, «Стоп» доступен всегда.
+ */
 @Composable
-private fun InvertedButton(
+private fun TimerButton(
     text: String,
     colors: SegmentColors,
+    filled: Boolean,
     onClick: () -> Unit,
     textStyle: TextStyle,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     enabled: Boolean = true,
 ) {
-    // Цвета поменяны местами: контраст этой пары проверен в ThemeTest
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = colors.content,
-            contentColor = colors.background,
-            disabledContainerColor = colors.content.copy(alpha = 0.5f),
-            disabledContentColor = colors.background,
-        ),
-        contentPadding = contentPadding,
-        modifier = modifier.height(64.dp),
-    ) {
+    val buttonModifier = modifier.height(64.dp)
+    val shape = MaterialTheme.shapes.large
+    val label: @Composable () -> Unit = {
         Text(
             text = text,
             style = textStyle,
             maxLines = 1,
         )
+    }
+    if (filled) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.content,
+                contentColor = colors.background,
+                disabledContainerColor = colors.content.copy(alpha = DISABLED_ALPHA),
+                disabledContentColor = colors.background,
+            ),
+            contentPadding = contentPadding,
+            modifier = buttonModifier,
+        ) { label() }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            shape = shape,
+            border = BorderStroke(2.dp, colors.content),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.content),
+            contentPadding = contentPadding,
+            modifier = buttonModifier,
+        ) { label() }
     }
 }

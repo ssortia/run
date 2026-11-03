@@ -39,6 +39,8 @@ ksp {
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.compose.material3:material3")
+    // Иконки берутся из BOM явно, а не транзитивно через material3
+    implementation("androidx.compose.material:material-icons-core")
     // Версия закреплена: на её поведение ServiceCompat опирается предупреждение InlinedApi в CLAUDE.md
     implementation("androidx.core:core:1.13.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

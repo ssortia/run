@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class ThemeTest {
     private fun active(isRun: Boolean) = WorkoutState.Active(
@@ -36,13 +37,85 @@ class ThemeTest {
         }
     }
 
+    /** Тон цвета в градусах 0…360, как в HSV. У `Color` в Compose его нет. */
+    private fun hue(color: Color): Float {
+        val r = color.red
+        val g = color.green
+        val b = color.blue
+        val max = maxOf(r, g, b)
+        val delta = max - minOf(r, g, b)
+        if (delta == 0f) return 0f
+        val h = when (max) {
+            r -> 60f * (((g - b) / delta) % 6f)
+            g -> 60f * ((b - r) / delta + 2f)
+            else -> 60f * ((r - g) / delta + 4f)
+        }
+        return (h + 360f) % 360f
+    }
+
+    private fun hueDistance(a: Color, b: Color): Float {
+        val d = abs(hue(a) - hue(b))
+        return minOf(d, 360f - d)
+    }
+
+    // Прежде бег и ходьба различались по яркости (контраст фонов ≥ 3:1). Зелёный и синий палитры
+    // «Изумруд» выбрал пользователь, контраст между ними 1,53:1 в светлой теме и 2,3:1 в тёмной,
+    // поэтому проверяется оттенок: смену отрезка видно по цвету и по надписи «Бег» / «Ходьба».
+    // Разница тонов этих цветов 45°, порог 40° ловит случайный сдвиг одного из них к другому
     @Test
-    fun `бег и ходьба различаются по яркости в обеих темах`() {
+    fun `бег и ходьба различаются оттенком в обеих темах`() {
         for (darkTheme in listOf(false, true)) {
             val run = segmentColors(isRun = true, darkTheme).background
             val walk = segmentColors(isRun = false, darkTheme).background
 
-            assertTrue("контраст отрезков: тёмная тема $darkTheme", contrast(run, walk) >= 3f)
+            assertTrue("разница тонов отрезков: тёмная тема $darkTheme", hueDistance(run, walk) >= 40f)
+        }
+    }
+
+    @Test
+    fun `текст на акценте читается в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст onPrimary: тёмная тема $darkTheme",
+                contrast(scheme.primary, scheme.onPrimary) >= 4.5f,
+            )
+        }
+    }
+
+    // primary — цвет текста и значков акцента на карточках, диалогах и шторке: кнопки диалога
+    // удаления, время раскрытой карточки, галочка завершённой пробежки. «Старт» и экран бега
+    // залиты цветами бега, их проверяет тест фона отрезка
+    @Test
+    fun `акцент читается как текст на карточках и диалогах в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+            val surfaces = mapOf(
+                "surfaceContainerLow" to scheme.surfaceContainerLow,
+                "surfaceContainer" to scheme.surfaceContainer,
+                "surfaceContainerHigh" to scheme.surfaceContainerHigh,
+            )
+            for ((name, surface) in surfaces) {
+                assertTrue(
+                    "контраст primary на $name: тёмная тема $darkTheme",
+                    contrast(scheme.primary, surface) >= 4.5f,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `точка отрезка видна на карточке в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            for (isRun in listOf(false, true)) {
+                val marker = segmentColors(isRun, darkTheme).marker
+
+                assertTrue(
+                    "контраст точки: тёмная тема $darkTheme, бег $isRun",
+                    contrast(marker, appColorScheme(darkTheme).surfaceContainer) >= 3f,
+                )
+            }
         }
     }
 
@@ -53,14 +126,15 @@ class ThemeTest {
     }
 
     @Test
-    fun `на тёмном фоне ходьбы в светлой теме значки светлые`() {
-        assertFalse(darkStatusIcons(active(isRun = false), darkTheme = false))
-    }
-
-    @Test
-    fun `на ярком фоне бега значки тёмные в обеих темах`() {
-        assertTrue(darkStatusIcons(active(isRun = true), darkTheme = false))
-        assertTrue(darkStatusIcons(active(isRun = true), darkTheme = true))
+    fun `на беге и ходьбе значки светлые в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            for (isRun in listOf(false, true)) {
+                assertFalse(
+                    "значки: тёмная тема $darkTheme, бег $isRun",
+                    darkStatusIcons(active(isRun), darkTheme),
+                )
+            }
+        }
     }
 
     @Test
