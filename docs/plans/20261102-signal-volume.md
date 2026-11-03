@@ -224,10 +224,10 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 - [x] запустить тесты, они должны пройти
 
 ### Task 5: Проверка критериев приёмки
-- [ ] проверить по коду: все создания `Beeper` передают громкость, `USAGE_ALARM` не осталось в `Beeper.kt`
-- [ ] проверить по коду: контракт сервиса из `CLAUDE.md` не нарушен, окончательно ресурсы и фокус освобождает только `onDestroy`, между сигналами `Beeper` сам возвращает фокус по таймеру
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] проверить по коду: все создания `Beeper` передают громкость, `USAGE_ALARM` не осталось в `Beeper.kt`
+- [x] проверить по коду: контракт сервиса из `CLAUDE.md` не нарушен, окончательно ресурсы и фокус освобождает только `onDestroy`, между сигналами `Beeper` сам возвращает фокус по таймеру
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 6: [Final] Обновить документацию
 
