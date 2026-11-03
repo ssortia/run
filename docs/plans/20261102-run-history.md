@@ -169,10 +169,10 @@ fun runRecordOrNull(
 - Create: `app/src/main/java/com/ssortia/runtimer/ui/HistoryContent.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить `HistoryContent`: список на `LazyColumn`, пустое состояние, кнопка возврата
-- [ ] добавить диалог подтверждения удаления, в `rememberSaveable` хранить `pendingDeleteId`, данные брать из списка по `id`
-- [ ] добавить строки на русском
-- [ ] run tests - must pass before next task
+- [x] добавить `HistoryContent`: список на `LazyColumn`, пустое состояние, кнопка возврата
+- [x] добавить диалог подтверждения удаления, в `rememberSaveable` хранить `pendingDeleteId`, данные брать из списка по `id`
+- [x] добавить строки на русском
+- [x] run tests - must pass before next task
 
 ### Task 6: Навигация и кнопка «История»
 
