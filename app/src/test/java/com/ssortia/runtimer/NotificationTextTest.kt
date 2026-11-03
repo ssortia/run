@@ -59,7 +59,7 @@ class NotificationTextTest {
 
     @Test
     fun `финальная позиция показывает ноль`() {
-        val position = tickAt(WorkoutSettings().toWorkout(), 1_560_000, 12).state.position
+        val position = tickAt(WorkoutSettings(2, 0, 2, 0, 7).toWorkout(), 1_560_000, 12).state.position
 
         assertEquals("Бег · 0:00 · Повтор 7/7", text(position))
     }

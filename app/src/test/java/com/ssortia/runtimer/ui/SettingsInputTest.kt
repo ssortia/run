@@ -198,13 +198,13 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `неделя 11 без ходьбы ставит ходьбу на 0 и проходит проверку`() {
-        val week11 = WORKOUT_PRESETS.first { it.week == 11 }.settings
-        val input = SettingsInput.from(week11)
+    fun `неделя 10 без ходьбы ставит ходьбу на 0 и проходит проверку`() {
+        val week10 = WORKOUT_PRESETS.first { it.week == 10 }.settings
+        val input = SettingsInput.from(week10)
         assertEquals("0", input.walkMin)
         assertEquals("0", input.walkSec)
         assertEquals("0:00", segmentTimeText(parseField(input.walkMin), parseField(input.walkSec)))
         assertNull(input.toSettings().validate())
-        assertEquals(11, presetWeekOf(input.toSettings()))
+        assertEquals(10, presetWeekOf(input.toSettings()))
     }
 }

@@ -190,7 +190,7 @@ class WorkoutStateTest {
         assertEquals(30_000L, workout.totalMs)
         assertEquals(40_000L, Workout(10, 5, 3).totalMs)
         assertEquals(3_000L, Workout(3, 2, 1).totalMs)
-        assertEquals(1_560_000L, WorkoutSettings().toWorkout().totalMs)
+        assertEquals(1_560_000L, WorkoutSettings(2, 0, 2, 0, 7).toWorkout().totalMs)
     }
 
     @Test

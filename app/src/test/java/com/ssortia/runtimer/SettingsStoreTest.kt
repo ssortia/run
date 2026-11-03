@@ -13,7 +13,7 @@ class SettingsStoreTest {
 
     @Test
     fun `при первом запуске настройки равны значениям по умолчанию`() {
-        assertEquals(WorkoutSettings(2, 0, 2, 0, 7), store.load())
+        assertEquals(WorkoutSettings(1, 0, 2, 0, 7), store.load())
     }
 
     @Test

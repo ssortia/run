@@ -6,7 +6,7 @@ const val MAX_ROUNDS = 99
 
 /** Настройки в том виде, в каком их вводит пользователь. */
 data class WorkoutSettings(
-    val runMin: Int = 2,
+    val runMin: Int = 1,
     val runSec: Int = 0,
     val walkMin: Int = 2,
     val walkSec: Int = 0,

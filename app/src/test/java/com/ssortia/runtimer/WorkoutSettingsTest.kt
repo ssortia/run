@@ -6,16 +6,16 @@ import org.junit.Test
 
 class WorkoutSettingsTest {
     @Test
-    fun `значения по умолчанию 2 2 7 верны`() {
+    fun `значения по умолчанию 1 2 7 верны`() {
         val settings = WorkoutSettings()
 
-        assertEquals(WorkoutSettings(2, 0, 2, 0, 7), settings)
+        assertEquals(WorkoutSettings(1, 0, 2, 0, 7), settings)
         assertNull(settings.validate())
     }
 
     @Test
     fun `пример 2 2 7 даёт 13 отрезков и 26 минут`() {
-        val workout = WorkoutSettings().toWorkout()
+        val workout = WorkoutSettings(2, 0, 2, 0, 7).toWorkout()
 
         assertEquals(12, workout.at(1_559_999)?.index)
         assertNull(workout.at(1_560_000))
