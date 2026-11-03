@@ -176,14 +176,14 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 **Files:**
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 
-- [ ] добавить `ACTION_PAUSE`, `ACTION_RESUME`, `pauseIntent()`, `resumeIntent()`
-- [ ] перевести `runLoop` на `WorkoutClock`, созданный после отсчёта от `startedAt`, и передавать `paused` в `tickAt`
-- [ ] добавить `handlePauseAction` в ветку `job != null`, не меняя порядок с `startForeground`
-- [ ] снимать wake lock на паузе и брать заново на `remainingAt + WAKE_LOCK_MARGIN_MS` при продолжении
-- [ ] брать заголовок для `startForeground` в `onStartCommand` из текущего состояния
-- [ ] обновить KDoc сервиса: на паузе wake lock снимается временно
-- [ ] тестов нет, код только с Android API: логика покрыта в Task 1 и Task 2
-- [ ] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
+- [x] добавить `ACTION_PAUSE`, `ACTION_RESUME`, `pauseIntent()`, `resumeIntent()`
+- [x] перевести `runLoop` на `WorkoutClock`, созданный после отсчёта от `startedAt`, и передавать `paused` в `tickAt`
+- [x] добавить `handlePauseAction` в ветку `job != null`, не меняя порядок с `startForeground`
+- [x] снимать wake lock на паузе и брать заново на `remainingAt + WAKE_LOCK_MARGIN_MS` при продолжении
+- [x] брать заголовок для `startForeground` в `onStartCommand` из текущего состояния
+- [x] обновить KDoc сервиса: на паузе wake lock снимается временно
+- [x] тестов нет, код только с Android API: логика покрыта в Task 1 и Task 2
+- [x] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
 
 ### Task 4: Кнопки паузы на экране тренировки
 

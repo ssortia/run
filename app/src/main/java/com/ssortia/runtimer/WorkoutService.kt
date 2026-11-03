@@ -28,7 +28,10 @@ import kotlinx.coroutines.launch
  * поэтому после [onDestroy] цикл уже не может подать сигнал или обновить уведомление.
  *
  * Завершение одно на все пути: «Стоп» вызывает stopService(), в том числе во время отсчёта,
- * финал вызывает stopSelf(), ресурсы освобождает только [onDestroy].
+ * финал вызывает stopSelf(), ресурсы освобождает только [onDestroy]. Единственное исключение:
+ * на паузе wake lock снимается временно и берётся заново при продолжении.
+ *
+ * Команды паузы приходят обычными интентами через startService() и безопасны при повторе.
  */
 class WorkoutService : Service() {
     private val scope = MainScope()
@@ -36,6 +39,8 @@ class WorkoutService : Service() {
     // Остаётся заполненным и после финала: до onDestroy новый запрос не должен запустить тренировку
     private var job: Job? = null
     private var beeper: Beeper? = null
+    // Создаётся после отсчёта, команда паузы может прийти раньше
+    private var clock: WorkoutClock? = null
     private var shownText: String? = null
 
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
@@ -65,10 +70,16 @@ class WorkoutService : Service() {
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
-            buildNotification(getString(R.string.app_name)),
+            // Цикл обновляет уведомление только при смене текста, а на паузе текст не меняется
+            buildNotification(
+                (state.value as? WorkoutState.Active)?.let(::textFor) ?: getString(R.string.app_name),
+            ),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
-        if (job != null) return START_NOT_STICKY
+        if (job != null) {
+            handlePauseAction(intent?.action)
+            return START_NOT_STICKY
+        }
 
         val workout = intent?.toWorkout()
         val delayMs = intent?.toStartDelayMs()
@@ -78,6 +89,23 @@ class WorkoutService : Service() {
         }
         startWorkout(workout, delayMs)
         return START_NOT_STICKY
+    }
+
+    // Пауза в финальном хвосте игнорируется часами: время уже дошло до totalMs
+    private fun handlePauseAction(action: String?) {
+        val clock = clock ?: return
+        val now = SystemClock.elapsedRealtime()
+        when (action) {
+            ACTION_PAUSE -> {
+                clock.pause(now)
+                // На паузе процессору не над чем работать, а таймаут истёк бы на долгой паузе
+                if (clock.isPaused && wakeLock.isHeld) wakeLock.release()
+            }
+            ACTION_RESUME -> if (clock.isPaused) {
+                clock.resume(now)
+                wakeLock.acquire(clock.remainingAt(now) + WAKE_LOCK_MARGIN_MS)
+            }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -107,16 +135,19 @@ class WorkoutService : Service() {
             beeper?.play(Signal.START)
         }
 
+        // Создаётся после отсчёта: до старта прошедшее время было бы отрицательным
+        val clock = WorkoutClock(workout.totalMs, startedAt).also { this.clock = it }
         var previousIndex: Int? = null
 
         while (true) {
-            val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+            val elapsedMs = clock.elapsedAt(SystemClock.elapsedRealtime())
             val tick = tickAt(
                 workout,
                 elapsedMs,
                 previousIndex,
                 soundFailed = soundFailed,
                 soundMuted = audioManager.isMediaMuted(),
+                paused = clock.isPaused,
             )
             _state.value = tick.state
             showNotification(textFor(tick.state))
@@ -199,6 +230,8 @@ class WorkoutService : Service() {
         private const val EXTRA_WALK_SEC = "walkSec"
         private const val EXTRA_ROUNDS = "rounds"
         private const val EXTRA_START_DELAY_SEC = "startDelaySec"
+        private const val ACTION_PAUSE = "com.ssortia.runtimer.action.PAUSE"
+        private const val ACTION_RESUME = "com.ssortia.runtimer.action.RESUME"
 
         private val _state = MutableStateFlow<WorkoutState>(WorkoutState.Idle)
         val state: StateFlow<WorkoutState> = _state.asStateFlow()
@@ -210,5 +243,13 @@ class WorkoutService : Service() {
                 .putExtra(EXTRA_WALK_SEC, workout.walkSec)
                 .putExtra(EXTRA_ROUNDS, workout.rounds)
                 .putExtra(EXTRA_START_DELAY_SEC, startDelaySec)
+
+        /** Команда паузы для startService(). Без активной тренировки сервис её отклонит. */
+        fun pauseIntent(context: Context): Intent =
+            Intent(context, WorkoutService::class.java).setAction(ACTION_PAUSE)
+
+        /** Команда продолжения для startService(). */
+        fun resumeIntent(context: Context): Intent =
+            Intent(context, WorkoutService::class.java).setAction(ACTION_RESUME)
     }
 }
