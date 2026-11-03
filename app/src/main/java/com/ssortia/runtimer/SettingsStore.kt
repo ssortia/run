@@ -64,12 +64,12 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
-    /** Приглушение музыки заранее хранится отдельно от тренировки и по умолчанию включено. */
-    fun loadDuckAhead(): Boolean = prefs.getBoolean(KEY_DUCK_AHEAD, DEFAULT_DUCK_AHEAD)
+    /** Приглушение музыки сигналами хранится отдельно от тренировки и по умолчанию включено. */
+    fun loadDuckMusic(): Boolean = prefs.getBoolean(KEY_DUCK_MUSIC, DEFAULT_DUCK_MUSIC)
 
-    fun saveDuckAhead(enabled: Boolean) {
+    fun saveDuckMusic(enabled: Boolean) {
         prefs.edit()
-            .putBoolean(KEY_DUCK_AHEAD, enabled)
+            .putBoolean(KEY_DUCK_MUSIC, enabled)
             .apply()
     }
 
@@ -83,6 +83,8 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_START_DELAY_SEC = "start_delay_sec"
         const val KEY_SIGNAL_VOLUME = "signal_volume"
         const val KEY_VIBRATION = "vibration"
-        const val KEY_DUCK_AHEAD = "duck_ahead"
+        // Прежнее имя ключа: настройка начиналась как «Приглушать музыку заранее», и сохранённое
+        // значение не должно сбрасываться
+        const val KEY_DUCK_MUSIC = "duck_ahead"
     }
 }

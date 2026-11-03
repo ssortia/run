@@ -49,8 +49,8 @@ fun AppSettingsContent(
     onVolumeChange: (Int) -> Unit,
     loadVibration: () -> Boolean,
     onVibrationChange: (Boolean) -> Unit,
-    loadDuckAhead: () -> Boolean,
-    onDuckAheadChange: (Boolean) -> Unit,
+    loadDuckMusic: () -> Boolean,
+    onDuckMusicChange: (Boolean) -> Unit,
     loadStartDelay: () -> Int,
     onStartDelayChange: (Int) -> Unit,
     onBack: () -> Unit,
@@ -58,7 +58,7 @@ fun AppSettingsContent(
 ) {
     var volume by remember { mutableFloatStateOf(loadVolume().toFloat()) }
     var vibration by remember { mutableStateOf(loadVibration()) }
-    var duckAhead by remember { mutableStateOf(loadDuckAhead()) }
+    var duckMusic by remember { mutableStateOf(loadDuckMusic()) }
     var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
     Column(
@@ -92,11 +92,11 @@ fun AppSettingsContent(
         )
 
         SwitchSettingRow(
-            label = stringResource(R.string.setting_duck_ahead),
-            checked = duckAhead,
+            label = stringResource(R.string.setting_duck_music),
+            checked = duckMusic,
             onCheckedChange = {
-                duckAhead = it
-                onDuckAheadChange(it)
+                duckMusic = it
+                onDuckMusicChange(it)
             },
         )
 

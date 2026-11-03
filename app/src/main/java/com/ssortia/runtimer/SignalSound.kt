@@ -9,7 +9,7 @@ const val FINISH_TAIL_MS = 300L
 // заранее, и к моменту сигнала музыка уже тише
 const val DUCK_AHEAD_MS = 1_000L
 
-const val DEFAULT_DUCK_AHEAD = true
+const val DEFAULT_DUCK_MUSIC = true
 
 // Длительности звуков из res/raw: по ним держится фокус и ждёт финал, а сами файлы читаются
 // только с Android API. SignalFilesTest сверяет константы с файлами
@@ -18,19 +18,19 @@ const val FINISH_SOUND_MS = 1240L
 
 /**
  * Пора ли приглушать музыку: до ближайшего сигнала осталось не больше [DUCK_AHEAD_MS].
- * На паузе время стоит, и музыка должна звучать в полную громкость. При выключенной [duckAhead]
+ * На паузе время стоит, и музыка должна звучать в полную громкость. При выключенной [duckMusic]
  * всегда `false`; передавайте её именованным аргументом, рядом стоит булев [paused].
  */
-fun shouldDuck(msToSignal: Long, duckAhead: Boolean, paused: Boolean = false): Boolean =
-    duckAhead && !paused && msToSignal <= DUCK_AHEAD_MS
+fun shouldDuck(msToSignal: Long, duckMusic: Boolean, paused: Boolean = false): Boolean =
+    duckMusic && !paused && msToSignal <= DUCK_AHEAD_MS
 
 /**
  * Пора ли приглушать музыку сразу после продолжения: до конца отрезка, а с ним до сигнала,
  * осталось не больше [DUCK_AHEAD_MS]. Цикл сервиса проверил бы это только на следующем шаге.
- * После конца тренировки сигналов больше нет. При выключенной настройке [duckAhead] всегда `false`.
+ * После конца тренировки сигналов больше нет. При выключенной настройке [duckMusic] всегда `false`.
  */
-fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long, duckAhead: Boolean): Boolean =
-    workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs, duckAhead = duckAhead) } ?: false
+fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long, duckMusic: Boolean): Boolean =
+    workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs, duckMusic = duckMusic) } ?: false
 
 /** Длительность звука сигнала. Старт звучит как смена отрезка. */
 fun soundDurationMs(signal: Signal): Long = when (signal) {

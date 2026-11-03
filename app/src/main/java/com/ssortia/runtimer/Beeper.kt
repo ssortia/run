@@ -23,10 +23,10 @@ fun AudioManager.isMediaMuted(): Boolean = getStreamVolume(AudioManager.STREAM_M
  * сигнала и следуют системной громкости, поэтому итоговая громкость равна [volumePercent],
  * умноженной на громкость канала.
  *
- * Аудиофокус берётся заранее через [duck], если сервис его вызывает (настройка «Приглушать музыку
- * заранее»), иначе его берёт [play] в момент сигнала. После сигнала фокус возвращается по таймеру
- * через [soundWithTailMs], окончательно его отпускает [release]. Все методы вызываются только
- * из главного потока.
+ * Аудиофокус берётся заранее через [duck] и держится до сигнала, [play] переводит его на таймер
+ * возврата через [soundWithTailMs], окончательно его отпускает [release]. При выключенном
+ * [duckMusic] (настройка «Приглушать музыку») фокус не берётся вовсе, и сигнал звучит поверх
+ * музыки в полную громкость. Все методы вызываются только из главного потока.
  *
  * Готовятся только [signals]: чтение файлов из `res/raw` и создание дорожек идут
  * в конструкторе, в главном потоке, поэтому пробному сигналу незачем готовить все три.
@@ -35,6 +35,7 @@ class Beeper(
     private val audioManager: AudioManager,
     private val resources: Resources,
     private val volumePercent: Int,
+    private val duckMusic: Boolean,
     signals: Collection<Signal> = Signal.entries,
 ) {
     // ATTRIBUTES объявлены в companion object: tracks заполняется при создании объекта,
@@ -78,7 +79,7 @@ class Beeper(
             track.stop()
             val reloaded = track.reloadStaticData()
             if (reloaded == AudioTrack.SUCCESS) {
-                requestFocus(signal)
+                if (duckMusic) requestFocus(signal)
                 track.play()
             } else {
                 Log.w(TAG, "Сигнал $signal не проигран: reloadStaticData вернул $reloaded")
@@ -96,11 +97,11 @@ class Beeper(
      * до [play] или [stopDucking]. Повторный вызов ничего не меняет. Таймер возврата после
      * прошлого сигнала снимается: на коротких отрезках музыка остаётся приглушённой.
      *
-     * Без готовых сигналов музыку приглушать незачем. При отказе в фокусе [holding] не ставится,
-     * и следующий вызов запросит фокус снова.
+     * Без готовых сигналов и при выключенном [duckMusic] музыку приглушать незачем. При отказе
+     * в фокусе [holding] не ставится, и следующий вызов запросит фокус снова.
      */
     fun duck() {
-        if (released || holding || !isReady) return
+        if (released || holding || !duckMusic || !isReady) return
         handler.removeCallbacks(abandonFocus)
         holding = requestFocusLogged("заранее")
     }

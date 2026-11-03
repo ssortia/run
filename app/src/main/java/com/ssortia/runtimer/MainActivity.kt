@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,
-                    loadDuckAhead = store::loadDuckAhead,
+                    loadDuckMusic = store::loadDuckMusic,
                     loadStartDelay = store::loadStartDelaySec,
                     runs = runs,
                     showBackgroundWarning = !ignoringBatteryOptimizations,
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onVolumeChange = ::saveVolumeAndPreview,
                     onVibrationChange = store::saveVibration,
-                    onDuckAheadChange = store::saveDuckAhead,
+                    onDuckMusicChange = store::saveDuckMusic,
                     onStartDelayChange = store::saveStartDelaySec,
                     onDeleteRun = { id -> RunHistory.delete(applicationContext, id) },
                     onOpenAppDetails = ::openAppDetails,
@@ -163,7 +163,7 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, R.string.warning_muted, Toast.LENGTH_SHORT).show()
         }
         // Готовится только INTERVAL: дорожки создаются в главном потоке
-        val beeper = Beeper(audioManager, resources, percent, setOf(Signal.INTERVAL))
+        val beeper = Beeper(audioManager, resources, percent, store.loadDuckMusic(), setOf(Signal.INTERVAL))
         if (!beeper.isReady) Log.w(TAG, "Пробный сигнал не подготовлен")
         beeper.play(Signal.INTERVAL)
         previewBeeper = beeper

@@ -32,18 +32,18 @@ class SignalSoundTest {
 
     @Test
     fun `музыка приглушается за секунду до сигнала`() {
-        assertFalse(shouldDuck(1_001, duckAhead = true))
-        assertTrue(shouldDuck(1_000, duckAhead = true))
-        assertTrue(shouldDuck(1, duckAhead = true))
-        assertTrue(shouldDuck(0, duckAhead = true))
+        assertFalse(shouldDuck(1_001, duckMusic = true))
+        assertTrue(shouldDuck(1_000, duckMusic = true))
+        assertTrue(shouldDuck(1, duckMusic = true))
+        assertTrue(shouldDuck(0, duckMusic = true))
         // В конце отсчёта время до старта может уйти в минус
-        assertTrue(shouldDuck(-1, duckAhead = true))
+        assertTrue(shouldDuck(-1, duckMusic = true))
     }
 
     @Test
     fun `на паузе музыка не приглушается`() {
-        assertFalse(shouldDuck(500, duckAhead = true, paused = true))
-        assertTrue(shouldDuck(500, duckAhead = true, paused = false))
+        assertFalse(shouldDuck(500, duckMusic = true, paused = true))
+        assertTrue(shouldDuck(500, duckMusic = true, paused = false))
     }
 
     @Test
@@ -51,27 +51,27 @@ class SignalSoundTest {
         // Бег 60 с, ходьба 30 с, 2 повтора: сигналы на 60 с, 90 с и финал на 150 с
         val workout = Workout(runSec = 60, walkSec = 30, rounds = 2)
 
-        assertFalse(shouldDuckAfterResume(workout, 58_999, duckAhead = true))
-        assertTrue(shouldDuckAfterResume(workout, 59_000, duckAhead = true))
-        assertTrue(shouldDuckAfterResume(workout, 59_500, duckAhead = true))
+        assertFalse(shouldDuckAfterResume(workout, 58_999, duckMusic = true))
+        assertTrue(shouldDuckAfterResume(workout, 59_000, duckMusic = true))
+        assertTrue(shouldDuckAfterResume(workout, 59_500, duckMusic = true))
         // Ходьба кончается сигналом так же, как бег
-        assertTrue(shouldDuckAfterResume(workout, 89_500, duckAhead = true))
-        assertTrue(shouldDuckAfterResume(workout, 149_500, duckAhead = true))
-        assertFalse(shouldDuckAfterResume(workout, 60_000, duckAhead = true))
+        assertTrue(shouldDuckAfterResume(workout, 89_500, duckMusic = true))
+        assertTrue(shouldDuckAfterResume(workout, 149_500, duckMusic = true))
+        assertFalse(shouldDuckAfterResume(workout, 60_000, duckMusic = true))
     }
 
     @Test
     fun `после конца тренировки музыка не приглушается`() {
         val workout = Workout(runSec = 60, walkSec = 30, rounds = 2)
 
-        assertFalse(shouldDuckAfterResume(workout, 150_000, duckAhead = true))
-        assertFalse(shouldDuckAfterResume(workout, 151_000, duckAhead = true))
+        assertFalse(shouldDuckAfterResume(workout, 150_000, duckMusic = true))
+        assertFalse(shouldDuckAfterResume(workout, 151_000, duckMusic = true))
     }
 
     @Test
     fun `при выключенной настройке музыка заранее не приглушается`() {
-        assertFalse(shouldDuck(0, duckAhead = false))
-        assertFalse(shouldDuck(-1, duckAhead = false))
+        assertFalse(shouldDuck(0, duckMusic = false))
+        assertFalse(shouldDuck(-1, duckMusic = false))
     }
 
     @Test
@@ -79,9 +79,9 @@ class SignalSoundTest {
         val workout = Workout(runSec = 60, walkSec = 30, rounds = 2)
 
         // В этих точках при включённой настройке музыка приглушилась бы
-        assertFalse(shouldDuckAfterResume(workout, 59_000, duckAhead = false))
-        assertFalse(shouldDuckAfterResume(workout, 59_500, duckAhead = false))
-        assertFalse(shouldDuckAfterResume(workout, 89_500, duckAhead = false))
-        assertFalse(shouldDuckAfterResume(workout, 149_500, duckAhead = false))
+        assertFalse(shouldDuckAfterResume(workout, 59_000, duckMusic = false))
+        assertFalse(shouldDuckAfterResume(workout, 59_500, duckMusic = false))
+        assertFalse(shouldDuckAfterResume(workout, 89_500, duckMusic = false))
+        assertFalse(shouldDuckAfterResume(workout, 149_500, duckMusic = false))
     }
 }

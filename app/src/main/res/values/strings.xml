@@ -20,7 +20,7 @@
     <string name="button_cancel">Отмена</string>
     <string name="button_open_app_details">Настройки батареи</string>
     <string name="setting_vibration">Вибрация</string>
-    <string name="setting_duck_ahead">Приглушать музыку заранее</string>
+    <string name="setting_duck_music">Приглушать музыку</string>
     <string name="setting_start_delay">Задержка старта: %1$d с</string>
     <string name="segment_paused">%1$s · пауза</string>
     <string name="countdown_label">Старт через</string>

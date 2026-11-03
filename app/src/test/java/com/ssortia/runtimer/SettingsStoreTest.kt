@@ -204,53 +204,53 @@ class SettingsStoreTest {
 
         store.save(settings)
         store.saveSignalVolume(40)
-        store.saveDuckAhead(true)
+        store.saveDuckMusic(true)
         store.saveStartDelaySec(20)
         store.saveVibration(false)
 
         // Запись вибрации не меняет остальные настройки
         assertEquals(settings, store.load())
         assertEquals(40, store.loadSignalVolume())
-        assertTrue(store.loadDuckAhead())
+        assertTrue(store.loadDuckMusic())
         assertEquals(20, store.loadStartDelaySec())
 
         // Запись остальных настроек не меняет вибрацию
         store.save(WorkoutSettings())
         store.saveSignalVolume(60)
-        store.saveDuckAhead(true)
+        store.saveDuckMusic(true)
         store.saveStartDelaySec(10)
 
         assertFalse(store.loadVibration())
     }
 
     @Test
-    fun `приглушение заранее по умолчанию включено`() {
-        assertTrue(DEFAULT_DUCK_AHEAD)
-        assertEquals(DEFAULT_DUCK_AHEAD, store.loadDuckAhead())
+    fun `приглушение музыки по умолчанию включено`() {
+        assertTrue(DEFAULT_DUCK_MUSIC)
+        assertEquals(DEFAULT_DUCK_MUSIC, store.loadDuckMusic())
     }
 
     @Test
-    fun `сохранённое приглушение заранее читается обратно`() {
-        store.saveDuckAhead(false)
+    fun `сохранённое приглушение музыки читается обратно`() {
+        store.saveDuckMusic(false)
 
-        assertFalse(store.loadDuckAhead())
-        assertFalse(SettingsStore(prefs).loadDuckAhead())
+        assertFalse(store.loadDuckMusic())
+        assertFalse(SettingsStore(prefs).loadDuckMusic())
 
-        store.saveDuckAhead(true)
+        store.saveDuckMusic(true)
 
-        assertTrue(store.loadDuckAhead())
-        assertTrue(SettingsStore(prefs).loadDuckAhead())
+        assertTrue(store.loadDuckMusic())
+        assertTrue(SettingsStore(prefs).loadDuckMusic())
     }
 
     @Test
-    fun `приглушение заранее не зависит от остальных настроек`() {
+    fun `приглушение музыки не зависит от остальных настроек`() {
         val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
 
         store.save(settings)
         store.saveSignalVolume(40)
         store.saveVibration(false)
         store.saveStartDelaySec(20)
-        store.saveDuckAhead(false)
+        store.saveDuckMusic(false)
 
         // Запись приглушения не меняет остальные настройки
         assertEquals(settings, store.load())
@@ -265,7 +265,7 @@ class SettingsStoreTest {
         store.saveVibration(true)
         store.saveStartDelaySec(10)
 
-        assertFalse(store.loadDuckAhead())
+        assertFalse(store.loadDuckMusic())
     }
 
     /** Хранит значения в памяти, поддерживает только то, что нужно настройкам. */
