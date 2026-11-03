@@ -1,17 +1,25 @@
 package com.ssortia.runtimer.ui
 
-import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
+import kotlinx.coroutines.flow.Flow
+
+private const val ROUTE_SETTINGS = "settings"
+private const val ROUTE_APP_SETTINGS = "app_settings"
+private const val ROUTE_HISTORY = "history"
 
 @Composable
 fun WorkoutScreen(
@@ -20,44 +28,65 @@ fun WorkoutScreen(
     loadVolume: () -> Int,
     loadVibration: () -> Boolean,
     loadStartDelay: () -> Int,
+    runs: Flow<List<RunRecord>>,
     onStart: (WorkoutSettings) -> Unit,
     onVolumeChange: (Int) -> Unit,
     onVibrationChange: (Boolean) -> Unit,
     onStartDelayChange: (Int) -> Unit,
+    onDeleteRun: (Long) -> Unit,
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
 ) {
     when (state) {
         WorkoutState.Idle -> {
-            // remember внутри ветки: при каждом возврате в Idle настройки читаются заново
-            val initial = remember { loadSettings() }
-            // Переход без библиотеки навигации: флаг переживает поворот, но не тренировку
-            var showAppSettings by rememberSaveable { mutableStateOf(false) }
-            // Без держателя rememberSaveable формы теряет несохранённые правки, пока открыт
-            // экран настроек. Создаётся в ветке Idle: после тренировки форма читается заново
-            val formState = rememberSaveableStateHolder()
-
-            if (showAppSettings) {
-                BackHandler { showAppSettings = false }
-                AppSettingsContent(
-                    loadVolume = loadVolume,
-                    onVolumeChange = onVolumeChange,
-                    loadVibration = loadVibration,
-                    onVibrationChange = onVibrationChange,
-                    loadStartDelay = loadStartDelay,
-                    onStartDelayChange = onStartDelayChange,
-                    onBack = { showAppSettings = false },
-                    modifier = Modifier.safeDrawingPadding(),
-                )
-            } else {
-                formState.SaveableStateProvider("form") {
+            // Контроллер создаётся в ветке Idle: при старте тренировки ветка покидает композицию,
+            // стек сбрасывается, и после тренировки открывается форма
+            val navController = rememberNavController()
+            NavHost(
+                navController = navController,
+                startDestination = ROUTE_SETTINGS,
+                // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
+                // глотал бы нажатия
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
+                modifier = Modifier.safeDrawingPadding(),
+            ) {
+                composable(ROUTE_SETTINGS) {
+                    // Настройки читаются при создании маршрута: после тренировки стека нет, и форма
+                    // берёт сохранённые значения. Несохранённые правки, пока открыт другой экран,
+                    // хранит rememberSaveable записи стека
+                    val initial = remember { loadSettings() }
                     SettingsContent(
                         initial = initial,
                         onStart = onStart,
-                        onOpenSettings = { showAppSettings = true },
-                        // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
-                        modifier = Modifier.safeDrawingPadding(),
+                        onOpenSettings = dropUnlessResumed {
+                            navController.navigate(ROUTE_APP_SETTINGS)
+                        },
+                        onOpenHistory = dropUnlessResumed {
+                            navController.navigate(ROUTE_HISTORY)
+                        },
+                    )
+                }
+                composable(ROUTE_APP_SETTINGS) {
+                    AppSettingsContent(
+                        loadVolume = loadVolume,
+                        onVolumeChange = onVolumeChange,
+                        loadVibration = loadVibration,
+                        onVibrationChange = onVibrationChange,
+                        loadStartDelay = loadStartDelay,
+                        onStartDelayChange = onStartDelayChange,
+                        onBack = dropUnlessResumed { navController.popBackStack() },
+                    )
+                }
+                composable(ROUTE_HISTORY) {
+                    // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
+                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                    HistoryContent(
+                        records = records,
+                        onDelete = onDeleteRun,
+                        onBack = dropUnlessResumed { navController.popBackStack() },
                     )
                 }
             }

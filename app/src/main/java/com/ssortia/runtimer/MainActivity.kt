@@ -41,6 +41,8 @@ fun abandonsPermissionRequest(pending: Boolean, changingConfigurations: Boolean)
 
 class MainActivity : ComponentActivity() {
     private val store by lazy { SettingsStore(this) }
+    // Один поток на activity: вызов в setContent создавал бы новый Flow при рекомпозиции
+    private val runs by lazy { RunHistory.runs(applicationContext) }
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
 
     // Пробный сигнал ползунка. Громкость задаётся только конструктором, поэтому на каждое
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,
                     loadStartDelay = store::loadStartDelaySec,
+                    runs = runs,
                     onStart = { settings ->
                         store.save(settings)
                         when {
@@ -118,6 +121,7 @@ class MainActivity : ComponentActivity() {
                     onVolumeChange = ::saveVolumeAndPreview,
                     onVibrationChange = store::saveVibration,
                     onStartDelayChange = store::saveStartDelaySec,
+                    onDeleteRun = { id -> RunHistory.delete(applicationContext, id) },
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                     onPause = { sendCommand(WorkoutService.pauseIntent(this)) },
                     onResume = { sendCommand(WorkoutService.resumeIntent(this)) },

@@ -182,13 +182,13 @@ fun runRecordOrNull(
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/AppSettingsContent.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 
-- [ ] заменить в ветке `Idle` флаг `showAppSettings`, `BackHandler` и `rememberSaveableStateHolder()` на `rememberNavController()` и `NavHost` с маршрутами `settings` (стартовый), `app_settings` и `history`
-- [ ] отключить анимации `NavHost`, перенести на него `Modifier.safeDrawingPadding()` вместе с комментарием про клавиатуру, убрать модификатор с экранов
-- [ ] перенести `SettingsContent` в маршрут `settings` вместе с `remember { loadSettings() }`, обновить комментарий: настройки читаются при создании маршрута, правки формы хранит стек навигации
-- [ ] перенести `AppSettingsContent` в маршрут `app_settings` без изменения параметров, `onBack` вести на `popBackStack()`
-- [ ] добавить на форму кнопку «История» в одной строке с «Настройками» (`onOpenHistory`, обе кнопки с `weight(1f)`), все колбэки переходов и возврата обернуть в `dropUnlessResumed`
-- [ ] объявить в `MainActivity` `runs by lazy` и передать в `WorkoutScreen` поток записей и колбэк удаления
-- [ ] run tests - must pass before next task
+- [x] заменить в ветке `Idle` флаг `showAppSettings`, `BackHandler` и `rememberSaveableStateHolder()` на `rememberNavController()` и `NavHost` с маршрутами `settings` (стартовый), `app_settings` и `history`
+- [x] отключить анимации `NavHost`, перенести на него `Modifier.safeDrawingPadding()` вместе с комментарием про клавиатуру, убрать модификатор с экранов
+- [x] перенести `SettingsContent` в маршрут `settings` вместе с `remember { loadSettings() }`, обновить комментарий: настройки читаются при создании маршрута, правки формы хранит стек навигации
+- [x] перенести `AppSettingsContent` в маршрут `app_settings` без изменения параметров, `onBack` вести на `popBackStack()`
+- [x] добавить на форму кнопку «История» в одной строке с «Настройками» (`onOpenHistory`, обе кнопки с `weight(1f)`), все колбэки переходов и возврата обернуть в `dropUnlessResumed`
+- [x] объявить в `MainActivity` `runs by lazy` и передать в `WorkoutScreen` поток записей и колбэк удаления
+- [x] run tests - must pass before next task
 
 ### Task 7: Verify acceptance criteria
 - [ ] verify all requirements from Overview are implemented

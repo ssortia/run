@@ -118,6 +118,7 @@ fun SettingsContent(
     initial: WorkoutSettings,
     onStart: (WorkoutSettings) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
@@ -191,14 +192,28 @@ fun SettingsContent(
             )
         }
 
-        TextButton(
-            onClick = onOpenSettings,
+        Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(R.string.button_settings),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            TextButton(
+                onClick = onOpenHistory,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = stringResource(R.string.button_history),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            TextButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = stringResource(R.string.button_settings),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
         }
     }
 }
@@ -206,7 +221,7 @@ fun SettingsContent(
 /**
  * Ряд недель программы. На экран помещается 3–4 чипа, поэтому при первом показе формы ряд
  * один раз прокручивается к подсвеченному чипу. Флаг в [rememberSaveable] не даёт повторить
- * прокрутку после поворота и возврата из настроек приложения, иначе она перебила бы позицию,
+ * прокрутку после поворота и возврата с других экранов, иначе она перебила бы позицию,
  * которую выбрал пользователь. При ручной правке и выборе ряд не прокручивается.
  */
 @OptIn(ExperimentalFoundationApi::class)
