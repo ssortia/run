@@ -93,7 +93,7 @@ fun runRecordOrNull(
 - Порядок в `onDestroy`: `scope.cancel()`, сборка записи и вызов сохранения, затем прежние шаги, `Idle` последним. Сборка идёт в главном потоке после отмены цикла, поэтому состояние не изменится.
 - Сохранение: `insert` в отдельной области `CoroutineScope(SupervisorJob() + Dispatchers.IO)`. `SQLiteException` ловится и пишется в лог: сбой записи не должен ронять приложение после пробежки.
 - Запись защищена отдельным `PARTIAL_WAKE_LOCK` с таймаутом 10 с. После `onDestroy` основной wake lock и foreground уже сняты, и при заблокированном экране процесс мог бы уснуть до конца записи, особенно первой, когда база ещё открывается. Lock создаётся с `setReferenceCounted(false)`, а в `finally` отпускается только при `isHeld`: иначе после срабатывания таймаута `release()` бросил бы `RuntimeException("WakeLock under-locked")` в корутине без обработчика, и процесс упал бы уже после пробежки. `acquire` вызывается в `onDestroy` до снятия основного wake lock, чтобы между ними не было окна, в котором процессор может уснуть.
-- Единственный экземпляр базы лежит в `by lazy` внутри `object` (синхронизирован по умолчанию) и берётся в вызывающем потоке до `launch`: `MainActivity` и сервис обращаются к нему из разных потоков, и наивный синглтон мог бы создать две базы.
+- Единственный экземпляр базы строится в `@Synchronized` функции внутри `object RunHistory` (не `by lazy`: нужен контекст) и берётся в вызывающем потоке до `launch`: `MainActivity` и сервис обращаются к нему из разных потоков, и наивный синглтон мог бы создать две базы.
 - Чтение списка: `.catch` на потоке пишет `SQLiteException` в лог и отдаёт пустой список. `IllegalStateException` от Room не ловится, при смене схемы это ошибка разработки.
 - DAO: `runs(): Flow<List<RunRecord>>` с `ORDER BY startedAtMs DESC`, `insert`, `delete(id)`.
 - База: `RunDatabase` версии 1, `exportSchema = true`, схема в `app/schemas/` через `ksp { arg("room.schemaLocation", "$projectDir/schemas") }` и лежит в git. Gradle-плагин `androidx.room` не подключаем: аргумента KSP достаточно, а плагин добавил бы ещё одну версию, которую надо держать в соответствии с Room. `fallbackToDestructiveMigration` не включаем.
@@ -145,12 +145,13 @@ fun runRecordOrNull(
 - Create: `app/src/main/java/com/ssortia/runtimer/RunDatabase.kt`
 - Create: `app/schemas/com.ssortia.runtimer.RunDatabase/1.json`
 
-- [ ] описать DAO и `RunDatabase` с единственным экземпляром в `by lazy` внутри `object`
-- [ ] добавить сохранение и удаление в собственной области корутин, экземпляр базы брать до `launch`, `SQLiteException` писать в лог
-- [ ] защитить сохранение отдельным wake lock с `setReferenceCounted(false)` и таймаутом 10 с, в `finally` отпускать только при `isHeld`
-- [ ] добавить `.catch` с логом на поток записей
-- [ ] собрать проект и добавить в git сгенерированную схему
-- [ ] run tests - must pass before next task
+- [x] описать DAO и `RunDatabase` с единственным экземпляром в `by lazy` внутри `object`
+  - ⚠️ вместо `by lazy` экземпляр строится в `@Synchronized` функции `object RunHistory`: для `Room.databaseBuilder` нужен контекст, а он приходит только при вызове. Гарантия одной базы та же. API: `RunHistory.runs(context)`, `save(context, record)`, `delete(context, id)`
+- [x] добавить сохранение и удаление в собственной области корутин, экземпляр базы брать до `launch`, `SQLiteException` писать в лог
+- [x] защитить сохранение отдельным wake lock с `setReferenceCounted(false)` и таймаутом 10 с, в `finally` отпускать только при `isHeld`
+- [x] добавить `.catch` с логом на поток записей
+- [x] собрать проект и добавить в git сгенерированную схему
+- [x] run tests - must pass before next task
 
 ### Task 4: Сохранение тренировки в сервисе
 
