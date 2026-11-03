@@ -90,6 +90,20 @@ fun digitsOnly(text: String): String = text.filter { it in '0'..'9' }
 fun parseField(text: String): Int =
     if (text.isEmpty()) 0 else text.toIntOrNull() ?: Int.MAX_VALUE
 
+/** Повторы из поля, прижатые к 1..[MAX_ROUNDS]: пустое поле и 0 считаются одним повтором. */
+private fun clampedRounds(text: String): Int = parseField(text).coerceIn(1, MAX_ROUNDS)
+
+/**
+ * Шаг степпера повторов. Значение прижимается до и после прибавления [delta], поэтому
+ * переполнения нет, а число вне диапазона сразу возвращается в допустимые пределы.
+ */
+fun stepRounds(text: String, delta: Int): String =
+    (clampedRounds(text) + delta).coerceIn(1, MAX_ROUNDS).toString()
+
+fun canDecreaseRounds(text: String): Boolean = clampedRounds(text) > 1
+
+fun canIncreaseRounds(text: String): Boolean = clampedRounds(text) < MAX_ROUNDS
+
 @StringRes
 fun SettingsError.messageRes(): Int = when (this) {
     SettingsError.RUN_ZERO -> R.string.error_run_zero

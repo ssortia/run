@@ -7,7 +7,9 @@ import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.presetWeekOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsInputTest {
@@ -145,5 +147,53 @@ class SettingsInputTest {
         val saved = with(SettingsInputSaver) { SaverScope { true }.save(original) }
 
         assertEquals(original, SettingsInputSaver.restore(saved!!))
+    }
+
+    @Test
+    fun `шаг повторов прибавляет и вычитает`() {
+        assertEquals("8", stepRounds("7", 1))
+        assertEquals("6", stepRounds("7", -1))
+        assertTrue(canDecreaseRounds("7"))
+        assertTrue(canIncreaseRounds("7"))
+    }
+
+    @Test
+    fun `пустое поле повторов считается одним повтором`() {
+        assertEquals("2", stepRounds("", 1))
+        assertEquals("1", stepRounds("", -1))
+        assertFalse(canDecreaseRounds(""))
+        assertTrue(canIncreaseRounds(""))
+    }
+
+    @Test
+    fun `ноль повторов считается одним повтором`() {
+        assertEquals("2", stepRounds("0", 1))
+        assertFalse(canDecreaseRounds("0"))
+    }
+
+    @Test
+    fun `меньше одного повтора не уходит`() {
+        assertEquals("1", stepRounds("1", -1))
+        assertFalse(canDecreaseRounds("1"))
+        assertTrue(canIncreaseRounds("1"))
+    }
+
+    @Test
+    fun `больше максимума повторов не уходит`() {
+        assertEquals("99", stepRounds("99", 1))
+        assertFalse(canIncreaseRounds("99"))
+        assertTrue(canDecreaseRounds("99"))
+    }
+
+    @Test
+    fun `значение вне диапазона сначала прижимается к максимуму`() {
+        assertEquals("98", stepRounds("150", -1))
+        assertFalse(canIncreaseRounds("150"))
+    }
+
+    @Test
+    fun `число больше Int прижимается без переполнения`() {
+        assertEquals("98", stepRounds("99999999999", -1))
+        assertEquals("99", stepRounds("99999999999", 1))
     }
 }
