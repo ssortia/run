@@ -97,6 +97,7 @@ class WorkoutTest {
     fun `нулевые и отрицательные параметры отклоняются`() {
         assertNull(workoutOrNull(runSec = 0, walkSec = 1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = 0, rounds = 2))
+        assertNull(workoutOrNull(runSec = 0, walkSec = 0, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = 0))
         assertNull(workoutOrNull(runSec = -1, walkSec = 1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = -1, rounds = 1))

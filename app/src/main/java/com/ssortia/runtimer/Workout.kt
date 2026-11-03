@@ -41,8 +41,12 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
 }
 
 /** Возвращает null, если параметры не дают корректную тренировку: сервис такой запрос отклоняет. */
-fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
-    if (runSec > 0 && rounds > 0 && (walkSec > 0 || (walkSec == 0 && rounds == 1))) Workout(runSec, walkSec, rounds) else null
+fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? = when {
+    runSec <= 0 || rounds <= 0 || walkSec < 0 -> null
+    // То же правило, что в WorkoutSettings.validate(): без ходьбы можно только при одном повторе
+    walkSec == 0 && rounds > 1 -> null
+    else -> Workout(runSec, walkSec, rounds)
+}
 
 /** Таймаут wake lock страхует от разряда батареи при ошибке в логике. */
 fun wakeLockTimeoutMs(totalMs: Long, delayMs: Long): Long = totalMs + delayMs + WAKE_LOCK_MARGIN_MS

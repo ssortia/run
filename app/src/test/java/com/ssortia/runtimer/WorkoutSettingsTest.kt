@@ -45,7 +45,6 @@ class WorkoutSettingsTest {
 
     @Test
     fun `нулевое время ходьбы`() {
-        assertEquals(SettingsError.WALK_ZERO, WorkoutSettings(walkMin = 0, walkSec = 0).validate())
         assertEquals(
             SettingsError.WALK_ZERO,
             WorkoutSettings(walkMin = 0, walkSec = 0, rounds = 2).validate(),
@@ -54,9 +53,11 @@ class WorkoutSettingsTest {
     }
 
     @Test
-    fun `нулевая ходьба при одном повторе даёт тренировку из одного бега`() {
-        val settings = WorkoutSettings(runMin = 30, runSec = 0, walkMin = 0, walkSec = 0, rounds = 1)
-        assertEquals(Workout(runSec = 1_800, walkSec = 0, rounds = 1), settings.toWorkout())
+    fun `нули при одном повторе дают ошибку бега`() {
+        assertEquals(
+            SettingsError.RUN_ZERO,
+            WorkoutSettings(runMin = 0, runSec = 0, walkMin = 0, walkSec = 0, rounds = 1).validate(),
+        )
     }
 
     @Test

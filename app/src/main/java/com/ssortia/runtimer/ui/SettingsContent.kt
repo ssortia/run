@@ -1,6 +1,7 @@
 package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -26,17 +29,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,8 +51,6 @@ import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.formatTotal
 import com.ssortia.runtimer.presetWeekOf
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -206,25 +204,27 @@ fun SettingsContent(
 }
 
 /**
- * Ряд недель программы. На экран помещается 3–4 чипа, поэтому при первом показе ряд один раз
- * прокручивается к подсвеченному чипу. Позиция чипа известна только после раскладки, отсюда
- * ожидание через [snapshotFlow]. При ручной правке и выборе ряд не прокручивается.
+ * Ряд недель программы. На экран помещается 3–4 чипа, поэтому при первом показе формы ряд
+ * один раз прокручивается к подсвеченному чипу. Флаг в [rememberSaveable] не даёт повторить
+ * прокрутку после поворота и возврата из настроек приложения, иначе она перебила бы позицию,
+ * которую выбрал пользователь. При ручной правке и выборе ряд не прокручивается.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PresetChips(
     selectedWeek: Int?,
     onSelect: (WorkoutPreset) -> Unit,
 ) {
-    val scrollState = rememberScrollState()
-    // Левый край и ширина каждого чипа в координатах содержимого ряда
-    val chipBounds = remember { mutableStateMapOf<Int, Pair<Int, Int>>() }
-    val initialWeek = remember { selectedWeek }
+    val selectedRequester = remember { BringIntoViewRequester() }
+    var scrolledToSelected by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        if (initialWeek == null) return@LaunchedEffect
-        val (left, width) = snapshotFlow { chipBounds[initialWeek] }.filterNotNull().first()
-        // Чип ставится по центру видимой части, scrollTo сам прижимает значение к границам
-        scrollState.scrollTo(left - (scrollState.viewportSize - width) / 2)
+        if (scrolledToSelected) return@LaunchedEffect
+        scrolledToSelected = true
+        if (selectedWeek == null) return@LaunchedEffect
+        // Ждём следующий кадр: прокрутить можно только к уже размещённому чипу
+        withFrameNanos { }
+        selectedRequester.bringIntoView()
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -233,16 +233,19 @@ private fun PresetChips(
             style = MaterialTheme.typography.titleMedium,
         )
         Row(
-            modifier = Modifier.horizontalScroll(scrollState),
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             WORKOUT_PRESETS.forEach { preset ->
+                val selected = selectedWeek == preset.week
                 FilterChip(
-                    selected = selectedWeek == preset.week,
+                    selected = selected,
                     onClick = { onSelect(preset) },
                     label = { Text(stringResource(R.string.preset_week, preset.week)) },
-                    modifier = Modifier.onGloballyPositioned {
-                        chipBounds[preset.week] = it.positionInParent().x.toInt() to it.size.width
+                    modifier = if (selected) {
+                        Modifier.bringIntoViewRequester(selectedRequester)
+                    } else {
+                        Modifier
                     },
                 )
             }

@@ -3,7 +3,9 @@ package com.ssortia.runtimer.ui
 import androidx.compose.runtime.saveable.SaverScope
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
+import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WorkoutSettings
+import com.ssortia.runtimer.presetWeekOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -109,6 +111,13 @@ class SettingsInputTest {
         )
 
         assertEquals(settings, SettingsInput.from(settings).toSettings())
+    }
+
+    @Test
+    fun `нажатие на чип подсвечивает его неделю`() {
+        WORKOUT_PRESETS.forEach {
+            assertEquals(it.week, presetWeekOf(SettingsInput.from(it.settings).toSettings()))
+        }
     }
 
     @Test

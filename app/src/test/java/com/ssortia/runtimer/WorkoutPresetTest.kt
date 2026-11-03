@@ -16,8 +16,20 @@ class WorkoutPresetTest {
     }
 
     @Test
+    fun `сервис принимает каждую неделю`() {
+        WORKOUT_PRESETS.forEach {
+            val workout = it.settings.toWorkout()
+            assertEquals(
+                "неделя ${it.week}",
+                workout,
+                workoutOrNull(workout.runSec, workout.walkSec, workout.rounds),
+            )
+        }
+    }
+
+    @Test
     fun `итоговая длительность недель совпадает с программой`() {
-        // Секунды вписаны числами из таблицы плана, а не вычислены из WORKOUT_PRESETS.
+        // Секунды вписаны числами из таблицы US-13 в USER_STORIES.md, а не вычислены из WORKOUT_PRESETS
         val expectedSec = listOf(
             19 * 60, 26 * 60, 23 * 60, 22 * 60, 22 * 60, 27 * 60,
             19 * 60 + 30, 23 * 60 + 30, 27 * 60, 31 * 60, 30 * 60,
@@ -30,11 +42,8 @@ class WorkoutPresetTest {
     }
 
     @Test
-    fun `точное совпадение возвращает неделю`() {
-        val settings = WorkoutSettings(runMin = 8, runSec = 0, walkMin = 1, walkSec = 30, rounds = 3)
-
-        assertEquals(6, presetWeekOf(settings))
-        assertEquals(11, presetWeekOf(WorkoutSettings(30, 0, 0, 0, 1)))
+    fun `точное совпадение возвращает свою неделю`() {
+        WORKOUT_PRESETS.forEach { assertEquals(it.week, presetWeekOf(it.settings)) }
     }
 
     @Test
