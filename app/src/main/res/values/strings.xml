@@ -29,6 +29,11 @@
     <string name="segment_paused">%1$s · пауза</string>
     <string name="countdown_label">Старт через</string>
     <string name="seconds_short">с</string>
+    <string name="minutes_short">мин</string>
+    <string name="state_expanded">развёрнуто</string>
+    <string name="state_collapsed">свёрнуто</string>
+    <string name="wheel_minutes">%1$s, минуты</string>
+    <string name="wheel_seconds">%1$s, секунды</string>
     <string name="round_progress">Повтор %1$d из %2$d</string>
     <string name="preset_title">Программа</string>
     <string name="preset_week">Неделя %1$d</string>
