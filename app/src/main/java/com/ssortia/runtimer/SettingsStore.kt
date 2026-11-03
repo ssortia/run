@@ -45,7 +45,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
     }
 
     /** Вибрация хранится отдельно от тренировки и по умолчанию включена. */
-    fun loadVibration(): Boolean = prefs.getBoolean(KEY_VIBRATION, true)
+    fun loadVibration(): Boolean = prefs.getBoolean(KEY_VIBRATION, DEFAULT_VIBRATION)
 
     fun saveVibration(enabled: Boolean) {
         prefs.edit()

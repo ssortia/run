@@ -85,13 +85,12 @@ fun ActiveContent(
                     modifier = Modifier.weight(1f),
                 )
                 InvertedButton(
-                    text = stringResource(
-                        if (state.paused) R.string.button_resume else R.string.button_pause,
-                    ),
+                    text = stringResource(pauseButtonRes(state.paused)),
                     colors = colors,
                     onClick = if (state.paused) onResume else onPause,
                     textStyle = rowStyle,
                     contentPadding = rowPadding,
+                    enabled = pauseEnabled(state),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -194,6 +193,16 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
     else -> null
 }
 
+@StringRes
+fun pauseButtonRes(paused: Boolean): Int =
+    if (paused) R.string.button_resume else R.string.button_pause
+
+/**
+ * После финального сигнала сервис ещё доигрывает его с нулевым остатком, а пауза уже не действует.
+ * Нажатие после остановки сервиса создало бы новый экземпляр ради отклонённой команды.
+ */
+fun pauseEnabled(state: WorkoutState.Active): Boolean = state.position.remainingMs > 0
+
 @Composable
 private fun SoundWarning(@StringRes textRes: Int) {
     Text(
@@ -211,13 +220,17 @@ private fun InvertedButton(
     textStyle: TextStyle,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    enabled: Boolean = true,
 ) {
     // Цвета поменяны местами: контраст этой пары проверен в ThemeTest
     Button(
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.content,
             contentColor = colors.background,
+            disabledContainerColor = colors.content.copy(alpha = 0.5f),
+            disabledContentColor = colors.background,
         ),
         contentPadding = contentPadding,
         modifier = modifier.height(64.dp),

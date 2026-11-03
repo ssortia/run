@@ -359,19 +359,62 @@ class WorkoutStateTest {
     fun `признак паузы доходит до состояния`() {
         assertFalse(tickAt(workout, 5_000, 0).state.paused)
         assertTrue(tickAt(workout, 5_000, 0, paused = true).state.paused)
-        assertTrue(tickAt(workout, 30_000, 2, paused = true).state.paused)
+        assertTrue(tickAt(workout, 29_999, 2, paused = true).state.paused)
     }
 
     @Test
-    fun `на паузе в том же отрезке сигнала нет`() {
-        // Время замерло, поэтому шаги на паузе повторяют один и тот же момент
-        val ticks = List(3) { tickAt(workout, 9_900, previousIndex = 0, paused = true) }
+    fun `сигнал и конец не зависят от признака паузы`() {
+        // Паузу делает замершее время, а не флаг: он нужен только экрану и уведомлению
+        for ((elapsed, previous) in listOf(9_900L to 0, 10_100L to 0, 30_000L to 2)) {
+            val running = tickAt(workout, elapsed, previous)
+            val paused = tickAt(workout, elapsed, previous, paused = true)
 
-        ticks.forEach {
-            assertNull(it.signal)
-            assertFalse(it.finished)
-            assertEquals(0, it.state.position.index)
+            assertEquals("$elapsed", running.signal, paused.signal)
+            assertEquals("$elapsed", running.finished, paused.finished)
+            assertEquals("$elapsed", running.state.position, paused.state.position)
         }
+    }
+
+    /**
+     * Повторяет цикл сервиса: шаг каждые [TICK_MS], первый через 100 мс после старта, команды
+     * паузы применяются к часам в свой момент между шагами. Возвращает моменты и сигналы.
+     */
+    private fun simulate(pauseAt: Long, resumeAt: Long): List<Pair<Long, Signal>> {
+        val clock = WorkoutClock(workout.totalMs, startedAt = 0)
+        val signals = mutableListOf<Pair<Long, Signal>>()
+        var previousIndex: Int? = null
+        var paused = false
+        var resumed = false
+        var now = 100L
+        while (true) {
+            if (!paused && pauseAt <= now) clock.pause(pauseAt).also { paused = true }
+            if (!resumed && resumeAt <= now) clock.resume(resumeAt).also { resumed = true }
+            val tick = tickAt(workout, clock.elapsedAt(now), previousIndex, paused = clock.isPaused)
+            tick.signal?.let { signals += now to it }
+            if (tick.finished) return signals
+            previousIndex = tick.state.position.index
+            now += TICK_MS
+        }
+    }
+
+    @Test
+    fun `цикл с паузой внутри отрезка не подаёт сигналов на паузе`() {
+        val signals = simulate(pauseAt = 9_000, resumeAt = 20_000)
+
+        assertEquals(listOf(Signal.INTERVAL, Signal.INTERVAL, Signal.FINISH), signals.map { it.second })
+        assertTrue(signals.all { it.first > 20_000 })
+        // До границы оставалась 1 с, она прошла через 1 с после продолжения, на ближайшем шаге
+        assertEquals(21_100L, signals.first().first)
+    }
+
+    @Test
+    fun `цикл с паузой сразу после границы подаёт сигнал один раз`() {
+        // Граница 10 000 пройдена до паузы, но после последнего шага 9 850
+        val signals = simulate(pauseAt = 10_050, resumeAt = 20_000)
+
+        assertEquals(listOf(Signal.INTERVAL, Signal.INTERVAL, Signal.FINISH), signals.map { it.second })
+        assertEquals(10_100L, signals[0].first)
+        assertTrue(signals.drop(1).all { it.first > 20_000 })
     }
 
     @Test

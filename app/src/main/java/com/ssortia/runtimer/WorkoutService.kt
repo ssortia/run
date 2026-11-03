@@ -73,10 +73,9 @@ class WorkoutService : Service() {
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
-            // Цикл обновляет уведомление только при смене текста, а на паузе текст не меняется
-            buildNotification(
-                (state.value as? WorkoutState.Active)?.let(::textFor) ?: getString(R.string.app_name),
-            ),
+            // Текущий текст, а не заглушка: цикл обновляет уведомление только при смене текста,
+            // а на паузе он не меняется
+            buildNotification(shownText ?: getString(R.string.app_name)),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
         if (job != null) {
@@ -94,19 +93,20 @@ class WorkoutService : Service() {
         return START_NOT_STICKY
     }
 
-    // Пауза в финальном хвосте игнорируется часами: время уже дошло до totalMs
     private fun handlePauseAction(action: String?) {
         val clock = clock ?: return
         val now = SystemClock.elapsedRealtime()
         when (action) {
             ACTION_PAUSE -> {
+                // В финальном хвосте часы паузу не примут: снятие wake lock
+                // растянуло бы ожидание конца сигнала
                 clock.pause(now)
                 // На паузе процессору не над чем работать, а таймаут истёк бы на долгой паузе
                 if (clock.isPaused && wakeLock.isHeld) wakeLock.release()
             }
             ACTION_RESUME -> if (clock.isPaused) {
                 clock.resume(now)
-                wakeLock.acquire(clock.remainingAt(now) + WAKE_LOCK_MARGIN_MS)
+                wakeLock.acquire(wakeLockTimeoutMs(clock.remainingAt(now), delayMs = 0))
             }
         }
     }
@@ -169,8 +169,7 @@ class WorkoutService : Service() {
             delay(TICK_MS)
         }
 
-        // Финальная вибрация длиннее звука, и onDestroy оборвала бы её
-        delay(maxOf(soundDurationMs(Signal.FINISH), vibrationDurationMs(Signal.FINISH)) + FINISH_TAIL_MS)
+        delay(finishWaitMs())
         stopSelf()
     }
 
@@ -256,11 +255,15 @@ class WorkoutService : Service() {
                 .putExtra(EXTRA_ROUNDS, workout.rounds)
                 .putExtra(EXTRA_START_DELAY_SEC, startDelaySec)
 
-        /** Команда паузы для startService(). Без активной тренировки сервис её отклонит. */
+        /**
+         * Команда паузы для startService(). Без активной тренировки сервис её отклонит, но если
+         * экземпляр сервиса уже уничтожен, команда создаст новый, и тот до остановки успеет
+         * показать уведомление «RunTimer».
+         */
         fun pauseIntent(context: Context): Intent =
             Intent(context, WorkoutService::class.java).setAction(ACTION_PAUSE)
 
-        /** Команда продолжения для startService(). */
+        /** Команда продолжения для startService(). Отклоняется так же, как [pauseIntent]. */
         fun resumeIntent(context: Context): Intent =
             Intent(context, WorkoutService::class.java).setAction(ACTION_RESUME)
     }

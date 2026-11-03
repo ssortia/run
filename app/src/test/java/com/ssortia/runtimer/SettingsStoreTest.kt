@@ -135,7 +135,8 @@ class SettingsStoreTest {
 
     @Test
     fun `вибрация по умолчанию включена`() {
-        assertTrue(store.loadVibration())
+        assertTrue(DEFAULT_VIBRATION)
+        assertEquals(DEFAULT_VIBRATION, store.loadVibration())
     }
 
     @Test

@@ -105,4 +105,32 @@ class WorkoutClockTest {
         assertEquals(0L, c.remainingAt(start + 10_000))
         assertEquals(0L, c.remainingAt(start + 50_000))
     }
+
+    @Test
+    fun `пауза до конца сравнивает время без пауз, а не от старта`() {
+        val c = clock()
+        c.pause(start + 3_000)
+        c.resume(start + 8_000)
+        // От старта прошло 12 с, без пауз только 7 с
+        c.pause(start + 12_000)
+        assertTrue(c.isPaused)
+        assertEquals(7_000L, c.elapsedAt(start + 20_000))
+    }
+
+    @Test
+    fun `пауза ровно в конце после продолжения игнорируется`() {
+        val c = clock()
+        c.pause(start + 3_000)
+        c.resume(start + 8_000)
+        c.pause(start + 15_000)
+        assertFalse(c.isPaused)
+    }
+
+    @Test
+    fun `таймаут wake lock после продолжения покрывает остаток и запас`() {
+        val c = clock()
+        c.pause(start + 3_000)
+        c.resume(start + 60_000)
+        assertEquals(7_000L + WAKE_LOCK_MARGIN_MS, wakeLockTimeoutMs(c.remainingAt(start + 60_000), delayMs = 0))
+    }
 }

@@ -12,11 +12,9 @@ import android.util.Log
  * Без вибромотора [play] ничего не делает. [release] сразу прекращает вибрацию.
  */
 class Buzzer(private val vibrator: Vibrator?) {
-    private var released = false
-
     /** Потерянная вибрация не должна останавливать тренировку. */
     fun play(signal: Signal) {
-        if (released || vibrator?.hasVibrator() != true) return
+        if (vibrator?.hasVibrator() != true) return
         try {
             val effect = VibrationEffect.createWaveform(vibrationFor(signal), NO_REPEAT)
             // Перегрузка с AudioAttributes устарела на API 33, но работает, а замена есть только с него
@@ -27,9 +25,7 @@ class Buzzer(private val vibrator: Vibrator?) {
         }
     }
 
-    /** Вызывать можно повторно, после этого [play] ничего не делает. */
     fun release() {
-        released = true
         vibrator?.cancel()
     }
 

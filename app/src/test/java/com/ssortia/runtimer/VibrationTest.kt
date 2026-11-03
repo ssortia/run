@@ -39,6 +39,13 @@ class VibrationTest {
 
     @Test
     fun `длительность равна сумме отрезков паттерна`() {
+        for (signal in Signal.entries) {
+            assertEquals("$signal", vibrationFor(signal).sum(), vibrationDurationMs(signal))
+        }
+    }
+
+    @Test
+    fun `длительности паттернов`() {
         assertEquals(600L, vibrationDurationMs(Signal.START))
         assertEquals(750L, vibrationDurationMs(Signal.INTERVAL))
         assertEquals(1600L, vibrationDurationMs(Signal.FINISH))
@@ -47,5 +54,22 @@ class VibrationTest {
     @Test
     fun `финальная вибрация длиннее обычной`() {
         assertTrue(vibrationDurationMs(Signal.FINISH) > vibrationDurationMs(Signal.INTERVAL))
+    }
+
+    @Test
+    fun `старт один импульс, смена отрезка два, финал три`() {
+        // Импульсы стоят на нечётных местах паттерна
+        fun pulses(signal: Signal) = vibrationFor(signal).size / 2
+
+        assertEquals(1, pulses(Signal.START))
+        assertEquals(2, pulses(Signal.INTERVAL))
+        assertEquals(3, pulses(Signal.FINISH))
+    }
+
+    @Test
+    fun `ожидание после финала покрывает звук и вибрацию с запасом`() {
+        assertTrue(finishWaitMs() >= vibrationDurationMs(Signal.FINISH) + FINISH_TAIL_MS)
+        assertTrue(finishWaitMs() >= soundWithTailMs(Signal.FINISH))
+        assertEquals(1_900L, finishWaitMs())
     }
 }
