@@ -1,16 +1,11 @@
 package com.ssortia.runtimer.ui
 
 import androidx.compose.runtime.saveable.SaverScope
-import com.ssortia.runtimer.MAX_MINUTES
-import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.R
-import com.ssortia.runtimer.SECONDS_WHEEL_STEP
 import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.presetWeekOf
-import com.ssortia.runtimer.wheelIndexOf
-import com.ssortia.runtimer.wheelOptions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -121,7 +116,7 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `выбор недели в шторке отмечает её неделю`() {
+    fun `настройки недели программы распознаются как её неделя`() {
         WORKOUT_PRESETS.forEach {
             assertEquals(it.week, presetWeekOf(SettingsInput.from(it.settings).toSettings()))
         }
@@ -203,14 +198,12 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `неделя 11 без ходьбы ставит барабаны ходьбы на 0 и проходит проверку`() {
+    fun `неделя 11 без ходьбы ставит ходьбу на 0 и проходит проверку`() {
         val week11 = WORKOUT_PRESETS.first { it.week == 11 }.settings
         val input = SettingsInput.from(week11)
-        val walkMin = parseField(input.walkMin)
-        val walkSec = parseField(input.walkSec)
-        assertEquals("0:00", segmentTimeText(walkMin, walkSec))
-        assertEquals(0, wheelIndexOf(wheelOptions(MAX_MINUTES, 1, walkMin), walkMin))
-        assertEquals(0, wheelIndexOf(wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, walkSec), walkSec))
+        assertEquals("0", input.walkMin)
+        assertEquals("0", input.walkSec)
+        assertEquals("0:00", segmentTimeText(parseField(input.walkMin), parseField(input.walkSec)))
         assertNull(input.toSettings().validate())
         assertEquals(11, presetWeekOf(input.toSettings()))
     }

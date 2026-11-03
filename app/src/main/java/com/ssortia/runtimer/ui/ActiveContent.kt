@@ -215,10 +215,14 @@ internal fun WarningText(@StringRes textRes: Int, modifier: Modifier = Modifier)
     )
 }
 
+/** Прозрачность недоступной залитой кнопки: «Пауза» после финального сигнала. */
+private const val DISABLED_ALPHA = 0.5f
+
 /**
  * Кнопка на цветном фоне отрезка. Залитая кнопка меняет цвета отрезка местами, обведённая
  * пишет текст цветом отрезка по его фону. Контраст пары симметричен, поэтому проверки
- * в ThemeTest хватает обоим вариантам; рамка того же цвета, что и текст.
+ * в ThemeTest хватает обоим вариантам; рамка того же цвета, что и текст. Недоступной бывает
+ * только залитая кнопка, «Стоп» доступен всегда.
  */
 @Composable
 private fun TimerButton(
@@ -248,23 +252,18 @@ private fun TimerButton(
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.content,
                 contentColor = colors.background,
-                disabledContainerColor = colors.content.copy(alpha = 0.5f),
+                disabledContainerColor = colors.content.copy(alpha = DISABLED_ALPHA),
                 disabledContentColor = colors.background,
             ),
             contentPadding = contentPadding,
             modifier = buttonModifier,
         ) { label() }
     } else {
-        val borderColor = if (enabled) colors.content else colors.content.copy(alpha = 0.5f)
         OutlinedButton(
             onClick = onClick,
-            enabled = enabled,
             shape = shape,
-            border = BorderStroke(2.dp, borderColor),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = colors.content,
-                disabledContentColor = colors.content.copy(alpha = 0.5f),
-            ),
+            border = BorderStroke(2.dp, colors.content),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.content),
             contentPadding = contentPadding,
             modifier = buttonModifier,
         ) { label() }

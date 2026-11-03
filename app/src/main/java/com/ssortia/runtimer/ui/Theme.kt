@@ -23,19 +23,22 @@ import com.ssortia.runtimer.WorkoutState
  */
 data class SegmentColors(val background: Color, val content: Color, val marker: Color)
 
+// Изумруд и синий палитры «Изумруд». Фон экрана бега и «Старт» в обеих темах [Emerald] с белым
+// текстом. Текст и значки акцента на тёмных карточках рисуются светлым [EmeraldLight]: у [Emerald]
+// на них контраст около 3:1, это меньше 4,5:1 для текста
+private val Emerald = Color(0xFF047857)
+private val EmeraldLight = Color(0xFF34D399)
+private val WalkBlue = Color(0xFF0B4F8A)
+private val EmeraldContainerLight = Color(0xFFE3EFEA)
+private val OnEmeraldContainerLight = Color(0xFF0B2B24)
+private val EmeraldContainerDark = Color(0xFF1F3A33)
+private val OnEmeraldContainerDark = Color(0xFFD1FAE5)
+
 // Бег зелёный, ходьба синяя: отрезки различаются оттенком и надписью, яркость у них близкая
-private val RunLight = SegmentColors(
-    background = Color(0xFF047857),
-    content = Color.White,
-    marker = Color(0xFF047857),
-)
-private val WalkLight = SegmentColors(
-    background = Color(0xFF0B4F8A),
-    content = Color.White,
-    marker = Color(0xFF0B4F8A),
-)
+private val RunLight = SegmentColors(background = Emerald, content = Color.White, marker = Emerald)
+private val WalkLight = SegmentColors(background = WalkBlue, content = Color.White, marker = WalkBlue)
 private val RunDark = SegmentColors(
-    background = Color(0xFF047857),
+    background = Emerald,
     content = Color.White,
     marker = Color(0xFF10B981),
 )
@@ -48,15 +51,15 @@ private val WalkDark = SegmentColors(
 // surfaceTint прозрачный: иначе диалоги и шторка с tonalElevation подмешивают акцент к фону.
 // Фон и surface здесь не задаются, их подставляет RunTimerTheme из colors.xml
 private val LightScheme = lightColorScheme(
-    primary = Color(0xFF047857),
+    primary = Emerald,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE3EFEA),
-    onPrimaryContainer = Color(0xFF0B2B24),
+    primaryContainer = EmeraldContainerLight,
+    onPrimaryContainer = OnEmeraldContainerLight,
     inversePrimary = Color(0xFF6EE7B7),
     secondary = Color(0xFF3F5F55),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3EFEA),
-    onSecondaryContainer = Color(0xFF0B2B24),
+    secondaryContainer = EmeraldContainerLight,
+    onSecondaryContainer = OnEmeraldContainerLight,
     onBackground = Color(0xFF16181B),
     onSurface = Color(0xFF16181B),
     onSurfaceVariant = Color(0xFF5C6066),
@@ -77,16 +80,18 @@ private val LightScheme = lightColorScheme(
     onError = Color.White,
 )
 
+// primary светлый: им M3 рисует текст и значки на карточках (кнопки диалога, Switch, Slider),
+// а залитый «Старт» явно берёт цвета бега из segmentColors
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF047857),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF1F3A33),
-    onPrimaryContainer = Color(0xFFD1FAE5),
-    inversePrimary = Color(0xFF047857),
+    primary = EmeraldLight,
+    onPrimary = Color(0xFF022C22),
+    primaryContainer = EmeraldContainerDark,
+    onPrimaryContainer = OnEmeraldContainerDark,
+    inversePrimary = Emerald,
     secondary = Color(0xFFA7C9BD),
     onSecondary = Color(0xFF10302A),
-    secondaryContainer = Color(0xFF1F3A33),
-    onSecondaryContainer = Color(0xFFD1FAE5),
+    secondaryContainer = EmeraldContainerDark,
+    onSecondaryContainer = OnEmeraldContainerDark,
     onBackground = Color(0xFFECECEA),
     onSurface = Color(0xFFECECEA),
     onSurfaceVariant = Color(0xFFA4A7AD),

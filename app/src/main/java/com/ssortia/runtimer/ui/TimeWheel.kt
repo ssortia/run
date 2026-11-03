@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -31,6 +32,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.wheelIndexOf
+import com.ssortia.runtimer.wheelPick
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
@@ -42,12 +44,14 @@ private const val VISIBLE_ROWS = 3
 /**
  * Барабан выбора числа: видны три строки, выбранная стоит в середине на подложке. Значение
  * фиксируется через [onSelect], когда прокрутка остановилась, а не на каждом кадре: иначе
- * форма пересчитывалась бы на лету и сохраняла промежуточные значения. Нажатие на соседнюю
+ * форма пересчитывалась бы на лету и сохраняла промежуточные значения. Если барабан уходит из
+ * композиции посреди прокрутки (карточку свернули), фиксируется строка в середине. Нажатие на соседнюю
  * строку прокручивает к ней. Барабан не закольцован, отступы сверху и снизу на одну строку
  * дают крайним значениям встать в середину.
  *
  * [value] может не совпадать ни с одним из [options] (неверное сохранённое значение): тогда
  * показывается ближайшее по [wheelIndexOf], а настройка не меняется, пока барабан не прокрутят.
+ * [contentDescription] (например, «Бег, минуты») TalkBack называет у каждой строки вместе с числом.
  */
 @Composable
 fun TimeWheel(
@@ -64,7 +68,7 @@ fun TimeWheel(
     val scope = rememberCoroutineScope()
     val rowPx = with(LocalDensity.current) { WheelRowHeight.toPx() }
     // С отступом в одну строку строка с индексом firstVisibleItemIndex стоит в середине.
-    val centerIndex by remember(listState, options) {
+    val centerIndex by remember(listState, options, rowPx) {
         derivedStateOf {
             val shift = if (listState.firstVisibleItemScrollOffset > rowPx / 2) 1 else 0
             (listState.firstVisibleItemIndex + shift).coerceIn(options.indices)
@@ -72,6 +76,7 @@ fun TimeWheel(
     }
     val currentOnSelect by rememberUpdatedState(onSelect)
     val currentValue by rememberUpdatedState(value)
+    val currentOptions by rememberUpdatedState(options)
 
     LaunchedEffect(listState, options) {
         snapshotFlow { listState.isScrollInProgress }
@@ -79,16 +84,20 @@ fun TimeWheel(
             // Первое значение — состояние покоя при запуске, прокрутки ещё не было.
             .drop(1)
             .filter { !it }
-            .collect {
-                val picked = options[centerIndex]
-                if (picked != options[wheelIndexOf(options, currentValue)]) currentOnSelect(picked)
-            }
+            .collect { wheelPick(options, centerIndex, currentValue)?.let(currentOnSelect) }
     }
     // Значение сменилось снаружи (выбрана неделя программы) или список перестроился после
-    // выбора: барабан встаёт на выбранное, но не мешает идущей прокрутке.
+    // выбора: барабан встаёт на выбранное. scrollToItem прерывает идущую инерцию, иначе после
+    // остановки барабан записал бы своё значение поверх выбранной недели.
     LaunchedEffect(selectedIndex, options) {
-        if (!listState.isScrollInProgress && centerIndex != selectedIndex) {
-            listState.scrollToItem(selectedIndex)
+        if (centerIndex != selectedIndex) listState.scrollToItem(selectedIndex)
+    }
+    // Карточку свернули посреди прокрутки: фиксируется строка в середине. Сравнивается с показанной
+    // строкой, а не с сохранённым значением: неверное сохранённое от сворачивания не меняется
+    DisposableEffect(listState) {
+        onDispose {
+            val shown = wheelIndexOf(currentOptions, currentValue)
+            if (centerIndex != shown) currentOnSelect(currentOptions[centerIndex])
         }
     }
 
@@ -96,8 +105,7 @@ fun TimeWheel(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(WheelRowHeight * VISIBLE_ROWS)
-                .semantics { this.contentDescription = contentDescription },
+                .height(WheelRowHeight * VISIBLE_ROWS),
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -122,7 +130,10 @@ fun TimeWheel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(WheelRowHeight)
-                            .semantics { selected = isCenter }
+                            .semantics {
+                                selected = isCenter
+                                this.contentDescription = "$contentDescription, $option"
+                            }
                             .clickable(role = Role.Button) {
                                 scope.launch { listState.animateScrollToItem(index) }
                             },

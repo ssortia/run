@@ -51,4 +51,14 @@ class PresetRowTextTest {
         assertEquals("60 мин", formatPresetTotal(3_600_000, "мин", "с"))
         assertEquals("125 мин 10 с", formatPresetTotal(7_510_000, "мин", "с"))
     }
+
+    @Test
+    fun `ноль даёт ноль минут`() {
+        assertEquals("0 мин", formatPresetTotal(0, "мин", "с"))
+    }
+
+    @Test
+    fun `отрицательное время прижимается к нулю`() {
+        assertEquals("0 мин", formatPresetTotal(-5_000, "мин", "с"))
+    }
 }

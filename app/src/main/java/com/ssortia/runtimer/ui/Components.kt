@@ -1,14 +1,14 @@
 package com.ssortia.runtimer.ui
 
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +26,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.R
+
+/** Зазор над заголовком группы, кроме первой: отделяет группы карточек друг от друга. */
+val SectionGroupGap = 16.dp
 
 /**
  * Верхняя панель экрана. Отступы от системных панелей уже даёт NavHost (`safeDrawingPadding`),
@@ -47,7 +50,7 @@ fun AppTopBar(
             if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = stringResource(R.string.button_back),
                     )
                 }
@@ -62,11 +65,11 @@ fun AppTopBar(
     )
 }
 
-/** Карточка группы элементов на фоне `surfaceContainer` без тени. */
+/** Карточка группы элементов на фоне `surfaceContainer` без тени. Отступы подходят строкам настроек. */
 @Composable
 fun SectionCard(
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(

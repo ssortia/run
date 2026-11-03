@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class ThemeTest {
     private fun active(isRun: Boolean) = WorkoutState.Active(
@@ -53,7 +54,7 @@ class ThemeTest {
     }
 
     private fun hueDistance(a: Color, b: Color): Float {
-        val d = kotlin.math.abs(hue(a) - hue(b))
+        val d = abs(hue(a) - hue(b))
         return minOf(d, 360f - d)
     }
 
@@ -80,6 +81,27 @@ class ThemeTest {
                 "контраст onPrimary: тёмная тема $darkTheme",
                 contrast(scheme.primary, scheme.onPrimary) >= 4.5f,
             )
+        }
+    }
+
+    // primary — цвет текста и значков акцента на карточках, диалогах и шторке: кнопки диалога
+    // удаления, время раскрытой карточки, галочка завершённой пробежки. «Старт» и экран бега
+    // залиты цветами бега, их проверяет тест фона отрезка
+    @Test
+    fun `акцент читается как текст на карточках и диалогах в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+            val surfaces = mapOf(
+                "surfaceContainerLow" to scheme.surfaceContainerLow,
+                "surfaceContainer" to scheme.surfaceContainer,
+                "surfaceContainerHigh" to scheme.surfaceContainerHigh,
+            )
+            for ((name, surface) in surfaces) {
+                assertTrue(
+                    "контраст primary на $name: тёмная тема $darkTheme",
+                    contrast(scheme.primary, surface) >= 4.5f,
+                )
+            }
         }
     }
 

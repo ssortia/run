@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -34,12 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.RunRowText
 import com.ssortia.runtimer.groupRunsByMonth
-import com.ssortia.runtimer.runDateText
 import com.ssortia.runtimer.runFormatters
 import com.ssortia.runtimer.runMonthTitle
 import com.ssortia.runtimer.runRowText
@@ -85,8 +85,8 @@ fun HistoryContent(
                     for ((index, month) in months.withIndex()) {
                         item(key = "month-${month.yearMonth}") {
                             SectionTitle(
-                                text = runMonthTitle(month.yearMonth, formatters).uppercase(locale),
-                                modifier = if (index > 0) Modifier.padding(top = 16.dp) else Modifier,
+                                text = runMonthTitle(month.yearMonth, formatters),
+                                modifier = if (index > 0) Modifier.padding(top = SectionGroupGap) else Modifier,
                             )
                         }
                         items(month.records, key = { it.id }) { record ->
@@ -104,7 +104,7 @@ fun HistoryContent(
     val pending = pendingDeleteId?.let { id -> records?.firstOrNull { it.id == id } }
     if (pending != null) {
         DeleteDialog(
-            date = runDateText(pending.startedAtMs, formatters),
+            date = runRowText(pending, formatters).date,
             onConfirm = {
                 pendingDeleteId = null
                 onDelete(pending.id)
@@ -151,10 +151,13 @@ private fun EmptyHistory(modifier: Modifier = Modifier) {
     }
 }
 
+private val DayColumnWidth = 40.dp
+
 /**
  * Карточка записи: день и день недели слева, бег и ходьба в две колонки, справа длительность
  * со значком статуса и корзина. Время в колонке выровнено по правому краю с моноширинными
- * цифрами, чтобы «2:00» и «13:00» стояли друг под другом.
+ * цифрами, чтобы «2:00» и «13:00» стояли друг под другом. На узком экране или с крупным шрифтом
+ * первыми сокращаются подписи «Бег» и «Ходьба» с многоточием, время остаётся целым.
  */
 @Composable
 private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
@@ -164,7 +167,7 @@ private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
     SectionCard(contentPadding = PaddingValues(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(
-                modifier = Modifier.width(40.dp),
+                modifier = Modifier.width(DayColumnWidth),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -189,7 +192,8 @@ private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column {
+                    // Колонка подписей измеряется после колонки времени и сжимается первой
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         SegmentLabel(stringResource(R.string.segment_run))
                         if (text.walkTime != null) SegmentLabel(stringResource(R.string.segment_walk))
                     }
@@ -205,7 +209,7 @@ private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall.merge(TabularNumbers),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -217,7 +221,7 @@ private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
                     softWrap = false,
                 )
                 Icon(
-                    imageVector = if (text.completed) Icons.Filled.Check else Icons.Filled.Close,
+                    imageVector = if (text.completed) Icons.Outlined.Check else Icons.Outlined.Close,
                     contentDescription = stringResource(
                         if (text.completed) R.string.history_completed else R.string.history_stopped,
                     ),
@@ -249,6 +253,6 @@ private fun SegmentLabel(text: String) {
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = 1,
-        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
     )
 }

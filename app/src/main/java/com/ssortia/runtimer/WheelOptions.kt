@@ -25,3 +25,11 @@ fun wheelIndexOf(options: List<Int>, value: Int): Int {
     val index = options.binarySearch(value)
     return if (index >= 0) index else (-index - 1).coerceAtMost(options.lastIndex)
 }
+
+/**
+ * Значение, на котором остановился барабан, или null, если настройка не меняется. Сравнивается
+ * с сохранённым [value], а не с показанной строкой: неверное сохранённое значение (120 минут
+ * показаны как 99) остановка на этой строке исправляет.
+ */
+fun wheelPick(options: List<Int>, centerIndex: Int, value: Int): Int? =
+    options[centerIndex].takeIf { it != value }

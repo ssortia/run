@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible
@@ -31,6 +30,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -43,6 +43,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,10 +56,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -71,6 +72,7 @@ import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SECONDS_WHEEL_STEP
 import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WORKOUT_PRESETS
+import com.ssortia.runtimer.PresetRowText
 import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.presetRowText
@@ -160,9 +162,13 @@ internal val SettingsInputSaver = listSaver<SettingsInput, String>(
     restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
 )
 
+/** Отрезок, карточка которого раскрыта. */
+private enum class Segment { RUN, WALK }
 
-private const val EXPANDED_RUN = "run"
-private const val EXPANDED_WALK = "walk"
+// «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
+private val StartButtonHeight = 56.dp
+private val PresetCheckSize = 24.dp
+private val RoundsFieldWidth = 80.dp
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -179,8 +185,8 @@ fun SettingsContent(
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
         mutableStateOf(SettingsInput.from(initial))
     }
-    // Раскрыта не больше одной карточки отрезка: null, EXPANDED_RUN или EXPANDED_WALK
-    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    // Раскрыта не больше одной карточки отрезка, null — обе свёрнуты
+    var expanded by rememberSaveable { mutableStateOf<Segment?>(null) }
     // Шторка программы не маршрут, а состояние формы
     var showProgram by rememberSaveable { mutableStateOf(false) }
     val settings = input.toSettings()
@@ -233,8 +239,8 @@ fun SettingsContent(
                 isRun = true,
                 minutes = input.runMin,
                 seconds = input.runSec,
-                expanded = expanded == EXPANDED_RUN,
-                onToggle = { expanded = if (expanded == EXPANDED_RUN) null else EXPANDED_RUN },
+                expanded = expanded == Segment.RUN,
+                onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
                 onMinutesChange = { input = input.copy(runMin = it.toString()) },
                 onSecondsChange = { input = input.copy(runSec = it.toString()) },
             )
@@ -243,8 +249,8 @@ fun SettingsContent(
                 isRun = false,
                 minutes = input.walkMin,
                 seconds = input.walkSec,
-                expanded = expanded == EXPANDED_WALK,
-                onToggle = { expanded = if (expanded == EXPANDED_WALK) null else EXPANDED_WALK },
+                expanded = expanded == Segment.WALK,
+                onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
                 onMinutesChange = { input = input.copy(walkMin = it.toString()) },
                 onSecondsChange = { input = input.copy(walkSec = it.toString()) },
             )
@@ -273,13 +279,20 @@ fun SettingsContent(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            // Цвета бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих темах
+            // изумрудный с белым текстом
+            val startColors = segmentColors(isRun = true, LocalDarkTheme.current)
             Button(
                 onClick = { onStart(settings) },
                 enabled = error == null,
                 shape = MaterialTheme.shapes.large,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = startColors.background,
+                    contentColor = startColors.content,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(StartButtonHeight),
             ) {
                 Text(
                     text = stringResource(R.string.button_start),
@@ -325,7 +338,6 @@ private fun ProgramSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .navigationBarsPadding()
             .padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -335,8 +347,7 @@ private fun ProgramSheetContent(
             style = MaterialTheme.typography.titleLarge,
         )
         WORKOUT_PRESETS.forEach { preset ->
-            val selected = selectedWeek == preset.week
-            val row = presetRowText(
+            val text = presetRowText(
                 preset = preset,
                 weekTitle = stringResource(R.string.preset_week, preset.week),
                 runLabel = runLabel,
@@ -345,10 +356,8 @@ private fun ProgramSheetContent(
                 secLabel = secLabel,
             )
             PresetRow(
-                title = row.title,
-                details = row.details,
-                total = row.total,
-                selected = selected,
+                text = text,
+                selected = selectedWeek == preset.week,
                 onClick = { onSelect(preset) },
             )
         }
@@ -356,13 +365,7 @@ private fun ProgramSheetContent(
 }
 
 @Composable
-private fun PresetRow(
-    title: String,
-    details: String,
-    total: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun PresetRow(text: PresetRowText, selected: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
@@ -376,17 +379,18 @@ private fun PresetRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val textColor = if (selected) colors.onSecondaryContainer else colors.onSurface
+        val detailsColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, color = textColor)
+            Text(text = text.title, style = MaterialTheme.typography.titleMedium, color = textColor)
             Text(
-                text = details,
+                text = text.details,
                 style = MaterialTheme.typography.bodyMedium.merge(TabularNumbers),
-                color = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
+                color = detailsColor,
             )
         }
         // Общее время в одну строку и без weight: колонка слева сжимается первой
         Text(
-            text = total,
+            text = text.total,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Clip,
@@ -397,11 +401,12 @@ private fun PresetRow(
             Icon(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
+                modifier = Modifier.size(PresetCheckSize),
                 tint = colors.onSecondaryContainer,
             )
         } else {
             // Место под галочку держится всегда, чтобы общее время не прыгало
-            Box(Modifier.size(24.dp))
+            Box(Modifier.size(PresetCheckSize))
         }
     }
 }
@@ -471,7 +476,7 @@ private fun SegmentCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TimeWheel(
-                    options = wheelOptions(MAX_MINUTES, 1, minutesValue),
+                    options = remember(minutesValue) { wheelOptions(MAX_MINUTES, 1, minutesValue) },
                     value = minutesValue,
                     onSelect = onMinutesChange,
                     contentDescription = stringResource(R.string.wheel_minutes, label),
@@ -479,7 +484,9 @@ private fun SegmentCard(
                     modifier = Modifier.weight(1f),
                 )
                 TimeWheel(
-                    options = wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, secondsValue),
+                    options = remember(secondsValue) {
+                        wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, secondsValue)
+                    },
                     value = secondsValue,
                     onSelect = onSecondsChange,
                     contentDescription = stringResource(R.string.wheel_seconds, label),
@@ -496,7 +503,7 @@ private fun SegmentCard(
 @Composable
 private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
     val label = stringResource(R.string.field_rounds)
-    SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+    SectionCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -517,7 +524,7 @@ private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
                 label = label,
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.width(80.dp),
+                modifier = Modifier.width(RoundsFieldWidth),
             )
             StepButton(
                 glyph = "+",

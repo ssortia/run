@@ -1,9 +1,10 @@
 package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
-class TimeWheelTest {
+class WheelOptionsTest {
     @Test
     fun `минуты от 0 до 99 с шагом 1`() {
         assertEquals((0..99).toList(), wheelOptions(MAX_MINUTES, 1, 3))
@@ -66,5 +67,40 @@ class TimeWheelTest {
         assertEquals(99, wheelIndexOf(options, 99))
         assertEquals(99, wheelIndexOf(options, 150))
         assertEquals(0, wheelIndexOf(options, -1))
+    }
+
+    @Test
+    fun `значение между шагами даёт ближайшее не меньшее`() {
+        assertEquals(1, wheelIndexOf(wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, 0), 3))
+    }
+
+    @Test
+    fun `остановка на сохранённом значении настройку не меняет`() {
+        val options = wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, 30)
+        assertNull(wheelPick(options, wheelIndexOf(options, 30), 30))
+    }
+
+    @Test
+    fun `остановка на другом значении выбирает его`() {
+        val options = wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, 30)
+        assertEquals(35, wheelPick(options, 7, 30))
+    }
+
+    @Test
+    fun `остановка на значении не на шаге настройку не меняет`() {
+        val options = wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, 7)
+        assertNull(wheelPick(options, wheelIndexOf(options, 7), 7))
+    }
+
+    @Test
+    fun `остановка на показанном краю исправляет значение больше max`() {
+        val options = wheelOptions(MAX_MINUTES, 1, 120)
+        assertEquals(99, wheelPick(options, wheelIndexOf(options, 120), 120))
+    }
+
+    @Test
+    fun `остановка на показанном нуле исправляет отрицательное значение`() {
+        val options = wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, -5)
+        assertEquals(0, wheelPick(options, wheelIndexOf(options, -5), -5))
     }
 }

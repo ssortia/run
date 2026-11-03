@@ -7,7 +7,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Поля карточки записи истории. [walkTime] равен null, если ходьбы нет (один повтор без ходьбы).
+ * Поля карточки записи истории. [walkTime] равен null, если ходьбы не было: при одном повторе
+ * последняя ходьба не выполняется, даже если её время задано.
  * [date] полная дата старта для диалога удаления и описания корзины.
  */
 data class RunRowText(
@@ -48,10 +49,6 @@ fun runFormatters(zone: ZoneId, locale: Locale): RunFormatters {
     )
 }
 
-/** Полная дата старта: для диалога удаления и описания корзины. */
-fun runDateText(startedAtMs: Long, formatters: RunFormatters): String =
-    formatters.date.format(Instant.ofEpochMilli(startedAtMs))
-
 /** Поля карточки. Длительность округляется вниз до секунды, время отрезков как на форме. */
 fun runRowText(record: RunRecord, formatters: RunFormatters): RunRowText {
     val startedAt = Instant.ofEpochMilli(record.startedAtMs)
@@ -59,7 +56,7 @@ fun runRowText(record: RunRecord, formatters: RunFormatters): RunRowText {
         day = formatters.day.format(startedAt),
         weekday = formatters.weekday.format(startedAt),
         runTime = formatTotal(record.runSec * 1000L),
-        walkTime = if (record.walkSec > 0) formatTotal(record.walkSec * 1000L) else null,
+        walkTime = if (record.walkSec > 0 && record.rounds > 1) formatTotal(record.walkSec * 1000L) else null,
         meta = "×${record.rounds} · ${formatters.time.format(startedAt)}",
         duration = formatElapsed(record.durationMs),
         completed = record.completed,
@@ -68,20 +65,15 @@ fun runRowText(record: RunRecord, formatters: RunFormatters): RunRowText {
 }
 
 /**
- * Группирует уже отсортированные записи по месяцу старта в зоне [zone]. Порядок групп и записей
- * в них сохраняется: соседние записи одного месяца попадают в одну группу.
+ * Группирует записи по месяцу старта в зоне [zone]. Группы идут в порядке первой записи месяца,
+ * записи в них в порядке списка. Месяц даёт одну группу, даже если его записи стоят не подряд:
+ * ключ группы служит ключом строки в `LazyColumn`, и повтор уронил бы экран.
  */
-fun groupRunsByMonth(records: List<RunRecord>, zone: ZoneId): List<RunMonth> {
-    val groups = mutableListOf<Pair<YearMonth, MutableList<RunRecord>>>()
-    for (record in records) {
-        val yearMonth = YearMonth.from(Instant.ofEpochMilli(record.startedAtMs).atZone(zone))
-        val last = groups.lastOrNull()
-        if (last != null && last.first == yearMonth) last.second += record
-        else groups += yearMonth to mutableListOf(record)
-    }
-    return groups.map { (yearMonth, monthRecords) -> RunMonth(yearMonth, monthRecords) }
-}
+fun groupRunsByMonth(records: List<RunRecord>, zone: ZoneId): List<RunMonth> =
+    records
+        .groupBy { YearMonth.from(Instant.ofEpochMilli(it.startedAtMs).atZone(zone)) }
+        .map { (yearMonth, monthRecords) -> RunMonth(yearMonth, monthRecords) }
 
-/** Заголовок группы: «ноябрь 2026». Прописными его делает экран. */
+/** Заголовок группы прописными: «НОЯБРЬ 2026». */
 fun runMonthTitle(yearMonth: YearMonth, formatters: RunFormatters): String =
-    formatters.month.format(yearMonth)
+    formatters.month.format(yearMonth).uppercase(formatters.month.locale)

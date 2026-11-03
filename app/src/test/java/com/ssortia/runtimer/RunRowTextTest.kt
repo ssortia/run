@@ -71,6 +71,14 @@ class RunRowTextTest {
     }
 
     @Test
+    fun `при одном повторе ходьба не показывается, даже если задана`() {
+        val text = row(record(runSec = 1_800, walkSec = 90, rounds = 1))
+
+        assertNull(text.walkTime)
+        assertEquals("×1 · 07:30", text.meta)
+    }
+
+    @Test
     fun `meta содержит повторы и время старта`() {
         assertEquals("×7 · 18:42", row(record(rounds = 7, startedAtMs = at("2026-11-03T18:42:00Z"))).meta)
     }
@@ -104,14 +112,8 @@ class RunRowTextTest {
     }
 
     @Test
-    fun `дата для диалога совпадает с датой карточки`() {
-        assertEquals("3 ноября 2026, 07:30", runDateText(startedAt, formatters()))
-        assertEquals(row(record()).date, runDateText(startedAt, formatters()))
-    }
-
-    @Test
-    fun `заголовок месяца в именительном падеже`() {
-        assertEquals("ноябрь 2026", runMonthTitle(YearMonth.of(2026, 11), formatters()))
+    fun `заголовок месяца в именительном падеже прописными`() {
+        assertEquals("НОЯБРЬ 2026", runMonthTitle(YearMonth.of(2026, 11), formatters()))
     }
 
     @Test
@@ -150,6 +152,21 @@ class RunRowTextTest {
         assertEquals(
             listOf(RunMonth(YearMonth.of(2026, 10), records)),
             groupRunsByMonth(records, ZoneOffset.UTC),
+        )
+    }
+
+    @Test
+    fun `записи месяца не подряд попадают в одну группу`() {
+        val a = record(id = 3, startedAtMs = at("2026-11-20T10:00:00Z"))
+        val b = record(id = 2, startedAtMs = at("2026-10-15T10:00:00Z"))
+        val c = record(id = 1, startedAtMs = at("2026-11-03T10:00:00Z"))
+
+        assertEquals(
+            listOf(
+                RunMonth(YearMonth.of(2026, 11), listOf(a, c)),
+                RunMonth(YearMonth.of(2026, 10), listOf(b)),
+            ),
+            groupRunsByMonth(listOf(a, b, c), ZoneOffset.UTC),
         )
     }
 }

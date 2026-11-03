@@ -2,7 +2,6 @@ package com.ssortia.runtimer.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -80,7 +79,7 @@ fun AppSettingsContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SectionTitle(stringResource(R.string.group_signals))
-            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+            SectionCard {
                 SliderSettingRow(
                     label = stringResource(R.string.setting_volume),
                     value = stringResource(R.string.value_percent, sliderToPercent(volume)),
@@ -110,9 +109,9 @@ fun AppSettingsContent(
 
             SectionTitle(
                 text = stringResource(R.string.group_workout),
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = SectionGroupGap),
             )
-            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+            SectionCard {
                 SliderSettingRow(
                     label = stringResource(R.string.setting_start_delay),
                     value = stringResource(R.string.value_seconds, sliderToStartDelay(startDelay)),
@@ -127,9 +126,9 @@ fun AppSettingsContent(
 
             SectionTitle(
                 text = stringResource(R.string.group_appearance),
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = SectionGroupGap),
             )
-            SectionCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+            SectionCard {
                 Column(Modifier.selectableGroup()) {
                     Text(
                         text = stringResource(R.string.setting_theme),

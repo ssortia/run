@@ -24,7 +24,10 @@ fun presetRowText(
     return PresetRowText(weekTitle, details, formatPresetTotal(workout.totalMs, minLabel, secLabel))
 }
 
-/** Общее время словами: «23 мин», «19 мин 30 с». Часы не выделяются, час пишется как «60 мин». */
+/**
+ * Общее время недели в шторке программы словами: «23 мин», «19 мин 30 с». Часы не выделяются,
+ * час пишется как «60 мин». Остальные форматы времени («м:сс») лежат в `WorkoutState.kt`.
+ */
 fun formatPresetTotal(totalMs: Long, minLabel: String, secLabel: String): String {
     val totalSec = totalMs.coerceAtLeast(0) / 1000
     val minutes = totalSec / 60
