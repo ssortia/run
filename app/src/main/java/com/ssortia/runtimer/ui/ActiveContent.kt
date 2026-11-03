@@ -6,6 +6,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +26,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +39,8 @@ import com.ssortia.runtimer.formatTime
 fun ActiveContent(
     state: WorkoutState.Active,
     onStop: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val position = state.position
@@ -45,10 +50,12 @@ fun ActiveContent(
         colors = colors,
         modifier = modifier,
         center = {
+            val segment = stringResource(
+                if (position.isRun) R.string.segment_run else R.string.segment_walk,
+            )
+            // Пауза отмечается в той же строке: новая строка текста сдвигала бы таймер
             Text(
-                text = stringResource(
-                    if (position.isRun) R.string.segment_run else R.string.segment_walk,
-                ),
+                text = if (state.paused) stringResource(R.string.segment_paused, segment) else segment,
                 style = MaterialTheme.typography.displaySmall,
             )
             TimerText(formatTime(position.remainingMs))
@@ -65,7 +72,29 @@ fun ActiveContent(
                 color = colors.content,
                 trackColor = colors.content.copy(alpha = 0.3f),
             )
-            StopButton(colors, onStop)
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // В половине экрана «Продолжить» не помещается в titleLarge с обычными отступами
+                val rowStyle = MaterialTheme.typography.titleMedium
+                val rowPadding = PaddingValues(horizontal = 8.dp)
+                InvertedButton(
+                    text = stringResource(R.string.button_stop),
+                    colors = colors,
+                    onClick = onStop,
+                    textStyle = rowStyle,
+                    contentPadding = rowPadding,
+                    modifier = Modifier.weight(1f),
+                )
+                InvertedButton(
+                    text = stringResource(
+                        if (state.paused) R.string.button_resume else R.string.button_pause,
+                    ),
+                    colors = colors,
+                    onClick = if (state.paused) onResume else onPause,
+                    textStyle = rowStyle,
+                    contentPadding = rowPadding,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         },
     )
 }
@@ -90,7 +119,15 @@ fun CountdownContent(
             TimerText(state.seconds.toString())
             soundWarningRes(state.soundFailed, state.soundMuted)?.let { SoundWarning(it) }
         },
-        bottom = { StopButton(colors, onStop) },
+        bottom = {
+            InvertedButton(
+                text = stringResource(R.string.button_stop),
+                colors = colors,
+                onClick = onStop,
+                textStyle = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
     )
 }
 
@@ -167,21 +204,28 @@ private fun SoundWarning(@StringRes textRes: Int) {
 }
 
 @Composable
-private fun StopButton(colors: SegmentColors, onStop: () -> Unit) {
+private fun InvertedButton(
+    text: String,
+    colors: SegmentColors,
+    onClick: () -> Unit,
+    textStyle: TextStyle,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+) {
     // Цвета поменяны местами: контраст этой пары проверен в ThemeTest
     Button(
-        onClick = onStop,
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.content,
             contentColor = colors.background,
         ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp),
+        contentPadding = contentPadding,
+        modifier = modifier.height(64.dp),
     ) {
         Text(
-            text = stringResource(R.string.button_stop),
-            style = MaterialTheme.typography.titleLarge,
+            text = text,
+            style = textStyle,
+            maxLines = 1,
         )
     }
 }

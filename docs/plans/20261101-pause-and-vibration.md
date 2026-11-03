@@ -193,12 +193,12 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строки `button_pause`, `button_resume`, `segment_paused`
-- [ ] сделать ряд из кнопок «Стоп» и «Пауза»/«Продолжить» по разделу «Экран тренировки»
-- [ ] показать «Бег · пауза» или «Ходьба · пауза» на паузе
-- [ ] передать `onPause` и `onResume` через `WorkoutScreen` в `MainActivity`, отправлять интенты через `startService()` с перехватом `IllegalStateException`
-- [ ] тестов нет, код только с Compose: контраст кнопок берётся из пары цветов, уже проверенной в `ThemeTest`
-- [ ] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
+- [x] добавить строки `button_pause`, `button_resume`, `segment_paused`
+- [x] сделать ряд из кнопок «Стоп» и «Пауза»/«Продолжить» по разделу «Экран тренировки»
+- [x] показать «Бег · пауза» или «Ходьба · пауза» на паузе
+- [x] передать `onPause` и `onResume` через `WorkoutScreen` в `MainActivity`, отправлять интенты через `startService()` с перехватом `IllegalStateException`
+- [x] тестов нет, код только с Compose: контраст кнопок берётся из пары цветов, уже проверенной в `ThemeTest`
+- [x] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
 
 ### Task 5: Паттерны вибрации и настройка
 

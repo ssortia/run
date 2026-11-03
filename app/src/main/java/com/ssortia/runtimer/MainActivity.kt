@@ -115,6 +115,8 @@ class MainActivity : ComponentActivity() {
                     },
                     onVolumeChange = ::saveVolumeAndPreview,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
+                    onPause = { sendCommand(WorkoutService.pauseIntent(this)) },
+                    onResume = { sendCommand(WorkoutService.resumeIntent(this)) },
                 )
             }
         }
@@ -142,6 +144,15 @@ class MainActivity : ComponentActivity() {
     private fun releasePreview() {
         previewBeeper?.release()
         previewBeeper = null
+    }
+
+    /** Команда паузы или продолжения. Сервис уже на переднем плане, поэтому хватает startService(). */
+    private fun sendCommand(intent: Intent) {
+        try {
+            startService(intent)
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "Система не приняла команду сервису", e)
+        }
     }
 
     private fun notificationsGranted(): Boolean =
