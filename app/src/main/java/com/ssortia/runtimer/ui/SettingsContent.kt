@@ -299,7 +299,7 @@ private fun SegmentFields(
                 Modifier
                     .size(12.dp)
                     .background(
-                        color = segmentColors(isRun, LocalDarkTheme.current).background,
+                        color = segmentColors(isRun, LocalDarkTheme.current).marker,
                         shape = CircleShape,
                     ),
             )

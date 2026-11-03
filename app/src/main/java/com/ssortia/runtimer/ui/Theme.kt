@@ -1,6 +1,7 @@
 package com.ssortia.runtimer.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -12,27 +13,105 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.WorkoutState
 
-/** Цвета экрана во время отрезка: фон и текст поверх него. */
-data class SegmentColors(val background: Color, val content: Color)
+/**
+ * Цвета отрезка: фон и текст экрана тренировки и точка [marker] у отрезка на форме.
+ * Точка рисуется на карточке формы, поэтому её цвет подобран под фон карточки, а не под [background].
+ */
+data class SegmentColors(val background: Color, val content: Color, val marker: Color)
 
-// Бег яркий, ходьба тёмная: отрезки различаются издалека и по оттенку, и по яркости
-private val RunLight = SegmentColors(background = Color(0xFFFF7A1A), content = Color.Black)
-private val WalkLight = SegmentColors(background = Color(0xFF0B4F8A), content = Color.White)
-private val RunDark = SegmentColors(background = Color(0xFFE8631A), content = Color.Black)
-private val WalkDark = SegmentColors(background = Color(0xFF0F3556), content = Color(0xFFD6E8FF))
+// Бег зелёный, ходьба синяя: отрезки различаются оттенком и надписью, яркость у них близкая
+private val RunLight = SegmentColors(
+    background = Color(0xFF047857),
+    content = Color.White,
+    marker = Color(0xFF047857),
+)
+private val WalkLight = SegmentColors(
+    background = Color(0xFF0B4F8A),
+    content = Color.White,
+    marker = Color(0xFF0B4F8A),
+)
+private val RunDark = SegmentColors(
+    background = Color(0xFF047857),
+    content = Color.White,
+    marker = Color(0xFF10B981),
+)
+private val WalkDark = SegmentColors(
+    background = Color(0xFF0F3556),
+    content = Color(0xFFD6E8FF),
+    marker = Color(0xFF4F8FCC),
+)
 
+// surfaceTint прозрачный: иначе диалоги и шторка с tonalElevation подмешивают акцент к фону.
+// Фон и surface здесь не задаются, их подставляет RunTimerTheme из colors.xml
 private val LightScheme = lightColorScheme(
-    primary = Color(0xFFB83A12),
+    primary = Color(0xFF047857),
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFE3EFEA),
+    onPrimaryContainer = Color(0xFF0B2B24),
+    inversePrimary = Color(0xFF6EE7B7),
+    secondary = Color(0xFF3F5F55),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE3EFEA),
+    onSecondaryContainer = Color(0xFF0B2B24),
+    onBackground = Color(0xFF16181B),
+    onSurface = Color(0xFF16181B),
+    onSurfaceVariant = Color(0xFF5C6066),
+    surfaceVariant = Color(0xFFE9E9E7),
+    surfaceTint = Color.Transparent,
+    surfaceBright = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFE2E2E0),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFAFAF8),
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFF0F0EE),
+    surfaceContainerHighest = Color(0xFFE9E9E7),
+    inverseSurface = Color(0xFF2E3033),
+    inverseOnSurface = Color(0xFFF0F0EE),
+    outline = Color(0xFF8A8D92),
+    outlineVariant = Color(0xFFE4E4E1),
+    error = Color(0xFFB3261E),
+    onError = Color.White,
 )
 
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFFFFB59B),
-    onPrimary = Color(0xFF5A1B00),
+    primary = Color(0xFF047857),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF1F3A33),
+    onPrimaryContainer = Color(0xFFD1FAE5),
+    inversePrimary = Color(0xFF047857),
+    secondary = Color(0xFFA7C9BD),
+    onSecondary = Color(0xFF10302A),
+    secondaryContainer = Color(0xFF1F3A33),
+    onSecondaryContainer = Color(0xFFD1FAE5),
+    onBackground = Color(0xFFECECEA),
+    onSurface = Color(0xFFECECEA),
+    onSurfaceVariant = Color(0xFFA4A7AD),
+    surfaceVariant = Color(0xFF303135),
+    surfaceTint = Color.Transparent,
+    surfaceBright = Color(0xFF37383C),
+    surfaceDim = Color(0xFF111214),
+    surfaceContainerLowest = Color(0xFF0C0D0F),
+    surfaceContainerLow = Color(0xFF17181B),
+    surfaceContainer = Color(0xFF1C1D20),
+    surfaceContainerHigh = Color(0xFF26272B),
+    surfaceContainerHighest = Color(0xFF303135),
+    inverseSurface = Color(0xFFECECEA),
+    inverseOnSurface = Color(0xFF2E3033),
+    outline = Color(0xFF6E7176),
+    outlineVariant = Color(0xFF2A2B2F),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
 )
+
+/** Схема цветов темы без фона: фон и surface подставляет [RunTimerTheme] из `colors.xml`. */
+internal fun appColorScheme(darkTheme: Boolean): ColorScheme = if (darkTheme) DarkScheme else LightScheme
+
+/** Цифры одинаковой ширины: время и счётчики не прыгают при смене значения. */
+val TabularNumbers = TextStyle(fontFeatureSettings = "tnum")
 
 fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
     darkTheme -> if (isRun) RunDark else WalkDark
@@ -63,7 +142,7 @@ fun RunTimerTheme(darkTheme: Boolean, content: @Composable () -> Unit) {
     val background = colorResource(
         if (darkTheme) R.color.window_background_dark else R.color.window_background_light,
     )
-    val scheme = if (darkTheme) DarkScheme else LightScheme
+    val scheme = appColorScheme(darkTheme)
     CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
         MaterialTheme(colorScheme = scheme.copy(background = background, surface = background)) {
             Surface(Modifier.fillMaxSize(), color = background, content = content)
