@@ -25,7 +25,7 @@ data class WorkoutSettings(
         runSec !in 0..MAX_SECONDS || walkSec !in 0..MAX_SECONDS -> SettingsError.SECONDS_RANGE
         rounds !in 1..MAX_ROUNDS -> SettingsError.ROUNDS_RANGE
         runTotalSec == 0 -> SettingsError.RUN_ZERO
-        walkTotalSec == 0 -> SettingsError.WALK_ZERO
+        walkTotalSec == 0 && rounds > 1 -> SettingsError.WALK_ZERO
         else -> null
     }
 

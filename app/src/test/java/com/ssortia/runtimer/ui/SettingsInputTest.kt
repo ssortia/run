@@ -94,6 +94,11 @@ class SettingsInputTest {
     }
 
     @Test
+    fun `пустые поля ходьбы при одном повторе не дают ошибки`() {
+        assertNull(input(walkMin = "", walkSec = "", rounds = "1").toSettings().validate())
+    }
+
+    @Test
     fun `начальные значения проходят через форму без изменений`() {
         val settings = WorkoutSettings(
             runMin = 3,

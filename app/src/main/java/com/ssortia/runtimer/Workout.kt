@@ -12,7 +12,8 @@ data class Position(
 
 /**
  * Тренировка: rounds повторов пары «бег + ходьба», в последнем повторе только бег.
- * Длительности должны быть больше нуля.
+ * Время бега и число повторов больше нуля, время ходьбы тоже, кроме тренировки из одного
+ * повтора: там ходьбы нет, и она может быть нулевой.
  */
 data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
@@ -41,7 +42,7 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
 
 /** Возвращает null, если параметры не дают корректную тренировку: сервис такой запрос отклоняет. */
 fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? =
-    if (runSec > 0 && walkSec > 0 && rounds > 0) Workout(runSec, walkSec, rounds) else null
+    if (runSec > 0 && rounds > 0 && (walkSec > 0 || (walkSec == 0 && rounds == 1))) Workout(runSec, walkSec, rounds) else null
 
 /** Таймаут wake lock страхует от разряда батареи при ошибке в логике. */
 fun wakeLockTimeoutMs(totalMs: Long, delayMs: Long): Long = totalMs + delayMs + WAKE_LOCK_MARGIN_MS

@@ -96,11 +96,37 @@ class WorkoutTest {
     @Test
     fun `нулевые и отрицательные параметры отклоняются`() {
         assertNull(workoutOrNull(runSec = 0, walkSec = 1, rounds = 1))
-        assertNull(workoutOrNull(runSec = 1, walkSec = 0, rounds = 1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = 0, rounds = 2))
         assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = 0))
         assertNull(workoutOrNull(runSec = -1, walkSec = 1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = -1, rounds = 1))
         assertNull(workoutOrNull(runSec = 1, walkSec = 1, rounds = -1))
+        assertNull(workoutOrNull(runSec = 1, walkSec = -1, rounds = 2))
+    }
+
+    @Test
+    fun `нулевая ходьба при одном повторе даёт тренировку`() {
+        assertEquals(Workout(1, 0, 1), workoutOrNull(runSec = 1, walkSec = 0, rounds = 1))
+    }
+
+    @Test
+    fun `один повтор без ходьбы длится как бег и всё время показывает бег`() {
+        val single = Workout(runSec = 3, walkSec = 0, rounds = 1)
+
+        assertEquals(3_000L, single.totalMs)
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 3_000),
+            single.at(0),
+        )
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 1_500),
+            single.at(1_500),
+        )
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 1),
+            single.at(2_999),
+        )
+        assertNull(single.at(3_000))
     }
 
     @Test

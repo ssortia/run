@@ -113,15 +113,15 @@
 - Modify: `app/src/test/java/com/ssortia/runtimer/WorkoutStateTest.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] в `WorkoutSettings.validate()` возвращать `WALK_ZERO` только при `rounds > 1`
-- [ ] уточнить текст `error_walk_zero` (см. Technical Details)
-- [ ] в `workoutOrNull()` пропускать `walkSec == 0` при `rounds == 1`; поправить KDoc `Workout` про длительности
-- [ ] обновить тест `нулевое время ходьбы`: ошибка при нескольких повторах, `null` при одном
-- [ ] в тесте `WorkoutTest` на отклонение нулевых и отрицательных параметров заменить `workoutOrNull(runSec = 1, walkSec = 0, rounds = 1)` (сейчас `assertNull`, строка 99) на `rounds = 2`, иначе тест упадёт
-- [ ] добавить тесты: `workoutOrNull(1, 0, 1)` даёт тренировку, `workoutOrNull(1, -1, 1)` даёт `null`; `Workout(runSec = 3, walkSec = 0, rounds = 1)` длится 3 с и всё время показывает бег
-- [ ] обновить `SettingsInputTest`: пустые поля ходьбы при одном повторе не дают ошибки
-- [ ] добавить в `WorkoutStateTest` прогон `simulate(Workout(runSec = 3, walkSec = 0, rounds = 1), 250)` по образцу соседнего теста для одного повтора: нет `INTERVAL`, ровно один `FINISH`
-- [ ] запустить тесты, они должны пройти
+- [x] в `WorkoutSettings.validate()` возвращать `WALK_ZERO` только при `rounds > 1`
+- [x] уточнить текст `error_walk_zero` (см. Technical Details)
+- [x] в `workoutOrNull()` пропускать `walkSec == 0` при `rounds == 1`; поправить KDoc `Workout` про длительности
+- [x] обновить тест `нулевое время ходьбы`: ошибка при нескольких повторах, `null` при одном
+- [x] в тесте `WorkoutTest` на отклонение нулевых и отрицательных параметров заменить `workoutOrNull(runSec = 1, walkSec = 0, rounds = 1)` (сейчас `assertNull`, строка 99) на `rounds = 2`, иначе тест упадёт
+- [x] добавить тесты: `workoutOrNull(1, 0, 1)` даёт тренировку, `workoutOrNull(1, -1, 1)` даёт `null`; `Workout(runSec = 3, walkSec = 0, rounds = 1)` длится 3 с и всё время показывает бег
+- [x] обновить `SettingsInputTest`: пустые поля ходьбы при одном повторе не дают ошибки
+- [x] добавить в `WorkoutStateTest` прогон `simulate(Workout(runSec = 3, walkSec = 0, rounds = 1), 250)` по образцу соседнего теста для одного повтора: нет `INTERVAL`, ровно один `FINISH`
+- [x] запустить тесты, они должны пройти
 
 ### Task 2: Программа по неделям в `WorkoutPreset.kt`
 

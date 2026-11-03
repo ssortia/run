@@ -314,6 +314,18 @@ class WorkoutStateTest {
     }
 
     @Test
+    fun `один повтор без ходьбы даёт только финальный сигнал`() {
+        val ticks = simulate(Workout(runSec = 3, walkSec = 0, rounds = 1), 250)
+
+        assertEquals(listOf(Signal.FINISH), ticks.mapNotNull { it.signal })
+        assertTrue(ticks.all { it.state.position.isRun })
+        assertEquals(
+            Position(index = 0, isRun = true, round = 1, remainingMs = 0),
+            ticks.last().state.position,
+        )
+    }
+
+    @Test
     fun `первый шаг уже после конца тренировки сразу завершает её`() {
         val tick = tickAt(workout, 50_000, previousIndex = null)
 
