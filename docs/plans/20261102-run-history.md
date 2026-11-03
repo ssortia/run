@@ -158,10 +158,10 @@ fun runRecordOrNull(
 **Files:**
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 
-- [ ] запоминать `workout` в `startWorkout`, а `runStartedAtMs` в `runLoop` рядом с созданием `WorkoutClock`, пересчитанный к моменту `startedAt`
-- [ ] собирать запись в `onDestroy` по `clock.elapsedAt(...)` и сохранять её, wake lock записи брать до снятия основного; остальной порядок из контракта сервиса не менять: `Idle` остаётся последним
-- [ ] убедиться, что отклонённый запрос, неверные параметры, команда паузы без тренировки и «Стоп» во время отсчёта не создают записи: `clock` и `runStartedAtMs` остаются `null`
-- [ ] run tests - must pass before next task
+- [x] запоминать `workout` в `startWorkout`, а `runStartedAtMs` в `runLoop` рядом с созданием `WorkoutClock`, пересчитанный к моменту `startedAt`
+- [x] собирать запись в `onDestroy` по `clock.elapsedAt(...)` и сохранять её, wake lock записи брать до снятия основного; остальной порядок из контракта сервиса не менять: `Idle` остаётся последним
+- [x] убедиться, что отклонённый запрос, неверные параметры, команда паузы без тренировки и «Стоп» во время отсчёта не создают записи: `clock` и `runStartedAtMs` остаются `null`
+- [x] run tests - must pass before next task
 
 ### Task 5: Экран истории
 

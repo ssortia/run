@@ -44,6 +44,9 @@ class WorkoutService : Service() {
     private var buzzer: Buzzer? = null
     // Создаётся после отсчёта, команда паузы может прийти раньше
     private var clock: WorkoutClock? = null
+    // Для записи в историю: workout заполняется при старте, runStartedAtMs вместе с clock
+    private var workout: Workout? = null
+    private var runStartedAtMs: Long? = null
     private var shownText: String? = null
 
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
@@ -114,6 +117,9 @@ class WorkoutService : Service() {
 
     override fun onDestroy() {
         scope.cancel()
+        // После отмены цикла часы и поля уже не меняются. Wake lock записи берётся
+        // до снятия основного, чтобы процессор не уснул между ними
+        saveRun()
         beeper?.release()
         buzzer?.release()
         if (wakeLock.isHeld) wakeLock.release()
@@ -123,7 +129,21 @@ class WorkoutService : Service() {
         super.onDestroy()
     }
 
+    // Без часов бег не начался: отклонённый запрос, команда паузы или «Стоп» во время отсчёта
+    private fun saveRun() {
+        val workout = workout ?: return
+        val startedAtMs = runStartedAtMs ?: return
+        val clock = clock ?: return
+        val record = runRecordOrNull(
+            workout,
+            startedAtMs = startedAtMs,
+            elapsedMs = clock.elapsedAt(SystemClock.elapsedRealtime()),
+        ) ?: return
+        RunHistory.save(this, record)
+    }
+
     private fun startWorkout(workout: Workout) {
+        this.workout = workout
         val settings = SettingsStore(this)
         val delayMs = settings.loadStartDelaySec() * 1000L
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
@@ -145,6 +165,8 @@ class WorkoutService : Service() {
 
         // Создаётся после отсчёта: до старта прошедшее время было бы отрицательным
         val clock = WorkoutClock(workout.totalMs, startedAt).also { this.clock = it }
+        // Пересчёт к моменту startedAt: после отсчёта и сигнала START уже прошло немного времени
+        runStartedAtMs = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - startedAt)
         var previousIndex: Int? = null
 
         while (true) {
