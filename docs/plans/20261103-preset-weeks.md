@@ -140,12 +140,12 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строки `preset_title` и `preset_week`
-- [ ] добавить первым элементом формы подпись и `Row` с `horizontalScroll` из `FilterChip` по `WORKOUT_PRESETS`
-- [ ] `selected` у чипа: `presetWeekOf(settings) == preset.week`, где `settings` уже вычислен из `input`
-- [ ] нажатие на чип: `input = SettingsInput.from(preset.settings)`
-- [ ] при первом показе формы прокрутить ряд к подсвеченному чипу (см. Solution Overview)
-- [ ] UI тестами не покрыт по соглашению проекта, логика проверена в Task 2; запустить `./gradlew test assembleDebug lintDebug`, всё должно пройти
+- [x] добавить строки `preset_title` и `preset_week`
+- [x] добавить первым элементом формы подпись и `Row` с `horizontalScroll` из `FilterChip` по `WORKOUT_PRESETS`
+- [x] `selected` у чипа: `presetWeekOf(settings) == preset.week`, где `settings` уже вычислен из `input`
+- [x] нажатие на чип: `input = SettingsInput.from(preset.settings)`
+- [x] при первом показе формы прокрутить ряд к подсвеченному чипу (см. Solution Overview)
+- [x] UI тестами не покрыт по соглашению проекта, логика проверена в Task 2; запустить `./gradlew test assembleDebug lintDebug`, всё должно пройти
 
 ### Task 4: Verify acceptance criteria
 - [ ] verify all requirements from Overview are implemented

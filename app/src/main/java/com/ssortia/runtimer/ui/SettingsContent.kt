@@ -2,6 +2,7 @@ package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,18 +18,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,8 +46,13 @@ import com.ssortia.runtimer.MAX_ROUNDS
 import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
+import com.ssortia.runtimer.WORKOUT_PRESETS
+import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.formatTotal
+import com.ssortia.runtimer.presetWeekOf
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -122,6 +135,10 @@ fun SettingsContent(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
+        PresetChips(
+            selectedWeek = presetWeekOf(settings),
+            onSelect = { input = SettingsInput.from(it.settings) },
+        )
         SegmentFields(
             label = stringResource(R.string.segment_run),
             isRun = true,
@@ -184,6 +201,51 @@ fun SettingsContent(
                 text = stringResource(R.string.button_settings),
                 style = MaterialTheme.typography.titleMedium,
             )
+        }
+    }
+}
+
+/**
+ * Ряд недель программы. На экран помещается 3–4 чипа, поэтому при первом показе ряд один раз
+ * прокручивается к подсвеченному чипу. Позиция чипа известна только после раскладки, отсюда
+ * ожидание через [snapshotFlow]. При ручной правке и выборе ряд не прокручивается.
+ */
+@Composable
+private fun PresetChips(
+    selectedWeek: Int?,
+    onSelect: (WorkoutPreset) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+    // Левый край и ширина каждого чипа в координатах содержимого ряда
+    val chipBounds = remember { mutableStateMapOf<Int, Pair<Int, Int>>() }
+    val initialWeek = remember { selectedWeek }
+
+    LaunchedEffect(Unit) {
+        if (initialWeek == null) return@LaunchedEffect
+        val (left, width) = snapshotFlow { chipBounds[initialWeek] }.filterNotNull().first()
+        // Чип ставится по центру видимой части, scrollTo сам прижимает значение к границам
+        scrollState.scrollTo(left - (scrollState.viewportSize - width) / 2)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.preset_title),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            WORKOUT_PRESETS.forEach { preset ->
+                FilterChip(
+                    selected = selectedWeek == preset.week,
+                    onClick = { onSelect(preset) },
+                    label = { Text(stringResource(R.string.preset_week, preset.week)) },
+                    modifier = Modifier.onGloballyPositioned {
+                        chipBounds[preset.week] = it.positionInParent().x.toInt() to it.size.width
+                    },
+                )
+            }
         }
     }
 }

@@ -21,6 +21,8 @@
     <string name="countdown_label">Старт через</string>
     <string name="seconds_short">с</string>
     <string name="round_progress">Повтор %1$d из %2$d</string>
+    <string name="preset_title">Программа</string>
+    <string name="preset_week">Неделя %1$d</string>
     <string name="total_duration">Всего: %1$s</string>
     <string name="error_run_zero">Время бега должно быть больше нуля</string>
     <string name="error_walk_zero">Время ходьбы должно быть больше нуля, если повторов больше одного</string>
