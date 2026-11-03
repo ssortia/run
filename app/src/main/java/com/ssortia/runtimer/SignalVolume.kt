@@ -16,3 +16,6 @@ fun volumeGain(percent: Int): Float = percent / 100f
 
 // Slider отдаёт Float: 34.999996 через toInt() дало бы 34 и разошлось с шагом
 fun sliderToPercent(value: Float): Int = clampVolume(value.roundToInt())
+
+/** Число промежуточных положений `Slider`: крайние значения в `steps` не входят. */
+fun volumeSliderSteps(): Int = (MAX_VOLUME_PERCENT - MIN_VOLUME_PERCENT) / VOLUME_STEP_PERCENT - 1

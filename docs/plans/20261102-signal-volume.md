@@ -215,13 +215,13 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 - Modify: `app/src/main/res/values/strings.xml`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SignalVolumeTest.kt`
 
-- [ ] добавить в `SignalVolume.kt` чистую функцию `volumeSliderSteps()`: число промежуточных шагов `Slider` из констант
-- [ ] добавить в `SettingsContent` ползунок и подпись, параметры `initialVolume` и `onVolumeChange`, значение переводить через `sliderToPercent` и отдавать из `onValueChangeFinished`
-- [ ] передать `loadVolume` и `onVolumeChange` через `WorkoutScreen`, читать значение в ветке `Idle` рядом с `loadSettings`
-- [ ] в `MainActivity` сохранять значение и проигрывать пробный сигнал, отпускать `Beeper` при «Старт» и в `onStop`
-- [ ] задать `volumeControlStream = AudioManager.STREAM_MUSIC` в `MainActivity.onCreate`
-- [ ] написать тесты `volumeSliderSteps()`: для 10–100% с шагом 5 получается 17, значения ползунка совпадают с шагом
-- [ ] запустить тесты, они должны пройти
+- [x] добавить в `SignalVolume.kt` чистую функцию `volumeSliderSteps()`: число промежуточных шагов `Slider` из констант
+- [x] добавить в `SettingsContent` ползунок и подпись, параметры `initialVolume` и `onVolumeChange`, значение переводить через `sliderToPercent` и отдавать из `onValueChangeFinished`
+- [x] передать `loadVolume` и `onVolumeChange` через `WorkoutScreen`, читать значение в ветке `Idle` рядом с `loadSettings`
+- [x] в `MainActivity` сохранять значение и проигрывать пробный сигнал, отпускать `Beeper` при «Старт» и в `onStop`
+- [x] задать `volumeControlStream = AudioManager.STREAM_MUSIC` в `MainActivity.onCreate`
+- [x] написать тесты `volumeSliderSteps()`: для 10–100% с шагом 5 получается 17, значения ползунка совпадают с шагом
+- [x] запустить тесты, они должны пройти
 
 ### Task 5: Проверка критериев приёмки
 - [ ] проверить по коду: все создания `Beeper` передают громкость, `USAGE_ALARM` не осталось в `Beeper.kt`

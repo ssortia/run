@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -40,8 +41,14 @@ fun abandonsPermissionRequest(pending: Boolean, changingConfigurations: Boolean)
 class MainActivity : ComponentActivity() {
     private val store by lazy { SettingsStore(this) }
 
+    // Пробный сигнал ползунка. Громкость задаётся только конструктором, поэтому на каждое
+    // отпускание создаётся новый Beeper, а прежний отпускается
+    private var previewBeeper: Beeper? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Между сигналами ничего не играет, и без этого кнопки меняли бы громкость звонка
+        volumeControlStream = AudioManager.STREAM_MUSIC
         enableEdgeToEdge()
         setContent {
             val state by WorkoutService.state.collectAsStateWithLifecycle()
@@ -84,7 +91,10 @@ class MainActivity : ComponentActivity() {
                 WorkoutScreen(
                     state = state,
                     loadSettings = store::load,
+                    loadVolume = store::loadSignalVolume,
                     onStart = { settings ->
+                        // Пробная дорожка не должна жить всю тренировку
+                        releasePreview()
                         store.save(settings)
                         when {
                             !needsNotificationRequest(Build.VERSION.SDK_INT, notificationsGranted()) ->
@@ -96,10 +106,29 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     },
+                    onVolumeChange = ::previewVolume,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                 )
             }
         }
+    }
+
+    override fun onStop() {
+        releasePreview()
+        super.onStop()
+    }
+
+    private fun previewVolume(percent: Int) {
+        store.saveSignalVolume(percent)
+        releasePreview()
+        previewBeeper = Beeper(getSystemService(AudioManager::class.java), percent).also {
+            it.play(Signal.INTERVAL)
+        }
+    }
+
+    private fun releasePreview() {
+        previewBeeper?.release()
+        previewBeeper = null
     }
 
     private fun notificationsGranted(): Boolean =

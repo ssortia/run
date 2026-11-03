@@ -11,16 +11,21 @@ import com.ssortia.runtimer.WorkoutState
 fun WorkoutScreen(
     state: WorkoutState,
     loadSettings: () -> WorkoutSettings,
+    loadVolume: () -> Int,
     onStart: (WorkoutSettings) -> Unit,
+    onVolumeChange: (Int) -> Unit,
     onStop: () -> Unit,
 ) {
     when (state) {
         WorkoutState.Idle -> {
             // remember внутри ветки: при каждом возврате в Idle настройки читаются заново
             val initial = remember { loadSettings() }
+            val initialVolume = remember { loadVolume() }
             SettingsContent(
                 initial = initial,
+                initialVolume = initialVolume,
                 onStart = onStart,
+                onVolumeChange = onVolumeChange,
                 // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
                 modifier = Modifier.safeDrawingPadding(),
             )

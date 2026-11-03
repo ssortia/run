@@ -44,4 +44,21 @@ class SignalVolumeTest {
         assertEquals(100, sliderToPercent(100.4f))
         assertEquals(100, sliderToPercent(250f))
     }
+
+    @Test
+    fun `число шагов ползунка`() {
+        assertEquals(17, volumeSliderSteps())
+    }
+
+    @Test
+    fun `значения ползунка совпадают с шагом`() {
+        // Slider раскладывает положения равномерно, как здесь, и Float даёт погрешность
+        val positions = volumeSliderSteps() + 1
+        val range = (MAX_VOLUME_PERCENT - MIN_VOLUME_PERCENT).toFloat()
+        val percents = (0..positions).map { i ->
+            sliderToPercent(MIN_VOLUME_PERCENT + range * (i.toFloat() / positions))
+        }
+        val expected = (MIN_VOLUME_PERCENT..MAX_VOLUME_PERCENT step VOLUME_STEP_PERCENT).toList()
+        assertEquals(expected, percents)
+    }
 }

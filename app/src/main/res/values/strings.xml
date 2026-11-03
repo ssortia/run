@@ -21,6 +21,7 @@
     <string name="error_seconds_range">Секунды должны быть от 0 до %1$d</string>
     <string name="error_minutes_range">Минуты должны быть от 0 до %1$d</string>
     <string name="error_start_delay_range">Задержка должна быть от 0 до %1$d секунд</string>
+    <string name="signal_volume">Громкость сигналов: %1$d%%</string>
     <string name="warning_no_sound">Сигналы недоступны, следите за временем на экране</string>
     <string name="warning_muted">Громкость медиа на нуле, сигналов не будет слышно</string>
 </resources>

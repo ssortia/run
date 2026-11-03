@@ -19,9 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,10 +38,14 @@ import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
 import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.MAX_START_DELAY_SEC
+import com.ssortia.runtimer.MAX_VOLUME_PERCENT
+import com.ssortia.runtimer.MIN_VOLUME_PERCENT
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.formatTotal
+import com.ssortia.runtimer.sliderToPercent
+import com.ssortia.runtimer.volumeSliderSteps
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -106,16 +112,22 @@ internal val SettingsInputSaver = listSaver<SettingsInput, String>(
     restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4], it[5]) },
 )
 
-/** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
+/**
+ * Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку.
+ * [onVolumeChange] вызывается при отпускании ползунка, а не на каждом его сдвиге.
+ */
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
+    initialVolume: Int,
     onStart: (WorkoutSettings) -> Unit,
+    onVolumeChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
         mutableStateOf(SettingsInput.from(initial))
     }
+    var volume by rememberSaveable { mutableFloatStateOf(initialVolume.toFloat()) }
     val settings = input.toSettings()
     val error = settings.validate()
 
@@ -155,6 +167,19 @@ fun SettingsContent(
             imeAction = ImeAction.Done,
             modifier = Modifier.fillMaxWidth(),
         )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.signal_volume, sliderToPercent(volume)),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Slider(
+                value = volume,
+                onValueChange = { volume = it },
+                valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
+                steps = volumeSliderSteps(),
+                onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
+            )
+        }
 
         // Ошибка и итог занимают одно место: итог неверных настроек не имеет смысла
         if (error != null) {
