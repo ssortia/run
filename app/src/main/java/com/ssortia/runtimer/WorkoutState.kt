@@ -10,7 +10,7 @@ const val TICK_MS = 250L
 /**
  * Состояние тренировки, которое сервис публикует для экрана. `soundFailed`: сигналы не удалось
  * подготовить. `soundMuted`: громкость медиа на нуле, она проверяется на каждом шаге и может
- * меняться на бегу.
+ * меняться на бегу. `paused`: тренировка на паузе, время замерло.
  */
 sealed interface WorkoutState {
     data object Idle : WorkoutState
@@ -28,6 +28,7 @@ sealed interface WorkoutState {
         val progress: Float,
         val soundFailed: Boolean = false,
         val soundMuted: Boolean = false,
+        val paused: Boolean = false,
     ) : WorkoutState
 }
 
@@ -64,7 +65,8 @@ fun countdownTickAt(
 /**
  * Считает шаг цикла на момент [elapsedMs]. На следующий шаг [previousIndex] берётся из
  * `state.position.index`. После конца показывается последний отрезок с нулевым остатком,
- * даже если шаг запоздал и перепрыгнул его.
+ * даже если шаг запоздал и перепрыгнул его. На паузе [elapsedMs] замирает, поэтому сигнал
+ * будет, только если граница отрезка пройдена до паузы.
  */
 fun tickAt(
     workout: Workout,
@@ -72,6 +74,7 @@ fun tickAt(
     previousIndex: Int?,
     soundFailed: Boolean = false,
     soundMuted: Boolean = false,
+    paused: Boolean = false,
 ): WorkoutTick {
     val position = workout.at(elapsedMs)
     val shown = position ?: checkNotNull(workout.at(workout.totalMs - 1)).copy(remainingMs = 0)
@@ -82,6 +85,7 @@ fun tickAt(
             progress = workout.progressAt(elapsedMs),
             soundFailed = soundFailed,
             soundMuted = soundMuted,
+            paused = paused,
         ),
         signal = signalFor(previousIndex, position),
         finished = position == null,

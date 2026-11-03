@@ -5,6 +5,7 @@
     <string name="segment_run">Бег</string>
     <string name="segment_walk">Ходьба</string>
     <string name="round_label">Повтор</string>
+    <string name="notification_paused">Пауза</string>
     <string name="field_minutes">Минуты</string>
     <string name="field_seconds">Секунды</string>
     <string name="field_rounds">Повторы</string>

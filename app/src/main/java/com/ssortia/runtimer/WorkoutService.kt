@@ -155,9 +155,11 @@ class WorkoutService : Service() {
     private fun textFor(active: WorkoutState.Active): String = notificationText(
         position = active.position,
         rounds = active.rounds,
+        paused = active.paused,
         runLabel = getString(R.string.segment_run),
         walkLabel = getString(R.string.segment_walk),
         roundLabel = getString(R.string.round_label),
+        pausedLabel = getString(R.string.notification_paused),
     )
 
     private fun countdownText(countdown: WorkoutState.Countdown): String = countdownNotificationText(

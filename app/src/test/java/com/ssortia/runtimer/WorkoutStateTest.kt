@@ -354,4 +354,32 @@ class WorkoutStateTest {
         assertEquals(Signal.INTERVAL, tickAt(workout, 10_000, previousIndex = 0, soundMuted = true).signal)
         assertEquals(Signal.FINISH, tickAt(workout, 30_000, previousIndex = 2, soundMuted = true).signal)
     }
+
+    @Test
+    fun `признак паузы доходит до состояния`() {
+        assertFalse(tickAt(workout, 5_000, 0).state.paused)
+        assertTrue(tickAt(workout, 5_000, 0, paused = true).state.paused)
+        assertTrue(tickAt(workout, 30_000, 2, paused = true).state.paused)
+    }
+
+    @Test
+    fun `на паузе в том же отрезке сигнала нет`() {
+        // Время замерло, поэтому шаги на паузе повторяют один и тот же момент
+        val ticks = List(3) { tickAt(workout, 9_900, previousIndex = 0, paused = true) }
+
+        ticks.forEach {
+            assertNull(it.signal)
+            assertFalse(it.finished)
+            assertEquals(0, it.state.position.index)
+        }
+    }
+
+    @Test
+    fun `граница, пройденная до паузы, даёт обычный сигнал на паузе`() {
+        val tick = tickAt(workout, 10_100, previousIndex = 0, paused = true)
+
+        assertEquals(Signal.INTERVAL, tick.signal)
+        assertEquals(1, tick.state.position.index)
+        assertTrue(tick.state.paused)
+    }
 }

@@ -4,8 +4,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class NotificationTextTest {
-    private fun text(position: Position, rounds: Int = 7) =
-        notificationText(position, rounds, runLabel = "Бег", walkLabel = "Ходьба", roundLabel = "Повтор")
+    private fun text(position: Position, rounds: Int = 7, paused: Boolean = false) = notificationText(
+        position,
+        rounds,
+        paused,
+        runLabel = "Бег",
+        walkLabel = "Ходьба",
+        roundLabel = "Повтор",
+        pausedLabel = "Пауза",
+    )
 
     @Test
     fun `отсчёт показывает оставшиеся секунды`() {
@@ -55,5 +62,12 @@ class NotificationTextTest {
         val position = tickAt(WorkoutSettings().toWorkout(), 1_560_000, 12).state.position
 
         assertEquals("Бег · 0:00 · Повтор 7/7", text(position))
+    }
+
+    @Test
+    fun `на паузе текст начинается с подписи паузы`() {
+        val position = Position(index = 0, isRun = true, round = 1, remainingMs = 83_000)
+
+        assertEquals("Пауза · Бег · 1:23 · Повтор 1/7", text(position, paused = true))
     }
 }

@@ -165,11 +165,11 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/test/java/com/ssortia/runtimer/NotificationTextTest.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/WorkoutStateTest.kt`
 
-- [ ] добавить `paused: Boolean = false` в `WorkoutState.Active` и параметр `paused` в `tickAt`
-- [ ] добавить параметры `paused` и `pausedLabel` в `notificationText`, строку `notification_paused` и обновить `textFor` в сервисе (`paused = active.paused`), иначе проект не соберётся
-- [ ] обновить вызовы в существующих тестах и добавить тест текста на паузе
-- [ ] написать тесты `tickAt`: `paused` попадает в состояние, на паузе в том же отрезке нет сигнала, при смене индекса на паузе подаётся `INTERVAL`
-- [ ] запустить тесты, они должны пройти перед следующей задачей
+- [x] добавить `paused: Boolean = false` в `WorkoutState.Active` и параметр `paused` в `tickAt`
+- [x] добавить параметры `paused` и `pausedLabel` в `notificationText`, строку `notification_paused` и обновить `textFor` в сервисе (`paused = active.paused`), иначе проект не соберётся
+- [x] обновить вызовы в существующих тестах и добавить тест текста на паузе
+- [x] написать тесты `tickAt`: `paused` попадает в состояние, на паузе в том же отрезке нет сигнала, при смене индекса на паузе подаётся `INTERVAL`
+- [x] запустить тесты, они должны пройти перед следующей задачей
 
 ### Task 3: Пауза в сервисе
 

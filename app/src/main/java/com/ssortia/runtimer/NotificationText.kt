@@ -4,12 +4,15 @@ package com.ssortia.runtimer
 fun notificationText(
     position: Position,
     rounds: Int,
+    paused: Boolean,
     runLabel: String,
     walkLabel: String,
     roundLabel: String,
+    pausedLabel: String,
 ): String {
     val segment = if (position.isRun) runLabel else walkLabel
-    return "$segment · ${formatTime(position.remainingMs)} · $roundLabel ${position.round}/$rounds"
+    val text = "$segment · ${formatTime(position.remainingMs)} · $roundLabel ${position.round}/$rounds"
+    return if (paused) "$pausedLabel · $text" else text
 }
 
 fun countdownNotificationText(
