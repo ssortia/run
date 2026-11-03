@@ -100,17 +100,17 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строку `setting_duck_ahead`
-- [ ] добавить в `AppSettingsContent` параметры `loadDuckAhead` и `onDuckAheadChange` и строку переключателя под вибрацией (`toggleable`, `Role.Switch`, `Switch(onCheckedChange = null)`)
-- [ ] пробросить параметры через `WorkoutScreen` в маршрут `app_settings` и подключить в `MainActivity` к `store::loadDuckAhead` и `store::saveDuckAhead`
-- [ ] тестов нет: это Compose, а хранение покрыто в Task 1
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`, всё должно пройти без новых предупреждений
+- [x] добавить строку `setting_duck_ahead`
+- [x] добавить в `AppSettingsContent` параметры `loadDuckAhead` и `onDuckAheadChange` и строку переключателя под вибрацией (`toggleable`, `Role.Switch`, `Switch(onCheckedChange = null)`)
+- [x] пробросить параметры через `WorkoutScreen` в маршрут `app_settings` и подключить в `MainActivity` к `store::loadDuckAhead` и `store::saveDuckAhead`
+- [x] тестов нет: это Compose, а хранение покрыто в Task 1
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`, всё должно пройти без новых предупреждений
 
 ### Task 4: Verify acceptance criteria
-- [ ] проверить, что включённая настройка сохраняет текущее поведение во всех трёх местах (цикл, отсчёт, продолжение после паузы)
-- [ ] проверить, что выключенная настройка не вызывает `duck()` ни в одном из трёх мест, а `play()` по-прежнему берёт фокус
-- [ ] проверить, что настройки нет ни в `WorkoutSettings`, ни в интенте
-- [ ] запустить полный набор: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
+- [x] проверить, что включённая настройка сохраняет текущее поведение во всех трёх местах (цикл, отсчёт, продолжение после паузы)
+- [x] проверить, что выключенная настройка не вызывает `duck()` ни в одном из трёх мест, а `play()` по-прежнему берёт фокус
+- [x] проверить, что настройки нет ни в `WorkoutSettings`, ни в интенте
+- [x] запустить полный набор: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
 
 ### Task 5: [Final] Update documentation
 - [ ] `USER_STORIES.md`, строка 52: критерий «Музыка начинает приглушаться раньше, чем начинается звук сигнала» сделать условным («если на экране настроек включено „Приглушать музыку заранее“…»); добавить, что по умолчанию переключатель включён, при выключенном музыка приглушается только на время сигнала, и что он действует со следующей тренировки

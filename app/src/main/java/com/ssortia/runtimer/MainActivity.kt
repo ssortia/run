@@ -104,6 +104,7 @@ class MainActivity : ComponentActivity() {
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,
+                    loadDuckAhead = store::loadDuckAhead,
                     loadStartDelay = store::loadStartDelaySec,
                     runs = runs,
                     onStart = { settings ->
@@ -120,6 +121,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onVolumeChange = ::saveVolumeAndPreview,
                     onVibrationChange = store::saveVibration,
+                    onDuckAheadChange = store::saveDuckAhead,
                     onStartDelayChange = store::saveStartDelaySec,
                     onDeleteRun = { id -> RunHistory.delete(applicationContext, id) },
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },

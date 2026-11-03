@@ -49,6 +49,8 @@ fun AppSettingsContent(
     onVolumeChange: (Int) -> Unit,
     loadVibration: () -> Boolean,
     onVibrationChange: (Boolean) -> Unit,
+    loadDuckAhead: () -> Boolean,
+    onDuckAheadChange: (Boolean) -> Unit,
     loadStartDelay: () -> Int,
     onStartDelayChange: (Int) -> Unit,
     onBack: () -> Unit,
@@ -56,6 +58,7 @@ fun AppSettingsContent(
 ) {
     var volume by remember { mutableFloatStateOf(loadVolume().toFloat()) }
     var vibration by remember { mutableStateOf(loadVibration()) }
+    var duckAhead by remember { mutableStateOf(loadDuckAhead()) }
     var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
     Column(
@@ -100,6 +103,29 @@ fun AppSettingsContent(
                 modifier = Modifier.weight(1f),
             )
             Switch(checked = vibration, onCheckedChange = null)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                // Строка целиком переключает настройку, а сам Switch без обработчика
+                .toggleable(
+                    value = duckAhead,
+                    role = Role.Switch,
+                    onValueChange = {
+                        duckAhead = it
+                        onDuckAheadChange(it)
+                    },
+                )
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.setting_duck_ahead),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(checked = duckAhead, onCheckedChange = null)
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
