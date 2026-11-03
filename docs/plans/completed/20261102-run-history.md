@@ -209,7 +209,7 @@ fun runRecordOrNull(
 - [x] обновить `CLAUDE.md`, раздел «Архитектура»: переписать фразу «Библиотеки навигации тоже нет», вместо флага `showAppSettings` и `SaveableStateHolder` описать `NavHost` с тремя маршрутами, который работает только внутри `Idle`, а экраном таймера управляет состояние сервиса; переходы только через `NavController` и `dropUnlessResumed`, без своего `BackHandler`
 - [x] обновить `CLAUDE.md`, контракт сервиса: запись собирается в `onDestroy` из `clock`, сохраняется в отдельной области корутин (после ревью без отдельного wake lock)
 - [x] обновить `CLAUDE.md`, раздел «Неочевидное»: анимации `NavHost` отключены, потому что `dropUnlessResumed` глотает нажатия во время перехода; почему у области `RunHistory` нет обработчика исключений (после ревью вместо wake lock записи); `.catch` завершает поток записей; «завершена» выводится из `elapsedMs >= totalMs`; дата строки списка форматируется явным шаблоном
-- [x] move this plan to `docs/plans/completed/` (отложено до завершения ревью, переносит оркестратор)
+- [x] move this plan to `docs/plans/completed/` (перенесён после ревью)
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
