@@ -27,15 +27,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.ssortia.runtimer.MAX_START_DELAY_SEC
 import com.ssortia.runtimer.MAX_VOLUME_PERCENT
-import com.ssortia.runtimer.MIN_START_DELAY_SEC
 import com.ssortia.runtimer.MIN_VOLUME_PERCENT
 import com.ssortia.runtimer.R
+import com.ssortia.runtimer.START_DELAY_OPTIONS_SEC
 import com.ssortia.runtimer.START_DELAY_SLIDER_STEPS
 import com.ssortia.runtimer.VOLUME_SLIDER_STEPS
 import com.ssortia.runtimer.sliderToPercent
 import com.ssortia.runtimer.sliderToStartDelay
+import com.ssortia.runtimer.startDelayToSlider
 
 /**
  * Экран настроек приложения. Значения сохраняются сразу: переключатель при переключении,
@@ -56,7 +56,7 @@ fun AppSettingsContent(
 ) {
     var volume by remember { mutableFloatStateOf(loadVolume().toFloat()) }
     var vibration by remember { mutableStateOf(loadVibration()) }
-    var startDelay by remember { mutableFloatStateOf(loadStartDelay().toFloat()) }
+    var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
     Column(
         modifier = modifier
@@ -110,7 +110,8 @@ fun AppSettingsContent(
                 onValueChange = { startDelay = it },
                 // Подпись над ползунком отдельный узел, без описания TalkBack назовёт ползунок безымянным
                 modifier = Modifier.semantics { contentDescription = delayLabel },
-                valueRange = MIN_START_DELAY_SEC.toFloat()..MAX_START_DELAY_SEC.toFloat(),
+                // Ползунок ходит по индексам списка: шаг между значениями неравномерный
+                valueRange = 0f..START_DELAY_OPTIONS_SEC.lastIndex.toFloat(),
                 steps = START_DELAY_SLIDER_STEPS,
                 onValueChangeFinished = { onStartDelayChange(sliderToStartDelay(startDelay)) },
             )

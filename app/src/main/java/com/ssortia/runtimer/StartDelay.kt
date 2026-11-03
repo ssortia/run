@@ -1,17 +1,25 @@
 package com.ssortia.runtimer
 
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 // Задержка старта в секундах, настройка приложения: хранится отдельно от тренировки
-const val MIN_START_DELAY_SEC = 0
-const val MAX_START_DELAY_SEC = 60
 const val DEFAULT_START_DELAY_SEC = 5
-const val START_DELAY_STEP_SEC = 5
+
+/** Допустимые значения задержки по возрастанию, ползунок ходит по их индексам. */
+val START_DELAY_OPTIONS_SEC = listOf(0, 3, 5, 10, 15, 20, 30, 45, 60)
 
 /** Число промежуточных положений `Slider`: крайние значения в `steps` не входят. */
-const val START_DELAY_SLIDER_STEPS = (MAX_START_DELAY_SEC - MIN_START_DELAY_SEC) / START_DELAY_STEP_SEC - 1
+val START_DELAY_SLIDER_STEPS = START_DELAY_OPTIONS_SEC.size - 2
 
-fun clampStartDelay(sec: Int): Int = sec.coerceIn(MIN_START_DELAY_SEC, MAX_START_DELAY_SEC)
+/**
+ * Приводит задержку к ближайшему допустимому значению, при равном расстоянии к меньшему.
+ * Так читаются значения прежних версий (например, 7 или 25) и значения вне диапазона.
+ */
+fun snapStartDelay(sec: Int): Int = START_DELAY_OPTIONS_SEC.minBy { abs(it - sec) }
 
-// Slider отдаёт Float: 4.9999995 через toInt() дало бы 4 и разошлось с шагом
-fun sliderToStartDelay(value: Float): Int = clampStartDelay(value.roundToInt())
+fun startDelayToSlider(sec: Int): Float = START_DELAY_OPTIONS_SEC.indexOf(snapStartDelay(sec)).toFloat()
+
+// Slider отдаёт Float: 1.9999995 через toInt() дало бы 1 и разошлось с положением бегунка
+fun sliderToStartDelay(value: Float): Int =
+    START_DELAY_OPTIONS_SEC[value.roundToInt().coerceIn(START_DELAY_OPTIONS_SEC.indices)]

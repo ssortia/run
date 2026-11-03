@@ -44,14 +44,14 @@ class SettingsStore(private val prefs: SharedPreferences) {
 
     /**
      * Задержка старта хранится отдельно от тренировки под прежним ключом, поэтому сохранённое
-     * раньше значение сохраняется. Значение вне диапазона прижимается к нему.
+     * раньше значение сохраняется. Значение приводится к ближайшему допустимому, см. `snapStartDelay`.
      */
     fun loadStartDelaySec(): Int =
-        clampStartDelay(prefs.getInt(KEY_START_DELAY_SEC, DEFAULT_START_DELAY_SEC))
+        snapStartDelay(prefs.getInt(KEY_START_DELAY_SEC, DEFAULT_START_DELAY_SEC))
 
     fun saveStartDelaySec(sec: Int) {
         prefs.edit()
-            .putInt(KEY_START_DELAY_SEC, clampStartDelay(sec))
+            .putInt(KEY_START_DELAY_SEC, snapStartDelay(sec))
             .apply()
     }
 

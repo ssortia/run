@@ -71,9 +71,28 @@ class SettingsStoreTest {
 
     @Test
     fun `задержка, сохранённая прежней версией формы, читается под тем же ключом`() {
-        prefs.values["start_delay_sec"] = 7
+        prefs.values["start_delay_sec"] = 20
 
-        assertEquals(7, store.loadStartDelaySec())
+        assertEquals(20, store.loadStartDelaySec())
+    }
+
+    @Test
+    fun `задержка вне списка приводится к ближайшей при записи и чтении`() {
+        store.saveStartDelaySec(8)
+        assertEquals(10, prefs.values["start_delay_sec"])
+
+        // Прежние версии позволяли сохранить 7 и 25
+        prefs.values["start_delay_sec"] = 7
+        assertEquals(5, store.loadStartDelaySec())
+        prefs.values["start_delay_sec"] = 25
+        assertEquals(20, store.loadStartDelaySec())
+    }
+
+    @Test
+    fun `задержка 3 секунды сохраняется как есть`() {
+        store.saveStartDelaySec(3)
+
+        assertEquals(3, store.loadStartDelaySec())
     }
 
     @Test
