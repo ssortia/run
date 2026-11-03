@@ -95,11 +95,11 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 
-- [ ] добавить `powerManager` и `readIgnoringBatteryOptimizations()` в `MainActivity`
-- [ ] хранить признак в состоянии Compose и перечитывать в `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)`
-- [ ] добавить `openAppDetails()` с `ACTION_APPLICATION_DETAILS_SETTINGS` и перехватом `ActivityNotFoundException`
-- [ ] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `WorkoutScreen` и передать их из `MainActivity`
-- [ ] тесты: новых нет (Android API, см. Development Approach); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` проходит
+- [x] добавить `powerManager` и `readIgnoringBatteryOptimizations()` в `MainActivity`
+- [x] хранить признак в состоянии Compose и перечитывать в `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)`
+- [x] добавить `openAppDetails()` с `ACTION_APPLICATION_DETAILS_SETTINGS` и перехватом `ActivityNotFoundException`
+- [x] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `WorkoutScreen` и передать их из `MainActivity`
+- [x] тесты: новых нет (Android API, см. Development Approach); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` проходит
 
 ### Task 2: Предупреждение и кнопка на форме
 
