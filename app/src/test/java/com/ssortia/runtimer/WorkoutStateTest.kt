@@ -171,6 +171,13 @@ class WorkoutStateTest {
     }
 
     @Test
+    fun `нулевая громкость доходит до состояния отсчёта`() {
+        assertTrue(countdownTickAt(startedAt = 101_000, now = 100_000, soundMuted = true)!!.state.soundMuted)
+        assertFalse(countdownTick(remainingMs = 1_000)!!.state.soundMuted)
+        assertFalse(countdownTick(remainingMs = 1_000, soundFailed = true)!!.state.soundMuted)
+    }
+
+    @Test
     fun `общая длительность равна сумме всех отрезков`() {
         assertEquals(30_000L, workout.totalMs)
         assertEquals(40_000L, Workout(10, 5, 3).totalMs)
@@ -312,5 +319,27 @@ class WorkoutStateTest {
         assertFalse(tickAt(workout, 0, null).state.soundFailed)
         assertTrue(tickAt(workout, 0, null, soundFailed = true).state.soundFailed)
         assertTrue(tickAt(workout, 30_000, 2, soundFailed = true).state.soundFailed)
+    }
+
+    @Test
+    fun `нулевая громкость доходит до состояния`() {
+        assertFalse(tickAt(workout, 0, null).state.soundMuted)
+        assertFalse(tickAt(workout, 0, null, soundFailed = true).state.soundMuted)
+        assertTrue(tickAt(workout, 0, null, soundMuted = true).state.soundMuted)
+        assertTrue(tickAt(workout, 30_000, 2, soundMuted = true).state.soundMuted)
+    }
+
+    @Test
+    fun `смена громкости между шагами не даёт лишнего сигнала`() {
+        val muted = tickAt(workout, 2_000, previousIndex = 0, soundMuted = true)
+        val unmuted = tickAt(workout, 2_250, previousIndex = 0, soundMuted = false)
+        val mutedAgain = tickAt(workout, 2_500, previousIndex = 0, soundMuted = true)
+
+        assertTrue(muted.state.soundMuted)
+        assertFalse(unmuted.state.soundMuted)
+        assertTrue(mutedAgain.state.soundMuted)
+        assertNull(muted.signal)
+        assertNull(unmuted.signal)
+        assertNull(mutedAgain.signal)
     }
 }

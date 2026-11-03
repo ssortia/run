@@ -1,5 +1,6 @@
 package com.ssortia.runtimer.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,7 @@ fun ActiveContent(
                 text = stringResource(R.string.round_progress, position.round, state.rounds),
                 style = MaterialTheme.typography.titleLarge,
             )
-            if (state.soundFailed) SoundWarning()
+            SoundWarning(soundWarningRes(state.soundFailed, state.soundMuted))
         },
         bottom = {
             LinearProgressIndicator(
@@ -87,7 +88,7 @@ fun CountdownContent(
                 style = MaterialTheme.typography.displaySmall,
             )
             TimerText(state.seconds.toString())
-            if (state.soundFailed) SoundWarning()
+            SoundWarning(soundWarningRes(state.soundFailed, state.soundMuted))
         },
         bottom = { StopButton(colors, onStop) },
     )
@@ -145,10 +146,22 @@ private fun TimerText(text: String) {
     )
 }
 
+/**
+ * Текст предупреждения о звуке или null, если всё в порядке. Сбой важнее нулевой громкости:
+ * если сигналы не подготовлены, прибавление громкости не поможет.
+ */
+@StringRes
+fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
+    soundFailed -> R.string.warning_no_sound
+    soundMuted -> R.string.warning_muted
+    else -> null
+}
+
 @Composable
-private fun SoundWarning() {
+private fun SoundWarning(@StringRes textRes: Int?) {
+    if (textRes == null) return
     Text(
-        text = stringResource(R.string.warning_no_sound),
+        text = stringResource(textRes),
         style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
     )

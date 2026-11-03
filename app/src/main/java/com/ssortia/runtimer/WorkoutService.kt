@@ -38,6 +38,7 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     private var shownText: String? = null
 
+    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
     private val wakeLock by lazy {
         getSystemService(PowerManager::class.java)
@@ -94,7 +95,7 @@ class WorkoutService : Service() {
     private fun startWorkout(workout: Workout, delayMs: Long) {
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
         beeper = Beeper(
-            getSystemService(AudioManager::class.java),
+            audioManager,
             SettingsStore(this).loadSignalVolume(),
         )
         job = scope.launch { runLoop(workout, delayMs) }
@@ -113,7 +114,13 @@ class WorkoutService : Service() {
 
         while (true) {
             val elapsedMs = SystemClock.elapsedRealtime() - startedAt
-            val tick = tickAt(workout, elapsedMs, previousIndex, soundFailed)
+            val tick = tickAt(
+                workout,
+                elapsedMs,
+                previousIndex,
+                soundFailed = soundFailed,
+                soundMuted = isMediaMuted(),
+            )
             _state.value = tick.state
             showNotification(textFor(tick.state))
 
@@ -130,12 +137,20 @@ class WorkoutService : Service() {
 
     private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
         while (true) {
-            val tick = countdownTickAt(startedAt, SystemClock.elapsedRealtime(), soundFailed) ?: break
+            val tick = countdownTickAt(
+                startedAt,
+                SystemClock.elapsedRealtime(),
+                soundFailed = soundFailed,
+                soundMuted = isMediaMuted(),
+            ) ?: break
             _state.value = tick.state
             showNotification(countdownText(tick.state))
             delay(tick.waitMs)
         }
     }
+
+    // Канал навигации на большинстве телефонов следует громкости медиа
+    private fun isMediaMuted(): Boolean = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
 
     // Сравнивается весь текст: при отрезках в 1 с секунды совпадают, а отрезок уже другой
     private fun showNotification(text: String) {

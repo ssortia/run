@@ -12,13 +12,19 @@ sealed interface WorkoutState {
     data object Idle : WorkoutState
 
     /** Отсчёт до старта. Позиции и прогресса у него нет: тренировка ещё не началась. */
-    data class Countdown(val seconds: Long, val soundFailed: Boolean = false) : WorkoutState
+    data class Countdown(
+        val seconds: Long,
+        val soundFailed: Boolean = false,
+        val soundMuted: Boolean = false,
+    ) : WorkoutState
 
     data class Active(
         val position: Position,
         val rounds: Int,
         val progress: Float,
         val soundFailed: Boolean = false,
+        // Громкость медиа на нуле: проверяется на каждом шаге, поэтому может меняться на бегу
+        val soundMuted: Boolean = false,
     ) : WorkoutState
 }
 
@@ -38,11 +44,16 @@ data class CountdownTick(val state: WorkoutState.Countdown, val waitMs: Long)
  * Считает шаг отсчёта на момент [now] или возвращает null, если [startedAt] уже наступил.
  * Ожидание не длиннее остатка, чтобы `START` не опоздал на шаг цикла.
  */
-fun countdownTickAt(startedAt: Long, now: Long, soundFailed: Boolean = false): CountdownTick? {
+fun countdownTickAt(
+    startedAt: Long,
+    now: Long,
+    soundFailed: Boolean = false,
+    soundMuted: Boolean = false,
+): CountdownTick? {
     val remainingMs = startedAt - now
     if (remainingMs <= 0) return null
     return CountdownTick(
-        state = WorkoutState.Countdown(wholeSeconds(remainingMs), soundFailed),
+        state = WorkoutState.Countdown(wholeSeconds(remainingMs), soundFailed, soundMuted),
         waitMs = minOf(TICK_MS, remainingMs),
     )
 }
@@ -57,11 +68,18 @@ fun tickAt(
     elapsedMs: Long,
     previousIndex: Int?,
     soundFailed: Boolean = false,
+    soundMuted: Boolean = false,
 ): WorkoutTick {
     val position = workout.at(elapsedMs)
     val shown = position ?: checkNotNull(workout.at(workout.totalMs - 1)).copy(remainingMs = 0)
     return WorkoutTick(
-        state = WorkoutState.Active(shown, workout.rounds, workout.progressAt(elapsedMs), soundFailed),
+        state = WorkoutState.Active(
+            position = shown,
+            rounds = workout.rounds,
+            progress = workout.progressAt(elapsedMs),
+            soundFailed = soundFailed,
+            soundMuted = soundMuted,
+        ),
         signal = signalFor(previousIndex, position),
         finished = position == null,
     )

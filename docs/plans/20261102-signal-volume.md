@@ -195,15 +195,15 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 - Modify: `app/src/test/java/com/ssortia/runtimer/WorkoutStateTest.kt`
 - Create: `app/src/test/java/com/ssortia/runtimer/ui/SoundWarningTest.kt`
 
-- [ ] добавить `soundMuted` в `WorkoutState.Active` и параметр в `tickAt`
-- [ ] добавить `soundMuted` в `WorkoutState.Countdown` и параметр в `countdownTickAt`
-- [ ] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runLoop`, передавать `soundMuted` в `tickAt` по имени
-- [ ] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runCountdown`, передавать `soundMuted` в `countdownTickAt` по имени
-- [ ] добавить `soundWarningRes()`, вывести предупреждение в `ActiveContent` и `CountdownContent` вместо прямой проверки `soundFailed`, добавить строку `warning_muted`
-- [ ] написать тесты `tickAt`: `soundMuted` доходит до состояния, по умолчанию `false`, меняется между шагами без лишнего сигнала
-- [ ] написать тесты `countdownTickAt`: `soundMuted` доходит до состояния, по умолчанию `false`
-- [ ] написать тесты `soundWarningRes()`: нет предупреждения, каждое по отдельности, `soundFailed` важнее `soundMuted`
-- [ ] запустить тесты, они должны пройти
+- [x] добавить `soundMuted` в `WorkoutState.Active` и параметр в `tickAt`
+- [x] добавить `soundMuted` в `WorkoutState.Countdown` и параметр в `countdownTickAt`
+- [x] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runLoop`, передавать `soundMuted` в `tickAt` по имени
+- [x] читать `getStreamVolume(STREAM_MUSIC)` на каждом шаге `runCountdown`, передавать `soundMuted` в `countdownTickAt` по имени
+- [x] добавить `soundWarningRes()`, вывести предупреждение в `ActiveContent` и `CountdownContent` вместо прямой проверки `soundFailed`, добавить строку `warning_muted`
+- [x] написать тесты `tickAt`: `soundMuted` доходит до состояния, по умолчанию `false`, меняется между шагами без лишнего сигнала
+- [x] написать тесты `countdownTickAt`: `soundMuted` доходит до состояния, по умолчанию `false`
+- [x] написать тесты `soundWarningRes()`: нет предупреждения, каждое по отдельности, `soundFailed` важнее `soundMuted`
+- [x] запустить тесты, они должны пройти
 
 ### Task 4: Ползунок и пробный сигнал
 
