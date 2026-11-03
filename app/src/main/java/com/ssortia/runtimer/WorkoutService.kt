@@ -43,6 +43,9 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     // null, если вибрация выключена в настройках
     private var buzzer: Buzzer? = null
+    // Настройка «Приглушать музыку заранее». Поле, а не локальная переменная runLoop:
+    // её использует и handlePauseAction при продолжении
+    private var duckAhead = DEFAULT_DUCK_AHEAD
     // Создаётся после отсчёта, команда паузы может прийти раньше
     private var clock: WorkoutClock? = null
     // Для записи в истории. Оба заполнены, если clock не null: workout при старте,
@@ -117,7 +120,8 @@ class WorkoutService : Service() {
                 clock.resume(now)
                 wakeLock.acquire(wakeLockTimeoutMs(clock.remainingAt(now), delayMs = 0))
                 // На следующем шаге цикла приглушать было бы уже поздно
-                if (shouldDuckAfterResume(workout, clock.elapsedAt(now))) beeper?.duck()
+                val elapsedMs = clock.elapsedAt(now)
+                if (shouldDuckAfterResume(workout, elapsedMs, duckAhead = duckAhead)) beeper?.duck()
             }
         }
     }
@@ -159,6 +163,7 @@ class WorkoutService : Service() {
         val delayMs = settings.loadStartDelaySec() * 1000L
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
         beeper = Beeper(audioManager, resources, settings.loadSignalVolume())
+        duckAhead = settings.loadDuckAhead()
         if (settings.loadVibration()) buzzer = Buzzer(getSystemService(Vibrator::class.java))
         job = scope.launch { runLoop(workout, delayMs) }
     }
@@ -200,7 +205,8 @@ class WorkoutService : Service() {
             }
             if (tick.finished) break
             // Каждый отрезок кончается сигналом: смена отрезка или финал
-            if (shouldDuck(tick.state.position.remainingMs, paused = clock.isPaused)) {
+            val remainingMs = tick.state.position.remainingMs
+            if (shouldDuck(remainingMs, duckAhead = duckAhead, paused = clock.isPaused)) {
                 beeper?.duck()
             } else {
                 beeper?.stopDucking()
@@ -224,7 +230,7 @@ class WorkoutService : Service() {
             ) ?: break
             _state.value = tick.state
             // Отсчёт кончается сигналом START
-            if (shouldDuck(startedAt - now)) beeper?.duck()
+            if (shouldDuck(startedAt - now, duckAhead = duckAhead)) beeper?.duck()
             showNotification(countdownText(tick.state))
             delay(tick.waitMs)
         }

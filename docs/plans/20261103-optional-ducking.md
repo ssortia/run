@@ -85,12 +85,12 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SignalSoundTest.kt`
 
-- [ ] добавить обязательный параметр `duckAhead` в `shouldDuck` и `shouldDuckAfterResume` и обновить KDoc
-- [ ] добавить в `WorkoutService` поле `duckAhead` с комментарием, почему это поле, а не локальная переменная (им пользуется `handlePauseAction` вне `runLoop`), и заполнять его в `startWorkout` из `settings.loadDuckAhead()`
-- [ ] передавать поле в `shouldDuck` в `runLoop` и `runCountdown` и в `shouldDuckAfterResume` в `handlePauseAction`, везде именованным аргументом `duckAhead = duckAhead`
-- [ ] обновить существующие тесты `SignalSoundTest` под новый параметр (`duckAhead = true`, именованным аргументом)
-- [ ] написать тесты: при `duckAhead = false` `shouldDuck` возвращает `false` для 0, 1 и 1 000 мс, в том числе без паузы; `shouldDuckAfterResume` возвращает `false` в точках, где при включённой настройке был бы `true`
-- [ ] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`, сборка и тесты должны пройти
+- [x] добавить обязательный параметр `duckAhead` в `shouldDuck` и `shouldDuckAfterResume` и обновить KDoc
+- [x] добавить в `WorkoutService` поле `duckAhead` с комментарием, почему это поле, а не локальная переменная (им пользуется `handlePauseAction` вне `runLoop`), и заполнять его в `startWorkout` из `settings.loadDuckAhead()`
+- [x] передавать поле в `shouldDuck` в `runLoop` и `runCountdown` и в `shouldDuckAfterResume` в `handlePauseAction`, везде именованным аргументом `duckAhead = duckAhead`
+- [x] обновить существующие тесты `SignalSoundTest` под новый параметр (`duckAhead = true`, именованным аргументом)
+- [x] написать тесты: при `duckAhead = false` `shouldDuck` возвращает `false` для 0, 1 и 1 000 мс, в том числе без паузы; `shouldDuckAfterResume` возвращает `false` в точках, где при включённой настройке был бы `true`
+- [x] запустить `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`, сборка и тесты должны пройти
 
 ### Task 3: Переключатель на экране настроек
 

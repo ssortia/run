@@ -19,18 +19,21 @@ const val FINISH_SOUND_MS = 1240L
 
 /**
  * Пора ли приглушать музыку: до ближайшего сигнала осталось не больше [DUCK_AHEAD_MS].
- * На паузе время стоит, и музыка должна звучать в полную громкость.
+ * На паузе время стоит, и музыка должна звучать в полную громкость. При выключенной настройке
+ * [duckAhead] заранее музыка не приглушается никогда, фокус на время сигнала берёт `Beeper.play`.
+ * [duckAhead] обязателен, чтобы ни один вызов в сервисе не обошёл настройку; передавайте его
+ * именованным аргументом, иначе его легко перепутать с [paused].
  */
-fun shouldDuck(msToSignal: Long, paused: Boolean = false): Boolean =
-    !paused && msToSignal <= DUCK_AHEAD_MS
+fun shouldDuck(msToSignal: Long, duckAhead: Boolean, paused: Boolean = false): Boolean =
+    duckAhead && !paused && msToSignal <= DUCK_AHEAD_MS
 
 /**
  * Пора ли приглушать музыку сразу после продолжения: до конца отрезка, а с ним до сигнала,
  * осталось не больше [DUCK_AHEAD_MS]. Цикл сервиса проверил бы это только на следующем шаге.
- * После конца тренировки сигналов больше нет.
+ * После конца тренировки сигналов больше нет. При выключенной настройке [duckAhead] всегда `false`.
  */
-fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long): Boolean =
-    workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs) } ?: false
+fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long, duckAhead: Boolean): Boolean =
+    workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs, duckAhead = duckAhead) } ?: false
 
 /** Длительность звука сигнала. Старт звучит как смена отрезка. */
 fun soundDurationMs(signal: Signal): Long = when (signal) {
