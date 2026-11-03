@@ -121,10 +121,10 @@ fun runRecordOrNull(
 - Modify: `build.gradle.kts`
 - Modify: `app/build.gradle.kts`
 
-- [ ] добавить плагин KSP `2.0.21-1.0.28` и зависимости Room 2.6.1 и `navigation-compose` 2.8.5
-- [ ] настроить `room.schemaLocation` на `app/schemas`
-- [ ] проверить через `./gradlew :app:dependencyInsight --dependency androidx.core:core --configuration debugRuntimeClasspath`, что `androidx.core` остался на 1.13.1. Если версия выросла, перепроверить предупреждение `InlinedApi` из `CLAUDE.md` и обновить его
-- [ ] run tests - must pass before next task
+- [x] добавить плагин KSP `2.0.21-1.0.28` и зависимости Room 2.6.1 и `navigation-compose` 2.8.5
+- [x] настроить `room.schemaLocation` на `app/schemas`
+- [x] проверить через `./gradlew :app:dependencyInsight --dependency androidx.core:core --configuration debugRuntimeClasspath`, что `androidx.core` остался на 1.13.1. Если версия выросла, перепроверить предупреждение `InlinedApi` из `CLAUDE.md` и обновить его
+- [x] run tests - must pass before next task
 
 ### Task 2: Логика записи и строки списка
 
