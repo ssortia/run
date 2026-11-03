@@ -64,6 +64,7 @@ fun WorkoutScreen(
                     val initial = remember { loadSettings() }
                     SettingsContent(
                         initial = initial,
+                        showBackgroundWarning = showBackgroundWarning,
                         onStart = onStart,
                         onOpenHistory = dropUnlessResumed {
                             navController.navigate(ROUTE_HISTORY)
@@ -71,7 +72,6 @@ fun WorkoutScreen(
                         onOpenSettings = dropUnlessResumed {
                             navController.navigate(ROUTE_APP_SETTINGS)
                         },
-                        showBackgroundWarning = showBackgroundWarning,
                         onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                     )
                 }

@@ -41,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
@@ -118,10 +117,10 @@ internal val SettingsInputSaver = listSaver<SettingsInput, String>(
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
+    showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
-    showBackgroundWarning: Boolean,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -200,12 +199,7 @@ fun SettingsContent(
         // предупреждение не блокирует. Меньший интервал связывает текст с кнопкой
         if (showBackgroundWarning) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.warning_background),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                WarningText(R.string.warning_background, Modifier.fillMaxWidth())
                 OutlinedButton(onClick = onOpenAppDetails, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.button_open_app_details))
                 }

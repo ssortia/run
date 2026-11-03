@@ -4,7 +4,7 @@
 - На realme (realme UI 6, Android 15, RMX3741) служба прошивки `OplusProxyWakeLock` через 60 с после выключения экрана забирает wake lock сервиса. Процессор засыпает, `runLoop` стоит на `delay(TICK_MS)`, и сигналы пропадают до включения экрана. Время при этом не сбивается: оно считается от `elapsedRealtime`, и первый шаг после пробуждения подаёт пропущенный сигнал.
 - Помогает только переключатель прошивки «О приложении → Использование батареи → Разрешить работу в фоновом режиме». Публичного API у него нет, но включённый переключатель добавляет приложение в белый список Doze, и `PowerManager.isIgnoringBatteryOptimizations(packageName)` начинает возвращать `true`. Одного белого списка Doze мало.
 - План добавляет на форму предупреждение под кнопкой «Старт», если `isIgnoringBatteryOptimizations` возвращает `false`, и кнопку «Настройки батареи», которая ведёт на системную страницу приложения. Признак перечитывается при каждом возврате activity в `RESUMED`. Старт тренировки предупреждение не блокирует.
-- Исходная задача: `docs/tasks/20261103-background-restriction-warning.md`.
+- Исходная задача: `docs/tasks/completed/20261103-background-restriction-warning.md`.
 
 ## Context (from discovery)
 - `MainActivity.kt`: в `setContent` уже есть состояние Compose уровня activity (`permissionPending`, `requestAbandoned`) и `LifecycleEventEffect(Lifecycle.Event.ON_STOP)`. Системные службы берутся через `by lazy` (`audioManager`). Колбэки в `WorkoutScreen` передаются ссылками на методы или лямбдами.
