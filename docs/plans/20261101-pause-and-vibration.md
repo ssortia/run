@@ -150,10 +150,10 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Create: `app/src/main/java/com/ssortia/runtimer/WorkoutClock.kt`
 - Create: `app/src/test/java/com/ssortia/runtimer/WorkoutClockTest.kt`
 
-- [ ] создать `WorkoutClock` с `elapsedAt`, `remainingAt`, `pause`, `resume`, `isPaused`
-- [ ] написать тесты: время без пауз, замирание на паузе, продолжение с того же места, несколько пауз подряд
-- [ ] написать тесты граничных случаев: повторные `pause` и `resume`, `resume` без паузы, `pause` ровно при `elapsed == totalMs` и после конца тренировки, `remainingAt` не уходит ниже нуля
-- [ ] запустить тесты, они должны пройти перед следующей задачей
+- [x] создать `WorkoutClock` с `elapsedAt`, `remainingAt`, `pause`, `resume`, `isPaused`
+- [x] написать тесты: время без пауз, замирание на паузе, продолжение с того же места, несколько пауз подряд
+- [x] написать тесты граничных случаев: повторные `pause` и `resume`, `resume` без паузы, `pause` ровно при `elapsed == totalMs` и после конца тренировки, `remainingAt` не уходит ниже нуля
+- [x] запустить тесты, они должны пройти перед следующей задачей
 
 ### Task 2: Пауза в состоянии и тексте уведомления
 
