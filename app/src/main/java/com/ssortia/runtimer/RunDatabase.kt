@@ -2,7 +2,6 @@ package com.ssortia.runtimer
 
 import android.content.Context
 import android.database.sqlite.SQLiteException
-import android.os.PowerManager
 import android.util.Log
 import androidx.room.Dao
 import androidx.room.Database
@@ -38,12 +37,13 @@ abstract class RunDatabase : RoomDatabase() {
  * История пробежек поверх [RunDatabase]. База одна на процесс: activity и сервис обращаются
  * к ней из разных потоков. Запись и удаление идут в собственной области корутин, потому что
  * область сервиса к моменту записи уже отменена, а activity может закрыться раньше конца удаления.
+ * Ловится только `SQLiteException`, обработчика у области нет намеренно: другое исключение
+ * (например, `IllegalStateException` от Room при смене схемы без миграции) роняет процесс,
+ * и запись теряется, но ошибка разработки не прячется.
  */
 object RunHistory {
     private const val TAG = "RunHistory"
     private const val DATABASE_NAME = "runs.db"
-    private const val SAVE_WAKE_LOCK_TAG = "RunTimer:save-run"
-    private const val SAVE_WAKE_LOCK_TIMEOUT_MS = 10_000L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -57,37 +57,26 @@ object RunHistory {
             .also { instance = it }
 
     /**
-     * Записи, новые сверху. Ошибка чтения пишется в лог и даёт пустой список, после неё поток
-     * завершается. `IllegalStateException` от Room не ловится: при смене схемы это ошибка разработки.
+     * Записи, новые сверху. Ошибка чтения пишется в лог и завершает поток без нового значения:
+     * экран показывает последний полученный список или ничего, а не «Пробежек пока нет».
      */
     fun runs(context: Context): Flow<List<RunRecord>> =
         database(context).runDao().runs().catch { e ->
             if (e !is SQLiteException) throw e
             Log.w(TAG, "Не удалось прочитать историю", e)
-            emit(emptyList())
         }
 
     /**
-     * Сохраняет запись под отдельным wake lock: после `onDestroy` сервиса основной wake lock
-     * уже снят, и при заблокированном экране процессор мог бы уснуть до конца записи.
-     * Вызывать до снятия основного wake lock, чтобы между ними не было окна.
+     * Сохраняет запись. Отдельного wake lock нет: вставка одной строки короткая, сон процессора
+     * её только приостановит, а от завершения процесса без сервиса wake lock всё равно не спасает.
      */
     fun save(context: Context, record: RunRecord) {
         val dao = database(context).runDao()
-        // Без подсчёта ссылок и с проверкой isHeld: release() после таймаута бросил бы исключение
-        val lock = context.getSystemService(PowerManager::class.java)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, SAVE_WAKE_LOCK_TAG)
-            .apply {
-                setReferenceCounted(false)
-                acquire(SAVE_WAKE_LOCK_TIMEOUT_MS)
-            }
         scope.launch {
             try {
                 dao.insert(record)
             } catch (e: SQLiteException) {
                 Log.w(TAG, "Не удалось сохранить пробежку", e)
-            } finally {
-                if (lock.isHeld) lock.release()
             }
         }
     }

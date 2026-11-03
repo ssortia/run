@@ -1,45 +1,14 @@
 package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
-import java.time.ZoneOffset
-import java.util.Locale
 
 class RunRecordTest {
     // 8 повторов по 1:00 бега и 1:30 ходьбы, всего 18:30
     private val workout = Workout(runSec = 60, walkSec = 90, rounds = 8)
     private val startedAt = Instant.parse("2026-11-03T07:30:00Z").toEpochMilli()
-
-    private fun row(record: RunRecord) = runRowText(
-        record,
-        zone = ZoneOffset.UTC,
-        locale = Locale("ru"),
-        runLabel = "Бег",
-        walkLabel = "Ходьба",
-        roundsLabel = "Повторы",
-        completedLabel = "завершена",
-        stoppedLabel = "остановлена",
-    )
-
-    private fun record(
-        durationMs: Long,
-        completed: Boolean,
-        runSec: Int = 60,
-        walkSec: Int = 90,
-        rounds: Int = 8,
-    ) = RunRecord(
-        startedAtMs = startedAt,
-        runSec = runSec,
-        walkSec = walkSec,
-        rounds = rounds,
-        durationMs = durationMs,
-        completed = completed,
-    )
 
     @Test
     fun `завершённая тренировка даёт запись с полной длительностью`() {
@@ -62,10 +31,9 @@ class RunRecordTest {
     fun `остановленная тренировка даёт запись с фактической длительностью`() {
         val record = runRecordOrNull(workout, startedAt, 300_000)
 
-        assertNotNull(record)
-        assertFalse(record!!.completed)
-        assertEquals(300_000, record.durationMs)
-        assertEquals(startedAt, record.startedAtMs)
+        assertEquals(false, record?.completed)
+        assertEquals(300_000L, record?.durationMs)
+        assertEquals(startedAt, record?.startedAtMs)
     }
 
     @Test
@@ -83,6 +51,19 @@ class RunRecordTest {
     }
 
     @Test
+    fun `20 секунд бега и 5 минут паузы не дают записи`() {
+        val clock = WorkoutClock(workout.totalMs, startedAt = 0)
+        clock.pause(20_000)
+
+        assertNull(runRecordOrNull(workout, startedAt, clock.elapsedAt(320_000)))
+
+        // После продолжения время паузы тоже не засчитывается
+        clock.resume(320_000)
+        assertNull(runRecordOrNull(workout, startedAt, clock.elapsedAt(325_000)))
+        assertEquals(30_000L, runRecordOrNull(workout, startedAt, clock.elapsedAt(330_000))?.durationMs)
+    }
+
+    @Test
     fun `короткая тренировка, дошедшая до финала, сохраняется`() {
         val short = Workout(runSec = 10, walkSec = 0, rounds = 1)
 
@@ -93,9 +74,17 @@ class RunRecordTest {
     }
 
     @Test
+    fun `короткая тренировка, остановленная до финала, не сохраняется`() {
+        val short = Workout(runSec = 10, walkSec = 0, rounds = 1)
+
+        assertNull(runRecordOrNull(short, startedAt, 5_000))
+        assertNull(runRecordOrNull(short, startedAt, short.totalMs - 1))
+    }
+
+    @Test
     fun `длительность, равная общей, означает завершённую тренировку`() {
-        assertTrue(runRecordOrNull(workout, startedAt, workout.totalMs)!!.completed)
-        assertFalse(runRecordOrNull(workout, startedAt, workout.totalMs - 1)!!.completed)
+        assertEquals(true, runRecordOrNull(workout, startedAt, workout.totalMs)?.completed)
+        assertEquals(false, runRecordOrNull(workout, startedAt, workout.totalMs - 1)?.completed)
     }
 
     @Test
@@ -107,61 +96,14 @@ class RunRecordTest {
     }
 
     @Test
-    fun `строка завершённой записи`() {
+    fun `системное время старта пересчитывается к моменту по elapsedRealtime`() {
+        // Сейчас 10:00:05 по системным часам и 50 000 по elapsedRealtime, бег начался на 45 000
+        val now = Instant.parse("2026-11-03T10:00:05Z").toEpochMilli()
+
         assertEquals(
-            RunRowText(
-                date = "3 ноября 2026, 07:30",
-                details = "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 18:30 · завершена",
-            ),
-            row(record(1_110_000, completed = true)),
+            Instant.parse("2026-11-03T10:00:00Z").toEpochMilli(),
+            wallTimeAt(nowWallMs = now, nowElapsedMs = 50_000, elapsedAt = 45_000),
         )
-    }
-
-    @Test
-    fun `строка остановленной записи`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 5:00 · остановлена",
-            row(record(300_000, completed = false)).details,
-        )
-    }
-
-    @Test
-    fun `строка записи без ходьбы не показывает ходьбу`() {
-        assertEquals(
-            "Бег 30:00 · Повторы 1 · 30:00 · завершена",
-            row(record(1_800_000, completed = true, runSec = 1_800, walkSec = 0, rounds = 1)).details,
-        )
-    }
-
-    @Test
-    fun `длительность в строке округляется вниз до секунды`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 0:30 · остановлена",
-            row(record(30_200, completed = false)).details,
-        )
-    }
-
-    @Test
-    fun `длительность от часа показывается с часами`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 1:00:00 · остановлена",
-            row(record(3_600_999, completed = false)).details,
-        )
-    }
-
-    @Test
-    fun `дата строки берётся в переданной зоне`() {
-        val row = runRowText(
-            record(300_000, completed = false),
-            zone = ZoneOffset.ofHours(3),
-            locale = Locale("ru"),
-            runLabel = "Бег",
-            walkLabel = "Ходьба",
-            roundsLabel = "Повторы",
-            completedLabel = "завершена",
-            stoppedLabel = "остановлена",
-        )
-
-        assertEquals("3 ноября 2026, 10:30", row.date)
+        assertEquals(now, wallTimeAt(nowWallMs = now, nowElapsedMs = 50_000, elapsedAt = 50_000))
     }
 }

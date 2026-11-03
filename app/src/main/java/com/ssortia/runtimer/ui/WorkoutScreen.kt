@@ -41,7 +41,9 @@ fun WorkoutScreen(
     when (state) {
         WorkoutState.Idle -> {
             // Контроллер создаётся в ветке Idle: при старте тренировки ветка покидает композицию,
-            // стек сбрасывается, и после тренировки открывается форма
+            // стек сбрасывается, и после тренировки открывается форма. Хранилища записей старого
+            // контроллера остаются в activity до её уничтожения, но ViewModel в них нет, и это
+            // несколько пустых объектов за тренировку
             val navController = rememberNavController()
             NavHost(
                 navController = navController,
@@ -61,11 +63,11 @@ fun WorkoutScreen(
                     SettingsContent(
                         initial = initial,
                         onStart = onStart,
-                        onOpenSettings = dropUnlessResumed {
-                            navController.navigate(ROUTE_APP_SETTINGS)
-                        },
                         onOpenHistory = dropUnlessResumed {
                             navController.navigate(ROUTE_HISTORY)
+                        },
+                        onOpenSettings = dropUnlessResumed {
+                            navController.navigate(ROUTE_APP_SETTINGS)
                         },
                     )
                 }

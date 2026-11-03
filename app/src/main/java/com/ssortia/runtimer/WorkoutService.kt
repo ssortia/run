@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
 import android.os.Vibrator
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.Job
@@ -44,9 +45,10 @@ class WorkoutService : Service() {
     private var buzzer: Buzzer? = null
     // Создаётся после отсчёта, команда паузы может прийти раньше
     private var clock: WorkoutClock? = null
-    // Для записи в историю: workout заполняется при старте, runStartedAtMs вместе с clock
-    private var workout: Workout? = null
-    private var runStartedAtMs: Long? = null
+    // Для записи в истории. Оба заполнены, если clock не null: workout при старте,
+    // runStartedAtMs (системное время начала бега) перед созданием clock
+    private lateinit var workout: Workout
+    private var runStartedAtMs = 0L
     private var shownText: String? = null
 
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
@@ -117,8 +119,7 @@ class WorkoutService : Service() {
 
     override fun onDestroy() {
         scope.cancel()
-        // После отмены цикла часы и поля уже не меняются. Wake lock записи берётся
-        // до снятия основного, чтобы процессор не уснул между ними
+        // После отмены цикла часы и поля уже не меняются
         saveRun()
         beeper?.release()
         buzzer?.release()
@@ -131,15 +132,18 @@ class WorkoutService : Service() {
 
     // Без часов бег не начался: отклонённый запрос, команда паузы или «Стоп» во время отсчёта
     private fun saveRun() {
-        val workout = workout ?: return
-        val startedAtMs = runStartedAtMs ?: return
         val clock = clock ?: return
         val record = runRecordOrNull(
             workout,
-            startedAtMs = startedAtMs,
+            startedAtMs = runStartedAtMs,
             elapsedMs = clock.elapsedAt(SystemClock.elapsedRealtime()),
         ) ?: return
-        RunHistory.save(this, record)
+        // Сбой записи не должен прервать onDestroy: иначе ресурсы не освободятся и Idle не настанет
+        try {
+            RunHistory.save(this, record)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Не удалось сохранить пробежку", e)
+        }
     }
 
     private fun startWorkout(workout: Workout) {
@@ -163,10 +167,11 @@ class WorkoutService : Service() {
             buzzer?.play(Signal.START)
         }
 
+        // Пересчёт к моменту startedAt: после отсчёта и сигнала START уже прошло немного времени.
+        // До clock: saveRun считает поле заполненным, если часы есть
+        runStartedAtMs = wallTimeAt(System.currentTimeMillis(), SystemClock.elapsedRealtime(), startedAt)
         // Создаётся после отсчёта: до старта прошедшее время было бы отрицательным
         val clock = WorkoutClock(workout.totalMs, startedAt).also { this.clock = it }
-        // Пересчёт к моменту startedAt: после отсчёта и сигнала START уже прошло немного времени
-        runStartedAtMs = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - startedAt)
         var previousIndex: Int? = null
 
         while (true) {
@@ -265,6 +270,7 @@ class WorkoutService : Service() {
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
         private const val WAKE_LOCK_TAG = "RunTimer:workout"
+        private const val TAG = "WorkoutService"
         private const val EXTRA_RUN_SEC = "runSec"
         private const val EXTRA_WALK_SEC = "walkSec"
         private const val EXTRA_ROUNDS = "rounds"

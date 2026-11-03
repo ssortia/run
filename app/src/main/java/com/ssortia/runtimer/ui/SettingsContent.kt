@@ -117,8 +117,8 @@ internal val SettingsInputSaver = listSaver<SettingsInput, String>(
 fun SettingsContent(
     initial: WorkoutSettings,
     onStart: (WorkoutSettings) -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {

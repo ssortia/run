@@ -117,5 +117,11 @@ fun formatTotal(totalMs: Long): String {
     return "%d:%02d:%02d".format(Locale.ROOT, totalSec / SECONDS_IN_HOUR, minutes, totalSec % 60)
 }
 
+/**
+ * Форматирует прошедшее время как [formatTotal], но доли секунды отбрасываются: [formatTotal]
+ * округляет вверх, как нужно для остатка, и 30,2 с превратились бы в 0:31.
+ */
+fun formatElapsed(elapsedMs: Long): String = formatTotal(elapsedMs.coerceAtLeast(0) / 1000 * 1000)
+
 /** Секунды округляются вверх: отсчёт идёт 5, 4, 3, 2, 1 и не показывает 0. */
 internal fun wholeSeconds(ms: Long): Long = (ms.coerceAtLeast(0) + 999) / 1000

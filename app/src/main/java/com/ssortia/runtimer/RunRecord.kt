@@ -2,10 +2,6 @@ package com.ssortia.runtimer
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Запись истории: одна прошедшая тренировка. `startedAtMs` по системным часам в конце отсчёта,
@@ -43,36 +39,9 @@ fun runRecordOrNull(workout: Workout, startedAtMs: Long, elapsedMs: Long): RunRe
     )
 }
 
-/** Строка списка истории: дата старта и подробности тренировки. */
-data class RunRowText(val date: String, val details: String)
-
-// Явный шаблон, а не ofLocalizedDateTime: локализованный формат в JDK и на телефоне разный
-private const val DATE_PATTERN = "d MMMM yyyy, HH:mm"
-
 /**
- * Текст строки списка. Ходьба без времени не показывается (один повтор без ходьбы).
- * Длительность округляется вниз до секунды, в отличие от остатка в [formatTime].
+ * Переводит момент по часам `elapsedRealtime` ([elapsedAt]) в системное время по паре
+ * одновременных показаний [nowWallMs] и [nowElapsedMs].
  */
-fun runRowText(
-    record: RunRecord,
-    zone: ZoneId,
-    locale: Locale,
-    runLabel: String,
-    walkLabel: String,
-    roundsLabel: String,
-    completedLabel: String,
-    stoppedLabel: String,
-): RunRowText {
-    val date = DateTimeFormatter.ofPattern(DATE_PATTERN, locale)
-        .withZone(zone)
-        .format(Instant.ofEpochMilli(record.startedAtMs))
-    val parts = buildList {
-        add("$runLabel ${formatTotal(record.runSec * 1000L)}")
-        if (record.walkSec > 0) add("$walkLabel ${formatTotal(record.walkSec * 1000L)}")
-        add("$roundsLabel ${record.rounds}")
-        // formatTotal округляет вверх, поэтому сначала отбрасываем доли секунды
-        add(formatTotal(record.durationMs / 1000 * 1000))
-        add(if (record.completed) completedLabel else stoppedLabel)
-    }
-    return RunRowText(date, parts.joinToString(" · "))
-}
+fun wallTimeAt(nowWallMs: Long, nowElapsedMs: Long, elapsedAt: Long): Long =
+    nowWallMs - (nowElapsedMs - elapsedAt)
