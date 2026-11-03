@@ -148,11 +148,11 @@
 - [x] UI тестами не покрыт по соглашению проекта, логика проверена в Task 2; запустить `./gradlew test assembleDebug lintDebug`, всё должно пройти
 
 ### Task 4: Verify acceptance criteria
-- [ ] verify all requirements from Overview are implemented
-- [ ] verify edge cases are handled: неделя 11 с ходьбой 0:00 запускается, нулевая ходьба при 2+ повторах по-прежнему ошибка, ручная правка снимает подсветку
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
-- [ ] verify test coverage meets project standard: вся новая логика в `WorkoutPreset.kt` и изменённые проверки покрыты тестами
+- [x] verify all requirements from Overview are implemented
+- [x] verify edge cases are handled: неделя 11 с ходьбой 0:00 запускается, нулевая ходьба при 2+ повторах по-прежнему ошибка, ручная правка снимает подсветку
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify test coverage meets project standard: вся новая логика в `WorkoutPreset.kt` и изменённые проверки покрыты тестами
 
 ### Task 5: [Final] Update documentation
 
