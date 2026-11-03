@@ -138,4 +138,19 @@ class TonesTest {
             assertTrue("сэмпл $i", abs(pcm[i].toInt()) <= limit)
         }
     }
+
+    @Test
+    fun `фокус держится дольше звука на запас для каждого сигнала`() {
+        for (signal in Signal.entries) {
+            assertEquals("$signal", soundDurationMs(signal) + FINISH_TAIL_MS, focusHoldMs(signal))
+            assertTrue("$signal", focusHoldMs(signal) > soundDurationMs(signal))
+        }
+    }
+
+    @Test
+    fun `удержание фокуса для каждого сигнала`() {
+        assertEquals(900, focusHoldMs(Signal.START))
+        assertEquals(700, focusHoldMs(Signal.INTERVAL))
+        assertEquals(1560, focusHoldMs(Signal.FINISH))
+    }
 }

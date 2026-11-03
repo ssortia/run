@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.media.AudioManager
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
@@ -92,7 +93,10 @@ class WorkoutService : Service() {
 
     private fun startWorkout(workout: Workout, delayMs: Long) {
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
-        beeper = Beeper()
+        beeper = Beeper(
+            getSystemService(AudioManager::class.java),
+            SettingsStore(this).loadSignalVolume(),
+        )
         job = scope.launch { runLoop(workout, delayMs) }
     }
 
@@ -180,7 +184,6 @@ class WorkoutService : Service() {
     companion object {
         private const val CHANNEL_ID = "workout"
         private const val NOTIFICATION_ID = 1
-        private const val FINISH_TAIL_MS = 300L
         private const val WAKE_LOCK_TAG = "RunTimer:workout"
         private const val EXTRA_RUN_SEC = "runSec"
         private const val EXTRA_WALK_SEC = "walkSec"

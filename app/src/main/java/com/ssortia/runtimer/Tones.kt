@@ -10,6 +10,9 @@ const val SAMPLE_RATE_HZ = 44_100
 internal const val PEAK_AMPLITUDE = 26_000
 internal const val FADE_SAMPLES = SAMPLE_RATE_HZ * 5 / 1000
 
+// Звук выходит из динамика с задержкой: release() или возврат фокуса без запаса обрежут конец сигнала
+const val FINISH_TAIL_MS = 300L
+
 /** Отрезок сигнала. При нулевой частоте это пауза. */
 data class Tone(val frequencyHz: Int, val durationMs: Int)
 
@@ -47,5 +50,8 @@ fun synthesize(tones: List<Tone>): ShortArray {
 }
 
 fun soundDurationMs(signal: Signal): Long = tonesFor(signal).sumOf { it.durationMs.toLong() }
+
+/** Сколько держать аудиофокус после начала сигнала: музыка не должна вернуться раньше конца звука. */
+fun focusHoldMs(signal: Signal): Long = soundDurationMs(signal) + FINISH_TAIL_MS
 
 private fun sampleCount(durationMs: Int): Int = (SAMPLE_RATE_HZ * durationMs.toLong() / 1000).toInt()

@@ -177,13 +177,13 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutService.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/TonesTest.kt`
 
-- [ ] перенести `FINISH_TAIL_MS` в `Tones.kt`, добавить `focusHoldMs`
-- [ ] перевести `Beeper` на `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, объявить атрибуты в `companion object`, обновить KDoc класса
-- [ ] применять `volumeGain` в `createTrack` через `AudioTrack.setVolume()`
-- [ ] запрашивать фокус в `play()`, возвращать его по таймеру, отпускать в `release()`
-- [ ] создавать `Beeper` в `WorkoutService.startWorkout` с `AudioManager` и значением из `SettingsStore`
-- [ ] написать тесты `focusHoldMs` для обоих сигналов: удержание длиннее звука на `FINISH_TAIL_MS`
-- [ ] запустить тесты, они должны пройти
+- [x] перенести `FINISH_TAIL_MS` в `Tones.kt`, добавить `focusHoldMs`
+- [x] перевести `Beeper` на `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, объявить атрибуты в `companion object`, обновить KDoc класса
+- [x] применять `volumeGain` в `createTrack` через `AudioTrack.setVolume()`
+- [x] запрашивать фокус в `play()`, возвращать его по таймеру, отпускать в `release()`
+- [x] создавать `Beeper` в `WorkoutService.startWorkout` с `AudioManager` и значением из `SettingsStore`
+- [x] написать тесты `focusHoldMs` для обоих сигналов: удержание длиннее звука на `FINISH_TAIL_MS`
+- [x] запустить тесты, они должны пройти
 
 ### Task 3: Предупреждение о нулевой громкости медиа
 
