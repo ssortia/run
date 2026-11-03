@@ -2,13 +2,19 @@ package com.ssortia.runtimer.ui
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -62,7 +68,7 @@ fun WorkoutScreen(
                 // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
                 modifier = Modifier.safeDrawingPadding(),
             ) {
-                composable(ROUTE_SETTINGS) {
+                screen(ROUTE_SETTINGS) {
                     // Настройки читаются при создании маршрута: после тренировки стека нет, и форма
                     // берёт сохранённые значения. Несохранённые правки, пока открыт другой экран,
                     // хранит rememberSaveable записи стека
@@ -80,7 +86,7 @@ fun WorkoutScreen(
                         onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                     )
                 }
-                composable(ROUTE_APP_SETTINGS) {
+                screen(ROUTE_APP_SETTINGS) {
                     AppSettingsContent(
                         loadVolume = loadVolume,
                         onVolumeChange = onVolumeChange,
@@ -95,7 +101,7 @@ fun WorkoutScreen(
                         onBack = dropUnlessResumed { navController.popBackStack() },
                     )
                 }
-                composable(ROUTE_HISTORY) {
+                screen(ROUTE_HISTORY) {
                     // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
                     val records by runs.collectAsStateWithLifecycle(initialValue = null)
                     HistoryContent(
@@ -115,5 +121,22 @@ fun WorkoutScreen(
             onPause = onPause,
             onResume = onResume,
         )
+    }
+}
+
+/**
+ * Маршрут с непрозрачным фоном. Даже без анимаций NavHost держит уходящий экран в композиции
+ * ещё кадр-другой, и без фона экраны просвечивали бы друг сквозь друга. Новый экран лежит над
+ * старым, а при возврате уходящий лежит над тем, к которому возвращаются, поэтому фон закрывает
+ * нижний целиком.
+ */
+private fun NavGraphBuilder.screen(
+    route: String,
+    content: @Composable (NavBackStackEntry) -> Unit,
+) {
+    composable(route) { entry ->
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            content(entry)
+        }
     }
 }
