@@ -161,13 +161,13 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 - Modify: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SettingsStoreTest.kt`
 
-- [ ] создать `SignalVolume.kt` с константами, `clampVolume`, `volumeGain` и `sliderToPercent`
-- [ ] написать тесты `sliderToPercent`: `34.999996f` и `35.00001f` дают 35, значения за границами прижимаются
-- [ ] добавить `loadSignalVolume()` и `saveSignalVolume()` в `SettingsStore`
-- [ ] написать тесты `clampVolume`: границы, значения за границами, `Int.MIN_VALUE` и `Int.MAX_VALUE`
-- [ ] написать тесты `volumeGain`: 10% и 100%
-- [ ] написать тесты `SettingsStore`: значение по умолчанию 100, сохранение и чтение, прижатие при записи, прижатие сохранённых 0 и 150 при чтении, независимость от `load()` и `save()`
-- [ ] запустить тесты, они должны пройти
+- [x] создать `SignalVolume.kt` с константами, `clampVolume`, `volumeGain` и `sliderToPercent`
+- [x] написать тесты `sliderToPercent`: `34.999996f` и `35.00001f` дают 35, значения за границами прижимаются
+- [x] добавить `loadSignalVolume()` и `saveSignalVolume()` в `SettingsStore`
+- [x] написать тесты `clampVolume`: границы, значения за границами, `Int.MIN_VALUE` и `Int.MAX_VALUE`
+- [x] написать тесты `volumeGain`: 10% и 100%
+- [x] написать тесты `SettingsStore`: значение по умолчанию 100, сохранение и чтение, прижатие при записи, прижатие сохранённых 0 и 150 при чтении, независимость от `load()` и `save()`
+- [x] запустить тесты, они должны пройти
 
 ### Task 2: Канал навигации, громкость и аудиофокус в Beeper
 

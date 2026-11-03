@@ -69,6 +69,52 @@ class SettingsStoreTest {
         assertEquals(SettingsError.START_DELAY_RANGE, store.load().validate())
     }
 
+    @Test
+    fun `громкость сигналов по умолчанию 100`() {
+        assertEquals(100, store.loadSignalVolume())
+    }
+
+    @Test
+    fun `сохранённая громкость читается обратно`() {
+        store.saveSignalVolume(35)
+
+        assertEquals(35, store.loadSignalVolume())
+        assertEquals(35, SettingsStore(prefs).loadSignalVolume())
+    }
+
+    @Test
+    fun `громкость прижимается к диапазону при записи`() {
+        store.saveSignalVolume(0)
+        assertEquals(10, prefs.values["signal_volume"])
+
+        store.saveSignalVolume(150)
+        assertEquals(100, prefs.values["signal_volume"])
+    }
+
+    @Test
+    fun `повреждённая громкость прижимается при чтении`() {
+        prefs.values["signal_volume"] = 0
+        assertEquals(10, store.loadSignalVolume())
+
+        prefs.values["signal_volume"] = 150
+        assertEquals(100, store.loadSignalVolume())
+    }
+
+    @Test
+    fun `громкость не зависит от настроек тренировки`() {
+        val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
+
+        store.saveSignalVolume(40)
+        store.save(settings)
+
+        assertEquals(40, store.loadSignalVolume())
+        assertEquals(settings, store.load())
+
+        store.saveSignalVolume(60)
+
+        assertEquals(settings, store.load())
+    }
+
     /** Хранит значения в памяти, поддерживает только то, что нужно настройкам. */
     private class FakePreferences : SharedPreferences {
         val values = mutableMapOf<String, Int>()

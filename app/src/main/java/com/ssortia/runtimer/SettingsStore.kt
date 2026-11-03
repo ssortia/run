@@ -32,6 +32,15 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
+    /** Громкость сигналов хранится отдельно от тренировки. Повреждённое значение прижимается к диапазону. */
+    fun loadSignalVolume(): Int = clampVolume(prefs.getInt(KEY_SIGNAL_VOLUME, DEFAULT_VOLUME_PERCENT))
+
+    fun saveSignalVolume(percent: Int) {
+        prefs.edit()
+            .putInt(KEY_SIGNAL_VOLUME, clampVolume(percent))
+            .apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "workout_settings"
         const val KEY_RUN_MIN = "run_min"
@@ -40,5 +49,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_WALK_SEC = "walk_sec"
         const val KEY_ROUNDS = "rounds"
         const val KEY_START_DELAY_SEC = "start_delay_sec"
+        const val KEY_SIGNAL_VOLUME = "signal_volume"
     }
 }
