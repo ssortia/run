@@ -18,6 +18,7 @@
     <string name="button_back">Назад</string>
     <string name="button_delete">Удалить</string>
     <string name="button_cancel">Отмена</string>
+    <string name="button_open_app_details">Настройки батареи</string>
     <string name="setting_vibration">Вибрация</string>
     <string name="setting_duck_ahead">Приглушать музыку заранее</string>
     <string name="setting_start_delay">Задержка старта: %1$d с</string>
@@ -36,6 +37,7 @@
     <string name="signal_volume">Громкость сигналов: %1$d%%</string>
     <string name="warning_no_sound">Сигналы недоступны, следите за временем на экране</string>
     <string name="warning_muted">Громкость медиа на нуле, сигналов не будет слышно</string>
+    <string name="warning_background">Система может остановить сигналы при выключенном экране</string>
     <string name="history_title">История пробежек</string>
     <string name="history_empty">Пробежек пока нет</string>
     <string name="history_completed">завершена</string>

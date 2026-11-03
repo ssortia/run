@@ -4,7 +4,7 @@
 - На realme (realme UI 6, Android 15, RMX3741) служба прошивки `OplusProxyWakeLock` через 60 с после выключения экрана забирает wake lock сервиса. Процессор засыпает, `runLoop` стоит на `delay(TICK_MS)`, и сигналы пропадают до включения экрана. Время при этом не сбивается: оно считается от `elapsedRealtime`, и первый шаг после пробуждения подаёт пропущенный сигнал.
 - Помогает только переключатель прошивки «О приложении → Использование батареи → Разрешить работу в фоновом режиме». Публичного API у него нет, но включённый переключатель добавляет приложение в белый список Doze, и `PowerManager.isIgnoringBatteryOptimizations(packageName)` начинает возвращать `true`. Одного белого списка Doze мало.
 - План добавляет на форму предупреждение под кнопкой «Старт», если `isIgnoringBatteryOptimizations` возвращает `false`, и кнопку «Настройки батареи», которая ведёт на системную страницу приложения. Признак перечитывается при каждом возврате activity в `RESUMED`. Старт тренировки предупреждение не блокирует.
-- Исходная задача: `docs/tasks/20261103-background-restriction-warning.md`.
+- Исходная задача: `docs/tasks/completed/20261103-background-restriction-warning.md`.
 
 ## Context (from discovery)
 - `MainActivity.kt`: в `setContent` уже есть состояние Compose уровня activity (`permissionPending`, `requestAbandoned`) и `LifecycleEventEffect(Lifecycle.Event.ON_STOP)`. Системные службы берутся через `by lazy` (`audioManager`). Колбэки в `WorkoutScreen` передаются ссылками на методы или лямбдами.
@@ -95,11 +95,11 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 
-- [ ] добавить `powerManager` и `readIgnoringBatteryOptimizations()` в `MainActivity`
-- [ ] хранить признак в состоянии Compose и перечитывать в `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)`
-- [ ] добавить `openAppDetails()` с `ACTION_APPLICATION_DETAILS_SETTINGS` и перехватом `ActivityNotFoundException`
-- [ ] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `WorkoutScreen` и передать их из `MainActivity`
-- [ ] тесты: новых нет (Android API, см. Development Approach); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` проходит
+- [x] добавить `powerManager` и `readIgnoringBatteryOptimizations()` в `MainActivity`
+- [x] хранить признак в состоянии Compose и перечитывать в `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)`
+- [x] добавить `openAppDetails()` с `ACTION_APPLICATION_DETAILS_SETTINGS` и перехватом `ActivityNotFoundException`
+- [x] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `WorkoutScreen` и передать их из `MainActivity`
+- [x] тесты: новых нет (Android API, см. Development Approach); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` проходит
 
 ### Task 2: Предупреждение и кнопка на форме
 
@@ -108,18 +108,18 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строки `warning_background` и `button_open_app_details`
-- [ ] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `SettingsContent`, в маршруте `settings` у `WorkoutScreen` передать их, обернув колбэк в `dropUnlessResumed`
-- [ ] показать блок предупреждения под «Старт» при `showBackgroundWarning`: текст обычного цвета с `TextAlign.Center`, `OutlinedButton`
-- [ ] убедиться, что `Button` «Старт» не зависит от `showBackgroundWarning` (старт не блокируется)
-- [ ] тесты: новых нет (Compose); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug` проходит без новых предупреждений lint
+- [x] добавить строки `warning_background` и `button_open_app_details`
+- [x] добавить параметры `showBackgroundWarning` и `onOpenAppDetails` в `SettingsContent`, в маршруте `settings` у `WorkoutScreen` передать их, обернув колбэк в `dropUnlessResumed`
+- [x] показать блок предупреждения под «Старт» при `showBackgroundWarning`: текст обычного цвета с `TextAlign.Center`, `OutlinedButton`
+- [x] убедиться, что `Button` «Старт» не зависит от `showBackgroundWarning` (старт не блокируется)
+- [x] тесты: новых нет (Compose); `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug` проходит без новых предупреждений lint
 
 ### Task 3: Verify acceptance criteria
-- [ ] предупреждение показывается только при `isIgnoringBatteryOptimizations == false` и перечитывается на `ON_RESUME`
-- [ ] кнопка открывает страницу приложения, а не `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`; разрешение `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` в манифест не добавлено
-- [ ] `SettingsContent` не импортирует `PowerManager` и `android.provider.Settings`
-- [ ] текст не обещает, что сигналы точно будут звучать
-- [ ] полный прогон: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
+- [x] предупреждение показывается только при `isIgnoringBatteryOptimizations == false` и перечитывается на `ON_RESUME`
+- [x] кнопка открывает страницу приложения, а не `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`; разрешение `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` в манифест не добавлено
+- [x] `SettingsContent` не импортирует `PowerManager` и `android.provider.Settings`
+- [x] текст не обещает, что сигналы точно будут звучать
+- [x] полный прогон: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug lintDebug`
 
 ### Task 4: [Final] Update documentation
 
@@ -128,15 +128,15 @@
 - Modify: `README.md`
 - Modify: `CLAUDE.md`
 
-- [ ] `USER_STORIES.md`, US-7: критерий «Если система может ограничить работу приложения в фоне, форма под „Старт“ предупреждает об этом и даёт кнопку „Настройки батареи“ со страницей приложения; старт предупреждение не блокирует. На большинстве телефонов предупреждение видно сразу после установки, пока работа в фоне не разрешена. Предупреждение может пропасть, хотя ограничение осталось»
-- [ ] `USER_STORIES.md`, US-14: уточнить критерий о кнопках «История» и «Настройки»: они стоят под «Старт», а при показанном предупреждении о фоновой работе под ним
-- [ ] `README.md`, «Как это работает → Фоновая работа»: предупреждение на форме, признак `isIgnoringBatteryOptimizations`, его неточность, показ по умолчанию после установки, почему не используется `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-- [ ] `README.md`, «Как это работает → Сон процессора»: прошивки realme, OPPO и OnePlus (`OplusProxyWakeLock`) забирают wake lock через минуту после выключения экрана, если работа в фоне не разрешена
-- [ ] `README.md`, таблица файлов: в строке `MainActivity.kt` упомянуть проверку ограничения фоновой работы и открытие страницы приложения, в строке `ui/SettingsContent.kt` предупреждение о фоновой работе
-- [ ] `README.md`, «Известные ограничения»: дополнить пункт про Xiaomi, Huawei и Samsung путём для realme, OPPO и OnePlus («О приложении → Использование батареи → Разрешить работу в фоновом режиме») и симптомом: сигналы пропадают через минуту после выключения экрана и звучат при его включении, таймер показывает верное время
-- [ ] `CLAUDE.md`, «Неочевидное»: `OplusProxyWakeLock` забирает wake lock через 60 с, белого списка Doze мало, `isIgnoringBatteryOptimizations` лишь косвенный и неточный признак переключателя, перечитывается на `ON_RESUME` в `MainActivity`, запрос `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` не используется намеренно
-- [ ] перенести задачу в `docs/tasks/completed/`: остаётся только ручная проверка на телефоне
-- [ ] перенести план в `docs/plans/completed/`
+- [x] `USER_STORIES.md`, US-7: критерий «Если система может ограничить работу приложения в фоне, форма под „Старт“ предупреждает об этом и даёт кнопку „Настройки батареи“ со страницей приложения; старт предупреждение не блокирует. На большинстве телефонов предупреждение видно сразу после установки, пока работа в фоне не разрешена. Предупреждение может пропасть, хотя ограничение осталось»
+- [x] `USER_STORIES.md`, US-14: уточнить критерий о кнопках «История» и «Настройки»: они стоят под «Старт», а при показанном предупреждении о фоновой работе под ним
+- [x] `README.md`, «Как это работает → Фоновая работа»: предупреждение на форме, признак `isIgnoringBatteryOptimizations`, его неточность, показ по умолчанию после установки, почему не используется `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+- [x] `README.md`, «Как это работает → Сон процессора»: прошивки realme, OPPO и OnePlus (`OplusProxyWakeLock`) забирают wake lock через минуту после выключения экрана, если работа в фоне не разрешена
+- [x] `README.md`, таблица файлов: в строке `MainActivity.kt` упомянуть проверку ограничения фоновой работы и открытие страницы приложения, в строке `ui/SettingsContent.kt` предупреждение о фоновой работе
+- [x] `README.md`, «Известные ограничения»: дополнить пункт про Xiaomi, Huawei и Samsung путём для realme, OPPO и OnePlus («О приложении → Использование батареи → Разрешить работу в фоновом режиме») и симптомом: сигналы пропадают через минуту после выключения экрана и звучат при его включении, таймер показывает верное время
+- [x] `CLAUDE.md`, «Неочевидное»: `OplusProxyWakeLock` забирает wake lock через 60 с, белого списка Doze мало, `isIgnoringBatteryOptimizations` лишь косвенный и неточный признак переключателя, перечитывается на `ON_RESUME` в `MainActivity`, запрос `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` не используется намеренно
+- [x] перенести задачу в `docs/tasks/completed/`: остаётся только ручная проверка на телефоне
+- [x] перенести план в `docs/plans/completed/`
 
 ## Post-Completion
 *Ручные проверки, вне репозитория*

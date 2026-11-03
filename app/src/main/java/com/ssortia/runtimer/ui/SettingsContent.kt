@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -116,9 +117,11 @@ internal val SettingsInputSaver = listSaver<SettingsInput, String>(
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
+    showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
@@ -190,6 +193,17 @@ fun SettingsContent(
                 text = stringResource(R.string.button_start),
                 style = MaterialTheme.typography.titleLarge,
             )
+        }
+
+        // Цвет обычный: красный текст под «Старт» читался бы как ошибка формы, а старт
+        // предупреждение не блокирует. Меньший интервал связывает текст с кнопкой
+        if (showBackgroundWarning) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                WarningText(R.string.warning_background, Modifier.fillMaxWidth())
+                OutlinedButton(onClick = onOpenAppDetails, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.button_open_app_details))
+                }
+            }
         }
 
         Row(

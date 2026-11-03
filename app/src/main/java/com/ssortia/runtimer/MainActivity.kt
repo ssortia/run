@@ -1,12 +1,16 @@
 package com.ssortia.runtimer
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -19,6 +23,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
@@ -44,6 +49,7 @@ class MainActivity : ComponentActivity() {
     // Один поток на activity: вызов в setContent создавал бы новый Flow при рекомпозиции
     private val runs by lazy { RunHistory.runs(applicationContext) }
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
+    private val powerManager by lazy { getSystemService(PowerManager::class.java) }
 
     // Пробный сигнал ползунка. Громкость задаётся только конструктором, поэтому на каждое
     // отпускание создаётся новый Beeper, а прежний отпускается
@@ -73,6 +79,16 @@ class MainActivity : ComponentActivity() {
                 if (abandonsPermissionRequest(permissionPending, isChangingConfigurations)) {
                     requestAbandoned = true
                 }
+            }
+            // Признак неточный: белый список Doze лишь косвенно говорит о разрешённой работе в фоне.
+            // Начальное значение читается сразу, иначе предупреждение мигнуло бы при первом показе.
+            // Перечитывается на ON_RESUME: переключатель включают в системных настройках
+            // и возвращаются кнопкой «Назад»
+            var ignoringBatteryOptimizations by remember {
+                mutableStateOf(readIgnoringBatteryOptimizations())
+            }
+            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                ignoringBatteryOptimizations = readIgnoringBatteryOptimizations()
             }
             // Вне WorkoutScreen: запрос должен пережить смену экрана и поворот телефона.
             // Результат не важен: без разрешения таймер работает, просто уведомления не видно
@@ -107,6 +123,7 @@ class MainActivity : ComponentActivity() {
                     loadDuckAhead = store::loadDuckAhead,
                     loadStartDelay = store::loadStartDelaySec,
                     runs = runs,
+                    showBackgroundWarning = !ignoringBatteryOptimizations,
                     onStart = { settings ->
                         store.save(settings)
                         when {
@@ -124,6 +141,7 @@ class MainActivity : ComponentActivity() {
                     onDuckAheadChange = store::saveDuckAhead,
                     onStartDelayChange = store::saveStartDelaySec,
                     onDeleteRun = { id -> RunHistory.delete(applicationContext, id) },
+                    onOpenAppDetails = ::openAppDetails,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                     onPause = { sendCommand(WorkoutService.pauseIntent(this)) },
                     onResume = { sendCommand(WorkoutService.resumeIntent(this)) },
@@ -162,6 +180,23 @@ class MainActivity : ComponentActivity() {
             startService(intent)
         } catch (e: IllegalStateException) {
             Log.w(TAG, "Система не приняла команду сервису", e)
+        }
+    }
+
+    private fun readIgnoringBatteryOptimizations(): Boolean =
+        powerManager.isIgnoringBatteryOptimizations(packageName)
+
+    /** Страница приложения в системных настройках: на realme там «Использование батареи». */
+    private fun openAppDetails() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        )
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            // На урезанной прошивке страницы может не быть
+            Log.w(TAG, "Страница приложения в настройках не найдена", e)
         }
     }
 

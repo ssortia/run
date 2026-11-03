@@ -30,12 +30,14 @@ fun WorkoutScreen(
     loadDuckAhead: () -> Boolean,
     loadStartDelay: () -> Int,
     runs: Flow<List<RunRecord>>,
+    showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
     onVolumeChange: (Int) -> Unit,
     onVibrationChange: (Boolean) -> Unit,
     onDuckAheadChange: (Boolean) -> Unit,
     onStartDelayChange: (Int) -> Unit,
     onDeleteRun: (Long) -> Unit,
+    onOpenAppDetails: () -> Unit,
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
@@ -64,6 +66,7 @@ fun WorkoutScreen(
                     val initial = remember { loadSettings() }
                     SettingsContent(
                         initial = initial,
+                        showBackgroundWarning = showBackgroundWarning,
                         onStart = onStart,
                         onOpenHistory = dropUnlessResumed {
                             navController.navigate(ROUTE_HISTORY)
@@ -71,6 +74,7 @@ fun WorkoutScreen(
                         onOpenSettings = dropUnlessResumed {
                             navController.navigate(ROUTE_APP_SETTINGS)
                         },
+                        onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                     )
                 }
                 composable(ROUTE_APP_SETTINGS) {

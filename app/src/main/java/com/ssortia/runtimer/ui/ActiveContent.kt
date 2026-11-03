@@ -63,7 +63,7 @@ fun ActiveContent(
                 text = stringResource(R.string.round_progress, position.round, state.rounds),
                 style = MaterialTheme.typography.titleLarge,
             )
-            soundWarningRes(state.soundFailed, state.soundMuted)?.let { SoundWarning(it) }
+            soundWarningRes(state.soundFailed, state.soundMuted)?.let { WarningText(it) }
         },
         bottom = {
             LinearProgressIndicator(
@@ -116,7 +116,7 @@ fun CountdownContent(
                 style = MaterialTheme.typography.displaySmall,
             )
             TimerText(state.seconds.toString())
-            soundWarningRes(state.soundFailed, state.soundMuted)?.let { SoundWarning(it) }
+            soundWarningRes(state.soundFailed, state.soundMuted)?.let { WarningText(it) }
         },
         bottom = {
             InvertedButton(
@@ -204,11 +204,12 @@ fun pauseButtonRes(paused: Boolean): Int =
 fun pauseEnabled(state: WorkoutState.Active): Boolean = state.position.remainingMs > 0
 
 @Composable
-private fun SoundWarning(@StringRes textRes: Int) {
+internal fun WarningText(@StringRes textRes: Int, modifier: Modifier = Modifier) {
     Text(
         text = stringResource(textRes),
         style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
+        modifier = modifier,
     )
 }
 
