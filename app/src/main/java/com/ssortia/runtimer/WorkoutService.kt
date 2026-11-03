@@ -105,12 +105,19 @@ class WorkoutService : Service() {
                 // В финальном хвосте часы паузу не примут: снятие wake lock
                 // растянуло бы ожидание конца сигнала
                 clock.pause(now)
-                // На паузе процессору не над чем работать, а таймаут истёк бы на долгой паузе
-                if (clock.isPaused && wakeLock.isHeld) wakeLock.release()
+                if (clock.isPaused) {
+                    // Сразу, а не на следующем шаге цикла: без wake lock он может не проснуться,
+                    // и музыка осталась бы приглушённой на всю паузу
+                    beeper?.stopDucking()
+                    // На паузе процессору не над чем работать, а таймаут истёк бы на долгой паузе
+                    if (wakeLock.isHeld) wakeLock.release()
+                }
             }
             ACTION_RESUME -> if (clock.isPaused) {
                 clock.resume(now)
                 wakeLock.acquire(wakeLockTimeoutMs(clock.remainingAt(now), delayMs = 0))
+                // На следующем шаге цикла приглушать было бы уже поздно
+                if (shouldDuckAfterResume(workout, clock.elapsedAt(now))) beeper?.duck()
             }
         }
     }
@@ -264,7 +271,6 @@ class WorkoutService : Service() {
         walkSec = getIntExtra(EXTRA_WALK_SEC, 0),
         rounds = getIntExtra(EXTRA_ROUNDS, 0),
     )
-
 
     companion object {
         private const val CHANNEL_ID = "workout"

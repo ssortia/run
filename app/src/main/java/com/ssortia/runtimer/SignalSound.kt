@@ -21,6 +21,14 @@ const val FINISH_SOUND_MS = 1240L
 fun shouldDuck(msToSignal: Long, paused: Boolean = false): Boolean =
     !paused && msToSignal <= DUCK_AHEAD_MS
 
+/**
+ * Пора ли приглушать музыку сразу после продолжения: до конца отрезка, а с ним до сигнала,
+ * осталось не больше [DUCK_AHEAD_MS]. Цикл сервиса проверил бы это только на следующем шаге.
+ * После конца тренировки сигналов больше нет.
+ */
+fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long): Boolean =
+    workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs) } ?: false
+
 /** Длительность звука сигнала. Старт звучит как смена отрезка. */
 fun soundDurationMs(signal: Signal): Long = when (signal) {
     Signal.START, Signal.INTERVAL -> INTERVAL_SOUND_MS

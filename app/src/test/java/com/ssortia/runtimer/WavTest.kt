@@ -76,4 +76,11 @@ class WavTest {
         val truncated = wav(chunk("fmt ", fmt()), chunk("data", samples(1, 2, 3))).dropLast(2).toByteArray()
         assertNull(decodeWav(truncated))
     }
+
+    @Test
+    fun `пустой чанк data отклоняется`() {
+        assertNull(decodeWav(wav(chunk("fmt ", fmt()), chunk("data", byteArrayOf()))))
+        // Один байт не даёт ни одного сэмпла
+        assertNull(decodeWav(wav(chunk("fmt ", fmt()), chunk("data", byteArrayOf(1)))))
+    }
 }

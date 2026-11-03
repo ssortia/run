@@ -26,7 +26,8 @@ fun decodeWav(bytes: ByteArray): ShortArray? {
                     buffer.getShort(body + 14).toInt() == Short.SIZE_BITS
             }
             "data" -> {
-                if (!formatOk) return null
+                // Пустые данные дали бы AudioTrack с буфером 0 байт, и Builder бросил бы исключение
+                if (!formatOk || size < Short.SIZE_BYTES) return null
                 return ShortArray(size / Short.SIZE_BYTES) { buffer.getShort(body + it * Short.SIZE_BYTES) }
             }
         }
