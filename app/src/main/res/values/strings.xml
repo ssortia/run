@@ -6,9 +6,9 @@
     <string name="segment_walk">Ходьба</string>
     <string name="round_label">Повтор</string>
     <string name="notification_paused">Пауза</string>
-    <string name="field_minutes">Минуты</string>
-    <string name="field_seconds">Секунды</string>
     <string name="field_rounds">Повторы</string>
+    <string name="rounds_decrease">Меньше повторов</string>
+    <string name="rounds_increase">Больше повторов</string>
     <string name="button_start">Старт</string>
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>
@@ -37,7 +37,7 @@
     <string name="round_progress">Повтор %1$d из %2$d</string>
     <string name="preset_title">Программа</string>
     <string name="preset_week">Неделя %1$d</string>
-    <string name="total_duration">Всего: %1$s</string>
+    <string name="preset_week_match">Неделя %1$d программы</string>
     <string name="error_run_zero">Время бега должно быть больше нуля</string>
     <string name="error_walk_zero">Время ходьбы должно быть больше нуля, если повторов больше одного</string>
     <string name="error_rounds_range">Число повторов должно быть от 1 до %1$d</string>
