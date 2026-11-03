@@ -94,10 +94,7 @@ class WorkoutService : Service() {
 
     private fun startWorkout(workout: Workout, delayMs: Long) {
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
-        beeper = Beeper(
-            audioManager,
-            SettingsStore(this).loadSignalVolume(),
-        )
+        beeper = Beeper(audioManager, SettingsStore(this).loadSignalVolume())
         job = scope.launch { runLoop(workout, delayMs) }
     }
 
@@ -119,7 +116,7 @@ class WorkoutService : Service() {
                 elapsedMs,
                 previousIndex,
                 soundFailed = soundFailed,
-                soundMuted = isMediaMuted(),
+                soundMuted = audioManager.isMediaMuted(),
             )
             _state.value = tick.state
             showNotification(textFor(tick.state))
@@ -130,8 +127,7 @@ class WorkoutService : Service() {
             delay(TICK_MS)
         }
 
-        // Звук выходит из динамика с задержкой, release() без запаса обрежет конец сигнала
-        delay(soundDurationMs(Signal.FINISH) + FINISH_TAIL_MS)
+        delay(soundWithTailMs(Signal.FINISH))
         stopSelf()
     }
 
@@ -141,16 +137,13 @@ class WorkoutService : Service() {
                 startedAt,
                 SystemClock.elapsedRealtime(),
                 soundFailed = soundFailed,
-                soundMuted = isMediaMuted(),
+                soundMuted = audioManager.isMediaMuted(),
             ) ?: break
             _state.value = tick.state
             showNotification(countdownText(tick.state))
             delay(tick.waitMs)
         }
     }
-
-    // Канал навигации на большинстве телефонов следует громкости медиа
-    private fun isMediaMuted(): Boolean = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
 
     // Сравнивается весь текст: при отрезках в 1 с секунды совпадают, а отрезок уже другой
     private fun showNotification(text: String) {

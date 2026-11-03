@@ -10,17 +10,30 @@ import android.os.Looper
 import android.util.Log
 
 /**
+ * Громкость медиа на нуле, и сигналов не будет слышно. Канал навигации на большинстве телефонов
+ * следует громкости медиа: при смене атрибутов [Beeper] эту проверку надо пересмотреть.
+ */
+fun AudioManager.isMediaMuted(): Boolean = getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+
+/**
  * Проигрывает сигналы через канал навигации: они звучат поверх музыки, приглушают её на время
  * сигнала и следуют системной громкости, поэтому итоговая громкость равна [volumePercent],
  * умноженной на громкость канала.
  *
- * Аудиофокус берётся на каждый сигнал и возвращается по таймеру через [focusHoldMs],
+ * Аудиофокус берётся на каждый сигнал и возвращается по таймеру через [soundWithTailMs],
  * окончательно его отпускает [release]. [play] и [release] вызываются только из главного потока.
+ *
+ * Готовятся только [signals]: синтез и создание дорожек идут в конструкторе, в главном потоке,
+ * поэтому пробному сигналу незачем готовить все три.
  */
-class Beeper(private val audioManager: AudioManager, private val volumePercent: Int) {
+class Beeper(
+    private val audioManager: AudioManager,
+    private val volumePercent: Int,
+    signals: Collection<Signal> = Signal.entries,
+) {
     // ATTRIBUTES объявлены в companion object: tracks заполняется при создании объекта,
     // и поле экземпляра ниже него было бы ещё null
-    private val tracks: Map<Signal, AudioTrack?> = Signal.entries.associateWith(::createTrack)
+    private val tracks: Map<Signal, AudioTrack?> = signals.associateWith(::createTrack)
 
     // Без слушателя: сигнал длится доли секунды, реагировать на смену фокуса незачем
     private val focusRequest =
@@ -31,7 +44,7 @@ class Beeper(private val audioManager: AudioManager, private val volumePercent: 
     private val abandonFocus = Runnable { audioManager.abandonAudioFocusRequest(focusRequest) }
     private var released = false
 
-    /** false, если хотя бы один сигнал не удалось подготовить: о такой тренировке надо предупредить. */
+    /** false, если хотя бы один из сигналов не удалось подготовить: о такой тренировке надо предупредить. */
     val isReady: Boolean get() = tracks.values.all { it != null }
 
     /** Проигрывает сигнал с начала. Потерянный сигнал не должен останавливать тренировку. */
@@ -72,7 +85,7 @@ class Beeper(private val audioManager: AudioManager, private val volumePercent: 
         if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             Log.w(TAG, "Фокус для сигнала $signal не получен: $result")
         }
-        handler.postDelayed(abandonFocus, focusHoldMs(signal))
+        handler.postDelayed(abandonFocus, soundWithTailMs(signal))
     }
 
     private fun createTrack(signal: Signal): AudioTrack? {

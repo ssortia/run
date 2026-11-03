@@ -51,7 +51,10 @@ fun synthesize(tones: List<Tone>): ShortArray {
 
 fun soundDurationMs(signal: Signal): Long = tonesFor(signal).sumOf { it.durationMs.toLong() }
 
-/** Сколько держать аудиофокус после начала сигнала: музыка не должна вернуться раньше конца звука. */
-fun focusHoldMs(signal: Signal): Long = soundDurationMs(signal) + FINISH_TAIL_MS
+/**
+ * Длительность сигнала с запасом [FINISH_TAIL_MS]. Столько `Beeper` держит аудиофокус,
+ * а сервис ждёт после финального сигнала перед остановкой.
+ */
+fun soundWithTailMs(signal: Signal): Long = soundDurationMs(signal) + FINISH_TAIL_MS
 
 private fun sampleCount(durationMs: Int): Int = (SAMPLE_RATE_HZ * durationMs.toLong() / 1000).toInt()

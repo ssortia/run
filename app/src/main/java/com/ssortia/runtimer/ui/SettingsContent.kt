@@ -25,12 +25,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -42,10 +45,10 @@ import com.ssortia.runtimer.MAX_VOLUME_PERCENT
 import com.ssortia.runtimer.MIN_VOLUME_PERCENT
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SettingsError
+import com.ssortia.runtimer.VOLUME_SLIDER_STEPS
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.formatTotal
 import com.ssortia.runtimer.sliderToPercent
-import com.ssortia.runtimer.volumeSliderSteps
 
 /** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
 data class SettingsInput(
@@ -127,7 +130,9 @@ fun SettingsContent(
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
         mutableStateOf(SettingsInput.from(initial))
     }
-    var volume by rememberSaveable { mutableFloatStateOf(initialVolume.toFloat()) }
+    // Не rememberSaveable: значение сохраняется только при отпускании, и прерванный поворотом сдвиг
+    // показывал бы несохранённую громкость. После пересоздания ползунок читает хранилище заново
+    var volume by remember { mutableFloatStateOf(initialVolume.toFloat()) }
     val settings = input.toSettings()
     val error = settings.validate()
 
@@ -168,15 +173,15 @@ fun SettingsContent(
             modifier = Modifier.fillMaxWidth(),
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.signal_volume, sliderToPercent(volume)),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            val volumeLabel = stringResource(R.string.signal_volume, sliderToPercent(volume))
+            Text(text = volumeLabel, style = MaterialTheme.typography.titleMedium)
             Slider(
                 value = volume,
                 onValueChange = { volume = it },
+                // Подпись над ползунком отдельный узел, без описания TalkBack назовёт ползунок безымянным
+                modifier = Modifier.semantics { contentDescription = volumeLabel },
                 valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
-                steps = volumeSliderSteps(),
+                steps = VOLUME_SLIDER_STEPS,
                 onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
             )
         }

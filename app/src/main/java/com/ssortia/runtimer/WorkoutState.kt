@@ -7,7 +7,11 @@ private const val SECONDS_IN_HOUR = 3_600L
 /** Шаг цикла сервиса. */
 const val TICK_MS = 250L
 
-/** Состояние тренировки, которое сервис публикует для экрана. */
+/**
+ * Состояние тренировки, которое сервис публикует для экрана. `soundFailed`: сигналы не удалось
+ * подготовить. `soundMuted`: громкость медиа на нуле, она проверяется на каждом шаге и может
+ * меняться на бегу.
+ */
 sealed interface WorkoutState {
     data object Idle : WorkoutState
 
@@ -23,7 +27,6 @@ sealed interface WorkoutState {
         val rounds: Int,
         val progress: Float,
         val soundFailed: Boolean = false,
-        // Громкость медиа на нуле: проверяется на каждом шаге, поэтому может меняться на бегу
         val soundMuted: Boolean = false,
     ) : WorkoutState
 }

@@ -28,7 +28,14 @@ class SignalVolumeTest {
     @Test
     fun `коэффициент громкости`() {
         assertEquals(0.1f, volumeGain(10), 1e-6f)
+        assertEquals(0.55f, volumeGain(55), 1e-6f)
         assertEquals(1f, volumeGain(100), 1e-6f)
+    }
+
+    @Test
+    fun `коэффициент громкости не даёт тишину и не усиливает`() {
+        assertEquals(0.1f, volumeGain(0), 1e-6f)
+        assertEquals(1f, volumeGain(150), 1e-6f)
     }
 
     @Test
@@ -46,14 +53,10 @@ class SignalVolumeTest {
     }
 
     @Test
-    fun `число шагов ползунка`() {
-        assertEquals(17, volumeSliderSteps())
-    }
-
-    @Test
     fun `значения ползунка совпадают с шагом`() {
-        // Slider раскладывает положения равномерно, как здесь, и Float даёт погрешность
-        val positions = volumeSliderSteps() + 1
+        // Модель раскладки Slider: положения равномерны, и Float даёт погрешность. Сам Compose
+        // здесь не проверяется, при смене его раскладки тест этого не заметит
+        val positions = VOLUME_SLIDER_STEPS + 1
         val range = (MAX_VOLUME_PERCENT - MIN_VOLUME_PERCENT).toFloat()
         val percents = (0..positions).map { i ->
             sliderToPercent(MIN_VOLUME_PERCENT + range * (i.toFloat() / positions))

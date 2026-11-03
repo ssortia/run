@@ -56,7 +56,7 @@ fun ActiveContent(
                 text = stringResource(R.string.round_progress, position.round, state.rounds),
                 style = MaterialTheme.typography.titleLarge,
             )
-            SoundWarning(soundWarningRes(state.soundFailed, state.soundMuted))
+            soundWarningRes(state.soundFailed, state.soundMuted)?.let { SoundWarning(it) }
         },
         bottom = {
             LinearProgressIndicator(
@@ -88,7 +88,7 @@ fun CountdownContent(
                 style = MaterialTheme.typography.displaySmall,
             )
             TimerText(state.seconds.toString())
-            SoundWarning(soundWarningRes(state.soundFailed, state.soundMuted))
+            soundWarningRes(state.soundFailed, state.soundMuted)?.let { SoundWarning(it) }
         },
         bottom = { StopButton(colors, onStop) },
     )
@@ -158,8 +158,7 @@ fun soundWarningRes(soundFailed: Boolean, soundMuted: Boolean): Int? = when {
 }
 
 @Composable
-private fun SoundWarning(@StringRes textRes: Int?) {
-    if (textRes == null) return
+private fun SoundWarning(@StringRes textRes: Int) {
     Text(
         text = stringResource(textRes),
         style = MaterialTheme.typography.bodyLarge,

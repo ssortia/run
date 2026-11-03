@@ -120,8 +120,16 @@ class WorkoutStateTest {
     }
 
     // Отсчёт с произвольным началом: значения elapsedRealtime не обязаны начинаться с нуля
-    private fun countdownTick(remainingMs: Long, soundFailed: Boolean = false) =
-        countdownTickAt(startedAt = 100_000 + remainingMs, now = 100_000, soundFailed)
+    private fun countdownTick(
+        remainingMs: Long,
+        soundFailed: Boolean = false,
+        soundMuted: Boolean = false,
+    ) = countdownTickAt(
+        startedAt = 100_000 + remainingMs,
+        now = 100_000,
+        soundFailed = soundFailed,
+        soundMuted = soundMuted,
+    )
 
     @Test
     fun `отсчёт заканчивается, когда остаток дошёл до нуля`() {
@@ -172,7 +180,7 @@ class WorkoutStateTest {
 
     @Test
     fun `нулевая громкость доходит до состояния отсчёта`() {
-        assertTrue(countdownTickAt(startedAt = 101_000, now = 100_000, soundMuted = true)!!.state.soundMuted)
+        assertTrue(countdownTick(remainingMs = 1_000, soundMuted = true)!!.state.soundMuted)
         assertFalse(countdownTick(remainingMs = 1_000)!!.state.soundMuted)
         assertFalse(countdownTick(remainingMs = 1_000, soundFailed = true)!!.state.soundMuted)
     }
@@ -333,13 +341,17 @@ class WorkoutStateTest {
     fun `смена громкости между шагами не даёт лишнего сигнала`() {
         val muted = tickAt(workout, 2_000, previousIndex = 0, soundMuted = true)
         val unmuted = tickAt(workout, 2_250, previousIndex = 0, soundMuted = false)
-        val mutedAgain = tickAt(workout, 2_500, previousIndex = 0, soundMuted = true)
 
         assertTrue(muted.state.soundMuted)
         assertFalse(unmuted.state.soundMuted)
-        assertTrue(mutedAgain.state.soundMuted)
         assertNull(muted.signal)
         assertNull(unmuted.signal)
-        assertNull(mutedAgain.signal)
+    }
+
+    @Test
+    fun `нулевая громкость не отменяет сигналы`() {
+        // Сигнал подаётся всё равно: громкость могут прибавить в любой момент
+        assertEquals(Signal.INTERVAL, tickAt(workout, 10_000, previousIndex = 0, soundMuted = true).signal)
+        assertEquals(Signal.FINISH, tickAt(workout, 30_000, previousIndex = 2, soundMuted = true).signal)
     }
 }

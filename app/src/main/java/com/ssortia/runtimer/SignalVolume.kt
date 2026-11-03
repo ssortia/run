@@ -9,13 +9,13 @@ const val MAX_VOLUME_PERCENT = 100
 const val DEFAULT_VOLUME_PERCENT = MAX_VOLUME_PERCENT
 const val VOLUME_STEP_PERCENT = 5
 
+/** Число промежуточных положений `Slider`: крайние значения в `steps` не входят. */
+const val VOLUME_SLIDER_STEPS = (MAX_VOLUME_PERCENT - MIN_VOLUME_PERCENT) / VOLUME_STEP_PERCENT - 1
+
 fun clampVolume(percent: Int): Int = percent.coerceIn(MIN_VOLUME_PERCENT, MAX_VOLUME_PERCENT)
 
-/** Коэффициент для `AudioTrack.setVolume()`: регулировка только ослабляет звук. */
-fun volumeGain(percent: Int): Float = percent / 100f
+/** Коэффициент для `AudioTrack.setVolume()`: регулировка только ослабляет звук и не даёт тишину. */
+fun volumeGain(percent: Int): Float = clampVolume(percent) / 100f
 
 // Slider отдаёт Float: 34.999996 через toInt() дало бы 34 и разошлось с шагом
 fun sliderToPercent(value: Float): Int = clampVolume(value.roundToInt())
-
-/** Число промежуточных положений `Slider`: крайние значения в `steps` не входят. */
-fun volumeSliderSteps(): Int = (MAX_VOLUME_PERCENT - MIN_VOLUME_PERCENT) / VOLUME_STEP_PERCENT - 1

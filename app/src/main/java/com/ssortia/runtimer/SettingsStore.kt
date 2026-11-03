@@ -32,7 +32,10 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
-    /** Громкость сигналов хранится отдельно от тренировки. Повреждённое значение прижимается к диапазону. */
+    /**
+     * Громкость сигналов хранится отдельно от тренировки. Значение вне диапазона прижимается к нему,
+     * значение внутри диапазона, но не на шаге ползунка, возвращается как есть.
+     */
     fun loadSignalVolume(): Int = clampVolume(prefs.getInt(KEY_SIGNAL_VOLUME, DEFAULT_VOLUME_PERCENT))
 
     fun saveSignalVolume(percent: Int) {

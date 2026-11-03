@@ -83,6 +83,22 @@ class SettingsStoreTest {
     }
 
     @Test
+    fun `границы громкости сохраняются без изменений`() {
+        store.saveSignalVolume(MIN_VOLUME_PERCENT)
+        assertEquals(MIN_VOLUME_PERCENT, store.loadSignalVolume())
+
+        store.saveSignalVolume(MAX_VOLUME_PERCENT)
+        assertEquals(MAX_VOLUME_PERCENT, store.loadSignalVolume())
+    }
+
+    @Test
+    fun `громкость не на шаге ползунка читается как есть`() {
+        prefs.values["signal_volume"] = 37
+
+        assertEquals(37, store.loadSignalVolume())
+    }
+
+    @Test
     fun `громкость прижимается к диапазону при записи`() {
         store.saveSignalVolume(0)
         assertEquals(10, prefs.values["signal_volume"])

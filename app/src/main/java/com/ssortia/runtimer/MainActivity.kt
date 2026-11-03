@@ -8,6 +8,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,6 +41,7 @@ fun abandonsPermissionRequest(pending: Boolean, changingConfigurations: Boolean)
 
 class MainActivity : ComponentActivity() {
     private val store by lazy { SettingsStore(this) }
+    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
 
     // Пробный сигнал ползунка. Громкость задаётся только конструктором, поэтому на каждое
     // отпускание создаётся новый Beeper, а прежний отпускается
@@ -47,11 +49,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Между сигналами ничего не играет, и без этого кнопки меняли бы громкость звонка
+        // Между сигналами ничего не играет, и без этого кнопки меняли бы громкость звонка.
+        // Поток тот же, что в isMediaMuted(): канал сигналов следует громкости медиа
         volumeControlStream = AudioManager.STREAM_MUSIC
         enableEdgeToEdge()
         setContent {
             val state by WorkoutService.state.collectAsStateWithLifecycle()
+            // Пробная дорожка не должна жить всю тренировку. Отпускается по уходу из Idle, а не по
+            // «Старт»: форма видна, пока сервис не опубликовал отсчёт, и ползунок ещё можно отпустить
+            val idle = state is WorkoutState.Idle
+            LaunchedEffect(idle) {
+                if (!idle) releasePreview()
+            }
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
@@ -93,8 +102,6 @@ class MainActivity : ComponentActivity() {
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     onStart = { settings ->
-                        // Пробная дорожка не должна жить всю тренировку
-                        releasePreview()
                         store.save(settings)
                         when {
                             !needsNotificationRequest(Build.VERSION.SDK_INT, notificationsGranted()) ->
@@ -106,7 +113,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     },
-                    onVolumeChange = ::previewVolume,
+                    onVolumeChange = ::saveVolumeAndPreview,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                 )
             }
@@ -118,12 +125,18 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    private fun previewVolume(percent: Int) {
+    private fun saveVolumeAndPreview(percent: Int) {
         store.saveSignalVolume(percent)
         releasePreview()
-        previewBeeper = Beeper(getSystemService(AudioManager::class.java), percent).also {
-            it.play(Signal.INTERVAL)
+        // Иначе пробный сигнал молча не слышен, и ползунок выглядит сломанным
+        if (audioManager.isMediaMuted()) {
+            Toast.makeText(this, R.string.warning_muted, Toast.LENGTH_SHORT).show()
         }
+        // Готовится только INTERVAL: дорожки создаются в главном потоке
+        val beeper = Beeper(audioManager, percent, setOf(Signal.INTERVAL))
+        if (!beeper.isReady) Log.w(TAG, "Пробный сигнал не подготовлен")
+        beeper.play(Signal.INTERVAL)
+        previewBeeper = beeper
     }
 
     private fun releasePreview() {

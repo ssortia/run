@@ -18,7 +18,7 @@
   - `Workout.kt`: `Workout`, `totalMs`;
   - `WorkoutState.kt`: `formatTime`, `formatTotal`;
   - `MainActivity.kt`: `setContent`, вызов `WorkoutScreen`, зависимости передаются параметрами;
-  - `ui/WorkoutScreen.kt`: ветка `Idle` с `remember { loadSettings() }`;
+  - `ui/WorkoutScreen.kt`: ветка `Idle` с `remember { loadSettings() }` и `remember { loadVolume() }`;
   - `ui/SettingsContent.kt`: форма на `rememberSaveable`, кнопка «Старт».
 - Паттерны:
   - чистая логика без Android API, подписи передаются параметрами, код с Android API тонкий и тестами не покрыт;
@@ -171,7 +171,7 @@ fun runRecordOrNull(
 
 - [ ] добавить в ветку `Idle` `rememberNavController()` и `NavHost` с маршрутами `settings` и `history`, `settings` стартовый
 - [ ] отключить анимации `NavHost`, перенести на него `Modifier.safeDrawingPadding()` вместе с комментарием про клавиатуру
-- [ ] перенести `SettingsContent` в маршрут `settings` вместе с `remember { loadSettings() }`, обновить комментарий: настройки читаются при создании маршрута
+- [ ] перенести `SettingsContent` в маршрут `settings` вместе с `remember { loadSettings() }` и `remember { loadVolume() }`, передать `initialVolume` и `onVolumeChange`, обновить комментарий: настройки читаются при создании маршрута
 - [ ] добавить на форму кнопку «История», переход и возврат только через `NavController`, без своего `BackHandler`, оба колбэка обернуть в `dropUnlessResumed`
 - [ ] объявить в `MainActivity` `runs by lazy` и передать в `WorkoutScreen` поток записей и колбэк удаления
 - [ ] run tests - must pass before next task

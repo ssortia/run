@@ -21,6 +21,14 @@
 - Modify: `docs/plans/completed/20261101-first-version.md`
 - Create: `app/src/main/java/com/ssortia/runtimer/SignalVolume.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
+- Modify: `app/src/main/java/com/ssortia/runtimer/Tones.kt`
+- Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutState.kt`
+- Modify: `app/src/main/java/com/ssortia/runtimer/ui/ActiveContent.kt`
+- Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
+- Modify: `CLAUDE.md`
+- Modify: `docs/plans/20261101-pause-and-vibration.md`
+- Create: `app/src/test/java/com/ssortia/runtimer/SignalVolumeTest.kt`
+- Create: `app/src/test/java/com/ssortia/runtimer/ui/SoundWarningTest.kt`
 
 - [x] перевести `Beeper` на `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE` и запрашивать аудиофокус `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` на время сигнала, чтобы музыка приглушалась
 - [x] отпускать аудиофокус после окончания сигнала и при «Стоп», чтобы музыка не оставалась приглушённой
