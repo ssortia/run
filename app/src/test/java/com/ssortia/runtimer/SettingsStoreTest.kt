@@ -2,7 +2,9 @@ package com.ssortia.runtimer
 
 import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsStoreTest {
@@ -131,11 +133,46 @@ class SettingsStoreTest {
         assertEquals(settings, store.load())
     }
 
+    @Test
+    fun `вибрация по умолчанию включена`() {
+        assertTrue(store.loadVibration())
+    }
+
+    @Test
+    fun `сохранённая вибрация читается обратно`() {
+        store.saveVibration(false)
+
+        assertFalse(store.loadVibration())
+        assertFalse(SettingsStore(prefs).loadVibration())
+
+        store.saveVibration(true)
+
+        assertTrue(store.loadVibration())
+    }
+
+    @Test
+    fun `вибрация не зависит от настроек тренировки и громкости`() {
+        val settings = WorkoutSettings(runMin = 3, runSec = 15, walkMin = 4, walkSec = 45, rounds = 9)
+
+        store.save(settings)
+        store.saveSignalVolume(40)
+        store.saveVibration(false)
+
+        assertEquals(settings, store.load())
+        assertEquals(40, store.loadSignalVolume())
+
+        store.save(WorkoutSettings())
+        store.saveSignalVolume(60)
+
+        assertFalse(store.loadVibration())
+    }
+
     /** Хранит значения в памяти, поддерживает только то, что нужно настройкам. */
     private class FakePreferences : SharedPreferences {
-        val values = mutableMapOf<String, Int>()
+        val values = mutableMapOf<String, Any>()
 
-        override fun getInt(key: String, defValue: Int): Int = values[key] ?: defValue
+        override fun getInt(key: String, defValue: Int): Int = values[key] as Int? ?: defValue
+        override fun getBoolean(key: String, defValue: Boolean): Boolean = values[key] as Boolean? ?: defValue
 
         override fun edit(): SharedPreferences.Editor = FakeEditor()
 
@@ -145,7 +182,6 @@ class SettingsStoreTest {
         override fun getStringSet(key: String, defValues: Set<String>?): Set<String>? = unsupported()
         override fun getLong(key: String, defValue: Long): Long = unsupported()
         override fun getFloat(key: String, defValue: Float): Float = unsupported()
-        override fun getBoolean(key: String, defValue: Boolean): Boolean = unsupported()
         override fun registerOnSharedPreferenceChangeListener(
             listener: SharedPreferences.OnSharedPreferenceChangeListener,
         ): Unit = unsupported()
@@ -155,9 +191,10 @@ class SettingsStoreTest {
         ): Unit = unsupported()
 
         private inner class FakeEditor : SharedPreferences.Editor {
-            private val pending = mutableMapOf<String, Int>()
+            private val pending = mutableMapOf<String, Any>()
 
             override fun putInt(key: String, value: Int) = apply { pending[key] = value }
+            override fun putBoolean(key: String, value: Boolean) = apply { pending[key] = value }
 
             override fun apply() {
                 values += pending
@@ -173,7 +210,6 @@ class SettingsStoreTest {
             override fun putString(key: String, value: String?): SharedPreferences.Editor = unsupported()
             override fun putLong(key: String, value: Long): SharedPreferences.Editor = unsupported()
             override fun putFloat(key: String, value: Float): SharedPreferences.Editor = unsupported()
-            override fun putBoolean(key: String, value: Boolean): SharedPreferences.Editor = unsupported()
             override fun putStringSet(
                 key: String,
                 values: Set<String>?,

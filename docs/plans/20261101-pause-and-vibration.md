@@ -208,12 +208,12 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/SettingsStore.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/SettingsStoreTest.kt`
 
-- [ ] создать `vibrationFor(signal)` с веткой `Signal.START` и `vibrationDurationMs(signal)`
-- [ ] добавить `loadVibration()` и `saveVibration()` в `SettingsStore`, по умолчанию `true`
-- [ ] написать тесты: паттерны начинаются без задержки, имеют чётную длину и заканчиваются вибрацией
-- [ ] написать тесты: финальный паттерн отличается от обычного, длительность считается верно
-- [ ] расширить `FakePreferences` на `Boolean` и написать тесты: по умолчанию `true`, сохранённое значение читается, настройка не задевает параметры тренировки
-- [ ] запустить тесты, они должны пройти перед следующей задачей
+- [x] создать `vibrationFor(signal)` с веткой `Signal.START` и `vibrationDurationMs(signal)`
+- [x] добавить `loadVibration()` и `saveVibration()` в `SettingsStore`, по умолчанию `true`
+- [x] написать тесты: паттерны начинаются без задержки, имеют чётную длину и заканчиваются вибрацией
+- [x] написать тесты: финальный паттерн отличается от обычного, длительность считается верно
+- [x] расширить `FakePreferences` на `Boolean` и написать тесты: по умолчанию `true`, сохранённое значение читается, настройка не задевает параметры тренировки
+- [x] запустить тесты, они должны пройти перед следующей задачей
 
 ### Task 6: Buzzer и подключение к циклу
 

@@ -44,6 +44,15 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
+    /** Вибрация хранится отдельно от тренировки и по умолчанию включена. */
+    fun loadVibration(): Boolean = prefs.getBoolean(KEY_VIBRATION, true)
+
+    fun saveVibration(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_VIBRATION, enabled)
+            .apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "workout_settings"
         const val KEY_RUN_MIN = "run_min"
@@ -53,5 +62,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_ROUNDS = "rounds"
         const val KEY_START_DELAY_SEC = "start_delay_sec"
         const val KEY_SIGNAL_VOLUME = "signal_volume"
+        const val KEY_VIBRATION = "vibration"
     }
 }
