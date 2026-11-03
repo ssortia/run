@@ -53,7 +53,7 @@
     <string name="warning_no_sound">Сигналы недоступны, следите за временем на экране</string>
     <string name="warning_muted">Громкость медиа на нуле, сигналов не будет слышно</string>
     <string name="warning_background">Система может остановить сигналы при выключенном экране</string>
-    <string name="history_title">История пробежек</string>
+    <string name="history_title">История</string>
     <string name="history_empty">Пробежек пока нет</string>
     <string name="history_completed">завершена</string>
     <string name="history_stopped">остановлена</string>

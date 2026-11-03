@@ -1,8 +1,10 @@
 package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.Instant
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Locale
@@ -10,24 +12,20 @@ import java.util.Locale
 class RunRowTextTest {
     private val startedAt = Instant.parse("2026-11-03T07:30:00Z").toEpochMilli()
 
-    private fun row(record: RunRecord, zone: ZoneId = ZoneOffset.UTC) = runRowText(
-        record,
-        dateFormatter = runDateFormatter(zone, Locale("ru")),
-        runLabel = "Бег",
-        walkLabel = "Ходьба",
-        roundsLabel = "Повторы",
-        completedLabel = "завершена",
-        stoppedLabel = "остановлена",
-    )
+    private fun formatters(zone: ZoneId = ZoneOffset.UTC) = runFormatters(zone, Locale("ru"))
+
+    private fun row(record: RunRecord, zone: ZoneId = ZoneOffset.UTC) = runRowText(record, formatters(zone))
 
     private fun record(
-        durationMs: Long,
-        completed: Boolean,
+        durationMs: Long = 300_000,
+        completed: Boolean = false,
         runSec: Int = 60,
         walkSec: Int = 90,
         rounds: Int = 8,
         startedAtMs: Long = startedAt,
+        id: Long = 0,
     ) = RunRecord(
+        id = id,
         startedAtMs = startedAtMs,
         runSec = runSec,
         walkSec = walkSec,
@@ -36,75 +34,122 @@ class RunRowTextTest {
         completed = completed,
     )
 
+    private fun at(iso: String) = Instant.parse(iso).toEpochMilli()
+
     @Test
-    fun `строка завершённой записи`() {
+    fun `карточка завершённой записи`() {
         assertEquals(
             RunRowText(
+                day = "3",
+                weekday = "вт",
+                runTime = "1:00",
+                walkTime = "1:30",
+                meta = "×8 · 07:30",
+                duration = "18:30",
+                completed = true,
                 date = "3 ноября 2026, 07:30",
-                details = "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 18:30 · завершена",
             ),
             row(record(1_110_000, completed = true)),
         )
     }
 
     @Test
-    fun `строка остановленной записи`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 5:00 · остановлена",
-            row(record(300_000, completed = false)).details,
-        )
+    fun `карточка остановленной записи`() {
+        val text = row(record(300_000, completed = false))
+
+        assertEquals(false, text.completed)
+        assertEquals("5:00", text.duration)
     }
 
     @Test
-    fun `строка записи без ходьбы не показывает ходьбу`() {
-        assertEquals(
-            "Бег 30:00 · Повторы 1 · 30:00 · завершена",
-            row(record(1_800_000, completed = true, runSec = 1_800, walkSec = 0, rounds = 1)).details,
-        )
+    fun `без ходьбы время ходьбы не показывается`() {
+        val text = row(record(1_800_000, completed = true, runSec = 1_800, walkSec = 0, rounds = 1))
+
+        assertNull(text.walkTime)
+        assertEquals("30:00", text.runTime)
+        assertEquals("×1 · 07:30", text.meta)
     }
 
     @Test
-    fun `длительность в строке округляется вниз до секунды`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 0:30 · остановлена",
-            row(record(30_200, completed = false)).details,
-        )
+    fun `meta содержит повторы и время старта`() {
+        assertEquals("×7 · 18:42", row(record(rounds = 7, startedAtMs = at("2026-11-03T18:42:00Z"))).meta)
+    }
+
+    @Test
+    fun `длительность округляется вниз до секунды`() {
+        assertEquals("0:30", row(record(30_200)).duration)
     }
 
     @Test
     fun `длительность от часа показывается с часами`() {
-        assertEquals(
-            "Бег 1:00 · Ходьба 1:30 · Повторы 8 · 1:00:00 · остановлена",
-            row(record(3_600_999, completed = false)).details,
-        )
+        assertEquals("1:00:00", row(record(3_600_999)).duration)
     }
 
     @Test
-    fun `дата строки берётся в переданной зоне и может сменить день`() {
-        val record = record(
-            300_000,
-            completed = false,
-            startedAtMs = Instant.parse("2026-11-02T22:30:00Z").toEpochMilli(),
-        )
+    fun `день и время берутся в переданной зоне и могут сменить день`() {
+        val text = row(record(startedAtMs = at("2026-11-02T22:30:00Z")), zone = ZoneOffset.ofHours(3))
 
-        assertEquals("3 ноября 2026, 01:30", row(record, zone = ZoneOffset.ofHours(3)).date)
+        assertEquals("3", text.day)
+        assertEquals("вт", text.weekday)
+        assertEquals("×8 · 01:30", text.meta)
+        assertEquals("3 ноября 2026, 01:30", text.date)
     }
 
     @Test
     fun `двузначные день и час, месяц в родительном падеже`() {
-        val record = record(
-            300_000,
-            completed = false,
-            startedAtMs = Instant.parse("2026-11-23T21:05:00Z").toEpochMilli(),
-        )
+        val text = row(record(startedAtMs = at("2026-11-23T21:05:00Z")))
 
-        assertEquals("23 ноября 2026, 21:05", row(record).date)
+        assertEquals("23", text.day)
+        assertEquals("23 ноября 2026, 21:05", text.date)
     }
 
     @Test
-    fun `дата для диалога совпадает с датой строки`() {
-        val formatter = runDateFormatter(ZoneOffset.UTC, Locale("ru"))
+    fun `дата для диалога совпадает с датой карточки`() {
+        assertEquals("3 ноября 2026, 07:30", runDateText(startedAt, formatters()))
+        assertEquals(row(record()).date, runDateText(startedAt, formatters()))
+    }
 
-        assertEquals("3 ноября 2026, 07:30", runDateText(startedAt, formatter))
+    @Test
+    fun `заголовок месяца в именительном падеже`() {
+        assertEquals("ноябрь 2026", runMonthTitle(YearMonth.of(2026, 11), formatters()))
+    }
+
+    @Test
+    fun `пустой список даёт пустые группы`() {
+        assertEquals(emptyList<RunMonth>(), groupRunsByMonth(emptyList(), ZoneOffset.UTC))
+    }
+
+    @Test
+    fun `записи группируются по месяцам с сохранением порядка`() {
+        val a = record(id = 4, startedAtMs = at("2026-11-20T10:00:00Z"))
+        val b = record(id = 3, startedAtMs = at("2026-11-03T10:00:00Z"))
+        val c = record(id = 2, startedAtMs = at("2026-10-15T10:00:00Z"))
+        val d = record(id = 1, startedAtMs = at("2025-11-10T10:00:00Z"))
+
+        assertEquals(
+            listOf(
+                RunMonth(YearMonth.of(2026, 11), listOf(a, b)),
+                RunMonth(YearMonth.of(2026, 10), listOf(c)),
+                RunMonth(YearMonth.of(2025, 11), listOf(d)),
+            ),
+            groupRunsByMonth(listOf(a, b, c, d), ZoneOffset.UTC),
+        )
+    }
+
+    @Test
+    fun `запись на границе месяцев попадает в месяц по зоне`() {
+        // 31 октября 22:30 по UTC — это уже 1 ноября по Москве
+        val boundary = record(id = 2, startedAtMs = at("2026-10-31T22:30:00Z"))
+        val october = record(id = 1, startedAtMs = at("2026-10-20T10:00:00Z"))
+        val records = listOf(boundary, october)
+
+        assertEquals(
+            listOf(YearMonth.of(2026, 11), YearMonth.of(2026, 10)),
+            groupRunsByMonth(records, ZoneOffset.ofHours(3)).map { it.yearMonth },
+        )
+        assertEquals(
+            listOf(RunMonth(YearMonth.of(2026, 10), records)),
+            groupRunsByMonth(records, ZoneOffset.UTC),
+        )
     }
 }
