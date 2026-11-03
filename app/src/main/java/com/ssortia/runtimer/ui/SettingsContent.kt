@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -125,6 +126,7 @@ fun SettingsContent(
     initialVolume: Int,
     onStart: (WorkoutSettings) -> Unit,
     onVolumeChange: (Int) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var input by rememberSaveable(stateSaver = SettingsInputSaver) {
@@ -213,6 +215,16 @@ fun SettingsContent(
             Text(
                 text = stringResource(R.string.button_start),
                 style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        TextButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.button_settings),
+                style = MaterialTheme.typography.titleMedium,
             )
         }
     }

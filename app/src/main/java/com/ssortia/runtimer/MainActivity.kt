@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                     state = state,
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
+                    loadVibration = store::loadVibration,
                     onStart = { settings ->
                         store.save(settings)
                         when {
@@ -114,6 +115,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onVolumeChange = ::saveVolumeAndPreview,
+                    onVibrationChange = store::saveVibration,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
                     onPause = { sendCommand(WorkoutService.pauseIntent(this)) },
                     onResume = { sendCommand(WorkoutService.resumeIntent(this)) },

@@ -14,6 +14,9 @@
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>
     <string name="button_resume">Продолжить</string>
+    <string name="button_settings">Настройки</string>
+    <string name="button_back">Назад</string>
+    <string name="setting_vibration">Вибрация</string>
     <string name="segment_paused">%1$s · пауза</string>
     <string name="countdown_label">Старт через</string>
     <string name="seconds_short">с</string>

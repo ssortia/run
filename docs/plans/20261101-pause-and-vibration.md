@@ -240,13 +240,13 @@ fun vibrationFor(signal: Signal): LongArray = when (signal) {
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить строки `button_settings`, `button_back`, `setting_vibration`
-- [ ] создать `AppSettingsContent` со строкой-переключателем и кнопкой «Назад», с `safeDrawingPadding()`
-- [ ] добавить кнопку «Настройки» и параметр `onOpenSettings` в `SettingsContent`
-- [ ] добавить в ветку `Idle` флаг `showAppSettings`, `BackHandler` и `SaveableStateHolder` для формы
-- [ ] передать `loadVibration` и `saveVibration` из `MainActivity`
-- [ ] тестов нет, код только с Compose: сохранение значений формы при переходе проверяется вручную
-- [ ] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
+- [x] добавить строки `button_settings`, `button_back`, `setting_vibration`
+- [x] создать `AppSettingsContent` со строкой-переключателем и кнопкой «Назад», с `safeDrawingPadding()`
+- [x] добавить кнопку «Настройки» и параметр `onOpenSettings` в `SettingsContent`
+- [x] добавить в ветку `Idle` флаг `showAppSettings`, `BackHandler` и `SaveableStateHolder` для формы
+- [x] передать `loadVibration` и `saveVibration` из `MainActivity`
+- [x] тестов нет, код только с Compose: сохранение значений формы при переходе проверяется вручную
+- [x] запустить `./gradlew test assembleDebug`, должно пройти перед следующей задачей
 
 ### Task 8: Проверка критериев приёмки
 - [ ] проверить по коду каждый пункт Overview и раздел «Контракт сервиса» в `CLAUDE.md`
