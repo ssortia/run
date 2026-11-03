@@ -1,7 +1,7 @@
 # Задержка перед стартом тренировки
 
 ## Overview
-- Задача из `docs/tasks/20261101-start-delay.md`: на форме можно указать, через сколько секунд после «Старт» начнётся таймер. За это время бегун убирает телефон в карман и готовится.
+- Задача из `docs/tasks/completed/20261101-start-delay.md`: на форме можно указать, через сколько секунд после «Старт» начнётся таймер. За это время бегун убирает телефон в карман и готовится.
 - Диапазон 0–60 секунд, по умолчанию 5. При 0 тренировка начинается сразу, как сейчас, без сигнала `START`.
 - Обратный отсчёт идёт в `WorkoutService`, поэтому работает при заблокированном экране. Экран и уведомление показывают оставшиеся секунды, «Стоп» доступен сразу.
 - Задержка не входит в итоговую длительность на форме и в прогресс тренировки.
@@ -175,7 +175,7 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
   - `play()` общий, поэтому аудиофокус и громкость `START` получает без изменений. Тест `focusHoldMs` «для обоих сигналов» проверяет три сигнала.
   - Проверка нулевой громкости нужна и в `runCountdown`: в `Countdown` добавляется `soundMuted`, а `soundWarningRes()` работает для обоих состояний. Иначе бегун увидит предупреждение уже после неслышного `START`, с телефоном в кармане.
   - Ползунок и новое поле добавляются в одно место формы.
-- **История пробежек** (`docs/tasks/20261102-run-history.md`). «Стоп» во время отсчёта не должен создавать запись, а длительность считается от `startedAt`, который на время отсчёта лежит в будущем.
+- **История пробежек** (`docs/tasks/completed/20261102-run-history.md`). «Стоп» во время отсчёта не должен создавать запись, а длительность считается от `startedAt`, который на время отсчёта лежит в будущем.
 
 ## What Goes Where
 - **Implementation Steps** (`[ ]` checkboxes): tasks achievable within this codebase - code changes, tests, documentation updates
@@ -269,7 +269,7 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - Modify: `USER_STORIES.md`
 - Modify: `README.md`
 - Modify: `CLAUDE.md`
-- Modify: `docs/tasks/20261101-start-delay.md`
+- Modify: `docs/tasks/completed/20261101-start-delay.md`
 - Modify: `docs/plans/20261101-pause-and-vibration.md`
 - Modify: `docs/plans/20261102-signal-volume.md`
 
@@ -277,7 +277,7 @@ private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
 - [x] обновить в `README.md` таймаут wake lock, состав сигналов, значения формы и таблицу файлов; незакоммиченную правку про `build-apk.sh` сохранить
 - [x] в контракте сервиса в `CLAUDE.md` распространить правило публикации `Active` на `Countdown`
 - [x] добавить в планы паузы и громкости заметки из раздела «Связь с другими планами»; если какой-то из них уже реализован, вместо заметки внести правки в код в рамках этого плана
-- [x] отметить пункты задачи в `docs/tasks/20261101-start-delay.md`, кроме проверки на телефоне
+- [x] отметить пункты задачи в `docs/tasks/completed/20261101-start-delay.md`, кроме проверки на телефоне
 - [x] перенести этот план в `docs/plans/completed/`
 
 ## Post-Completion
