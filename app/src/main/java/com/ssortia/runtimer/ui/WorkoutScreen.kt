@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ssortia.runtimer.RunRecord
+import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,8 @@ fun WorkoutScreen(
     onVibrationChange: (Boolean) -> Unit,
     onDuckMusicChange: (Boolean) -> Unit,
     onStartDelayChange: (Int) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onDeleteRun: (Long) -> Unit,
     onOpenAppDetails: () -> Unit,
     onStop: () -> Unit,
@@ -87,6 +90,8 @@ fun WorkoutScreen(
                         onDuckMusicChange = onDuckMusicChange,
                         loadStartDelay = loadStartDelay,
                         onStartDelayChange = onStartDelayChange,
+                        themeMode = themeMode,
+                        onThemeModeChange = onThemeModeChange,
                         onBack = dropUnlessResumed { navController.popBackStack() },
                     )
                 }

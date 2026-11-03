@@ -73,6 +73,15 @@ class SettingsStore(private val prefs: SharedPreferences) {
             .apply()
     }
 
+    /** Тема хранится именем значения: порядок в перечислении можно менять. */
+    fun loadThemeMode(): ThemeMode = themeModeOf(prefs.getString(KEY_THEME_MODE, null))
+
+    fun saveThemeMode(mode: ThemeMode) {
+        prefs.edit()
+            .putString(KEY_THEME_MODE, mode.name)
+            .apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "workout_settings"
         const val KEY_RUN_MIN = "run_min"
@@ -83,6 +92,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
         const val KEY_START_DELAY_SEC = "start_delay_sec"
         const val KEY_SIGNAL_VOLUME = "signal_volume"
         const val KEY_VIBRATION = "vibration"
+        const val KEY_THEME_MODE = "theme_mode"
         // Прежнее имя ключа: настройка начиналась как «Приглушать музыку заранее», и сохранённое
         // значение не должно сбрасываться
         const val KEY_DUCK_MUSIC = "duck_ahead"

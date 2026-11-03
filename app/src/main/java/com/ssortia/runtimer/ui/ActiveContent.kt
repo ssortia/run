@@ -2,7 +2,6 @@ package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,7 +43,7 @@ fun ActiveContent(
     modifier: Modifier = Modifier,
 ) {
     val position = state.position
-    val colors = segmentColors(position.isRun, isSystemInDarkTheme())
+    val colors = segmentColors(position.isRun, LocalDarkTheme.current)
 
     TimerLayout(
         colors = colors,
@@ -105,7 +104,7 @@ fun CountdownContent(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = countdownColors(isSystemInDarkTheme())
+    val colors = countdownColors(LocalDarkTheme.current)
 
     TimerLayout(
         colors = colors,

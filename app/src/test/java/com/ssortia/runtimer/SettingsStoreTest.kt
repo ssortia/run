@@ -141,6 +141,34 @@ class SettingsStoreTest {
     }
 
     @Test
+    fun `тема по умолчанию следует за системой`() {
+        assertEquals(ThemeMode.SYSTEM, store.loadThemeMode())
+    }
+
+    @Test
+    fun `каждый вариант темы сохраняется и читается`() {
+        for (mode in ThemeMode.entries) {
+            store.saveThemeMode(mode)
+
+            assertEquals(mode, SettingsStore(prefs).loadThemeMode())
+        }
+    }
+
+    @Test
+    fun `тема хранится именем значения`() {
+        store.saveThemeMode(ThemeMode.DARK)
+
+        assertEquals("DARK", prefs.values["theme_mode"])
+    }
+
+    @Test
+    fun `неизвестная тема читается как системная`() {
+        prefs.values["theme_mode"] = "SEPIA"
+
+        assertEquals(ThemeMode.SYSTEM, store.loadThemeMode())
+    }
+
+    @Test
     fun `громкость не на шаге ползунка читается как есть`() {
         prefs.values["signal_volume"] = 37
 
@@ -279,7 +307,7 @@ class SettingsStoreTest {
 
         override fun contains(key: String): Boolean = key in values
         override fun getAll(): Map<String, *> = values
-        override fun getString(key: String, defValue: String?): String? = unsupported()
+        override fun getString(key: String, defValue: String?): String? = values[key] as String? ?: defValue
         override fun getStringSet(key: String, defValues: Set<String>?): Set<String>? = unsupported()
         override fun getLong(key: String, defValue: Long): Long = unsupported()
         override fun getFloat(key: String, defValue: Float): Float = unsupported()
@@ -308,7 +336,8 @@ class SettingsStoreTest {
 
             override fun clear(): SharedPreferences.Editor = unsupported()
             override fun remove(key: String): SharedPreferences.Editor = unsupported()
-            override fun putString(key: String, value: String?): SharedPreferences.Editor = unsupported()
+            override fun putString(key: String, value: String?): SharedPreferences.Editor =
+                apply { pending[key] = requireNotNull(value) }
             override fun putLong(key: String, value: Long): SharedPreferences.Editor = unsupported()
             override fun putFloat(key: String, value: Float): SharedPreferences.Editor = unsupported()
             override fun putStringSet(

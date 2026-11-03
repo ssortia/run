@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -300,7 +299,7 @@ private fun SegmentFields(
                 Modifier
                     .size(12.dp)
                     .background(
-                        color = segmentColors(isRun, isSystemInDarkTheme()).background,
+                        color = segmentColors(isRun, LocalDarkTheme.current).background,
                         shape = CircleShape,
                     ),
             )

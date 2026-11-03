@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -32,6 +35,7 @@ import com.ssortia.runtimer.MIN_VOLUME_PERCENT
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.START_DELAY_OPTIONS_SEC
 import com.ssortia.runtimer.START_DELAY_SLIDER_STEPS
+import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.VOLUME_SLIDER_STEPS
 import com.ssortia.runtimer.sliderToPercent
 import com.ssortia.runtimer.sliderToStartDelay
@@ -41,7 +45,8 @@ import com.ssortia.runtimer.startDelayToSlider
  * Экран настроек приложения. Значения сохраняются сразу: переключатель при переключении,
  * ползунки при отпускании, а не на каждом сдвиге. Поэтому состояние не saveable: прерванный
  * поворотом сдвиг показывал бы несохранённое значение, а после пересоздания экран читает
- * хранилище заново. При отпускании ползунка громкости звучит пробный сигнал.
+ * хранилище заново. При отпускании ползунка громкости звучит пробный сигнал. Тему, наоборот,
+ * держит activity: она применяется ко всему интерфейсу сразу, поэтому экран получает значение.
  */
 @Composable
 fun AppSettingsContent(
@@ -53,6 +58,8 @@ fun AppSettingsContent(
     onDuckMusicChange: (Boolean) -> Unit,
     loadStartDelay: () -> Int,
     onStartDelayChange: (Int) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -115,6 +122,17 @@ fun AppSettingsContent(
             )
         }
 
+        Column(Modifier.selectableGroup()) {
+            Text(text = stringResource(R.string.setting_theme), style = MaterialTheme.typography.titleMedium)
+            for (mode in ThemeMode.entries) {
+                RadioSettingRow(
+                    label = stringResource(mode.labelRes()),
+                    selected = mode == themeMode,
+                    onClick = { if (mode != themeMode) onThemeModeChange(mode) },
+                )
+            }
+        }
+
         TextButton(onClick = onBack) {
             Text(
                 text = stringResource(R.string.button_back),
@@ -140,5 +158,30 @@ private fun SwitchSettingRow(label: String, checked: Boolean, onCheckedChange: (
             modifier = Modifier.weight(1f),
         )
         Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+private fun ThemeMode.labelRes(): Int = when (this) {
+    ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.LIGHT -> R.string.theme_light
+    ThemeMode.DARK -> R.string.theme_dark
+}
+
+@Composable
+private fun RadioSettingRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            // Строка целиком выбирает вариант, а сама RadioButton без обработчика
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 16.dp),
+        )
     }
 }

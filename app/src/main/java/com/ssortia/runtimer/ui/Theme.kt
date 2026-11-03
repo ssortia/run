@@ -1,12 +1,13 @@
 package com.ssortia.runtimer.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -50,15 +51,22 @@ fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean): Boolean = when (st
 
 private fun SegmentColors.needsDarkIcons(): Boolean = content.luminance() < 0.5f
 
-/** Тема следует за системой. Фон взят из темы окна, чтобы при запуске не было вспышки. */
+/**
+ * Тёмная ли тема с учётом выбора пользователя. Экраны берут признак отсюда, а не из
+ * `isSystemInDarkTheme()`: иначе цвета отрезков разошлись бы с выбранной темой.
+ */
+val LocalDarkTheme = staticCompositionLocalOf<Boolean> { error("LocalDarkTheme задаёт RunTimerTheme") }
+
+/** Фон взят из темы окна, чтобы при запуске не было вспышки. */
 @Composable
-fun RunTimerTheme(content: @Composable () -> Unit) {
-    val darkTheme = isSystemInDarkTheme()
+fun RunTimerTheme(darkTheme: Boolean, content: @Composable () -> Unit) {
     val background = colorResource(
         if (darkTheme) R.color.window_background_dark else R.color.window_background_light,
     )
     val scheme = if (darkTheme) DarkScheme else LightScheme
-    MaterialTheme(colorScheme = scheme.copy(background = background, surface = background)) {
-        Surface(Modifier.fillMaxSize(), color = background, content = content)
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(colorScheme = scheme.copy(background = background, surface = background)) {
+            Surface(Modifier.fillMaxSize(), color = background, content = content)
+        }
     }
 }

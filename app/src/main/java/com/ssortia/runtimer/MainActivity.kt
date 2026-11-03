@@ -1,6 +1,7 @@
 package com.ssortia.runtimer
 
 import android.Manifest
+import android.app.UiModeManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,6 +36,11 @@ import com.ssortia.runtimer.ui.WorkoutScreen
 import com.ssortia.runtimer.ui.darkStatusIcons
 
 private const val TAG = "MainActivity"
+
+// Подложка панели навигации с кнопками, те же значения, что по умолчанию у enableEdgeToEdge.
+// Литералы, а не Color.argb(): вызов Android API при загрузке файла уронил бы его unit-тесты
+private const val NAV_BAR_LIGHT_SCRIM = 0xE6FFFFFF.toInt()
+private const val NAV_BAR_DARK_SCRIM = 0x801B1B1B.toInt()
 
 /** Разрешение на уведомления существует с Android 13, на старых версиях запрашивать нечего. */
 fun needsNotificationRequest(sdkInt: Int, granted: Boolean): Boolean =
@@ -102,19 +108,36 @@ class MainActivity : ComponentActivity() {
                 if (!abandoned) startWorkout()
             }
 
+            // Выбор темы живёт здесь, а не в экране настроек: он применяется ко всему интерфейсу сразу.
+            // Признак тёмной темы считается только здесь, экраны берут его из LocalDarkTheme
+            var themeMode by remember { mutableStateOf(store.loadThemeMode()) }
+            val darkTheme = isDarkTheme(themeMode, isSystemInDarkTheme())
+            // Фон окна виден до первого кадра и за клавиатурой. Тема окна знает только о системной
+            // теме, поэтому при выбранной вручную фон задаётся явно
+            LaunchedEffect(darkTheme) {
+                window.setBackgroundDrawableResource(
+                    if (darkTheme) R.color.window_background_dark else R.color.window_background_light,
+                )
+            }
+
             // Значки следуют за цветом экрана: тёмный фон ходьбы бывает и в светлой теме
-            val darkIcons = darkStatusIcons(state, isSystemInDarkTheme())
-            LaunchedEffect(darkIcons) {
+            val darkIcons = darkStatusIcons(state, darkTheme)
+            LaunchedEffect(darkIcons, darkTheme) {
                 enableEdgeToEdge(
                     statusBarStyle = if (darkIcons) {
                         SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
                     } else {
                         SystemBarStyle.dark(Color.TRANSPARENT)
                     },
+                    // Как по умолчанию в enableEdgeToEdge, но по выбранной теме, а не по системной
+                    navigationBarStyle = SystemBarStyle.auto(
+                        NAV_BAR_LIGHT_SCRIM,
+                        NAV_BAR_DARK_SCRIM,
+                    ) { darkTheme },
                 )
             }
 
-            RunTimerTheme {
+            RunTimerTheme(darkTheme = darkTheme) {
                 WorkoutScreen(
                     state = state,
                     loadSettings = store::load,
@@ -140,6 +163,12 @@ class MainActivity : ComponentActivity() {
                     onVibrationChange = store::saveVibration,
                     onDuckMusicChange = store::saveDuckMusic,
                     onStartDelayChange = store::saveStartDelaySec,
+                    themeMode = themeMode,
+                    onThemeModeChange = { mode ->
+                        store.saveThemeMode(mode)
+                        themeMode = mode
+                        applyApplicationNightMode(mode)
+                    },
                     onDeleteRun = { id -> RunHistory.delete(applicationContext, id) },
                     onOpenAppDetails = ::openAppDetails,
                     onStop = { stopService(Intent(this, WorkoutService::class.java)) },
@@ -167,6 +196,16 @@ class MainActivity : ComponentActivity() {
         if (!beeper.isReady) Log.w(TAG, "Пробный сигнал не подготовлен")
         beeper.play(Signal.INTERVAL)
         previewBeeper = beeper
+    }
+
+    /**
+     * На API 31+ система запоминает выбор сама и применяет его к окну и заставке ещё до старта
+     * процесса, иначе при запуске мелькнул бы фон системной темы. Смена режима пересоздаёт
+     * activity, как поворот. На старых версиях такого вызова нет, и тему применяет только Compose.
+     */
+    private fun applyApplicationNightMode(mode: ThemeMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        getSystemService(UiModeManager::class.java)?.setApplicationNightMode(mode.toApplicationNightMode())
     }
 
     private fun releasePreview() {
