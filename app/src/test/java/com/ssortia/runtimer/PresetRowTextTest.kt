@@ -11,7 +11,7 @@ class PresetRowTextTest {
 
     @Test
     fun `неделя 2`() {
-        assertEquals(PresetRowText("Неделя 2", "Бег 2:00 · Ходьба 2:00 · ×7", "26 мин"), row(2))
+        assertEquals(PresetRowText("Неделя 2", "Бег 2:00 · Ходьба 2:00 · ×6", "22 мин"), row(2))
     }
 
     @Test
@@ -20,15 +20,15 @@ class PresetRowTextTest {
     }
 
     @Test
-    fun `неделя 11 без ходьбы`() {
-        assertEquals("Бег 30:00 · ×1", row(11).details)
-        assertEquals("30 мин", row(11).total)
+    fun `неделя 10 без ходьбы`() {
+        assertEquals("Бег 30:00 · ×1", row(10).details)
+        assertEquals("30 мин", row(10).total)
     }
 
     @Test
     fun `общее время без последней ходьбы`() {
         assertEquals("23 мин", row(3).total)
-        assertEquals("19 мин 30 с", row(7).total)
+        assertEquals("27 мин", row(7).total)
     }
 
     @Test
