@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
 import com.ssortia.runtimer.MAX_SECONDS
@@ -224,6 +225,7 @@ fun SettingsContent(
             ) {
                 FormLayout(
                     viewport = viewport,
+                    cardExpanded = expanded != null,
                     largeTimeWidth = {
                         textMeasurer.measure(time, largeTimeStyle, maxLines = 1, softWrap = false).size.width
                     },
@@ -306,6 +308,7 @@ fun SettingsContent(
 @Composable
 private fun FormLayout(
     viewport: Int,
+    cardExpanded: Boolean,
     largeTimeWidth: () -> Int,
     summary: @Composable (large: Boolean) -> Unit,
     bottom: @Composable () -> Unit,
@@ -321,6 +324,7 @@ private fun FormLayout(
             bottom = bottomPlaceable.height,
             largeSummary = large.height,
             largeFitsWidth = largeTimeWidth() <= constraints.maxWidth,
+            cardExpanded = cardExpanded,
         ) {
             subcompose("smallSummary") { summary(false) }.first().measure(free).also { small = it }.height
         }
@@ -338,10 +342,15 @@ private fun FormLayout(
 /** Последняя верная строка состава, см. [WorkoutSummary]. */
 private class LastParts(var text: String = "")
 
+// Размеры времени итога из макета: 80 при свёрнутых карточках, 56 с раскрытым барабаном.
+// Межстрочие 1,05, как в макете, иначе крупные цифры занимали бы лишнюю высоту
 @Composable
-private fun summaryTimeStyle(large: Boolean): TextStyle =
-    (if (large) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium)
+private fun summaryTimeStyle(large: Boolean): TextStyle {
+    val size = if (large) 80.sp else 56.sp
+    return MaterialTheme.typography.displayLarge
+        .copy(fontSize = size, lineHeight = size * 1.05f, letterSpacing = (-1).sp)
         .merge(TabularNumbers)
+}
 
 /**
  * Итог тренировки над карточками: общее время и состав. При неверных настройках [summary] null:
