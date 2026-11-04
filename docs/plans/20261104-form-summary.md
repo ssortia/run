@@ -144,11 +144,11 @@
 - [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug` (ошибок нет, предупреждения прежние: GradleDependency, InlinedApi, ObsoleteSdkInt)
 
 ### Task 7: [Final] Update documentation
-- [ ] `README.md`: описание формы (итог над карточками) и нижней панели («Старт» в центре)
-- [ ] `USER_STORIES.md`: сценарии итога и старта с любой вкладки
-- [ ] `CLAUDE.md`, «Архитектура»: состояние формы в ветке `Idle` вместо `remember { loadSettings() }` в маршруте, «Старт» в панели не вкладка и без `dropUnlessResumed`, центральный слот панели
-- [ ] `CLAUDE.md`, «Неочевидное»: почему `StartFab` в общем `Box`, а не внутри `NavigationBar` (`Surface` обрезает и отрисовку, и нажатия); заместитель в центральном слоте ради порядка TalkBack (`Surface` — группа обхода); `StartFabOverlap` на всех вкладках; `BottomBarHeight` повторяет внутреннее значение M3; раздача места через `SubcomposeLayout` и `summaryPlacement`, правило смены размера времени
-- [ ] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/`
+- [x] `README.md`: описание формы (итог над карточками) и нижней панели («Старт» в центре)
+- [x] `USER_STORIES.md`: сценарии итога и старта с любой вкладки
+- [x] `CLAUDE.md`, «Архитектура»: состояние формы в ветке `Idle` вместо `remember { loadSettings() }` в маршруте, «Старт» в панели не вкладка и без `dropUnlessResumed`, центральный слот панели
+- [x] `CLAUDE.md`, «Неочевидное»: почему `StartFab` в общем `Box`, а не внутри `NavigationBar` (`Surface` обрезает и отрисовку, и нажатия); заместитель в центральном слоте ради порядка TalkBack (`Surface` — группа обхода); `StartFabOverlap` на всех вкладках; `BottomBarHeight` повторяет внутреннее значение M3; раздача места через `SubcomposeLayout` и `summaryPlacement`, правило смены размера времени
+- [x] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/` (задача перенесена; план переносится после ревью)
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
