@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
@@ -208,6 +209,8 @@ private val StartFabSize = 72.dp
 private val StartFabRing = 4.dp
 private val StartFabIconSize = 36.dp
 private val StartFabElevation = 6.dp
+// Сильно скруглённый квадрат, но не круг: круг дал бы радиус StartFabSize / 2 (36 dp)
+private val StartFabCorner = 28.dp
 
 /**
  * На сколько «Старт» выступает над нижней панелью: на треть высоты, две трети кнопки лежат на
@@ -315,8 +318,7 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
     Surface(
         onClick = onClick,
         enabled = enabled,
-        // Скругление как у карточек формы
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(StartFabCorner),
         color = containerColor,
         contentColor = contentColor,
         border = BorderStroke(StartFabRing, background),
