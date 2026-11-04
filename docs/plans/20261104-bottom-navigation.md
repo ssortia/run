@@ -154,9 +154,9 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/Theme.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt`
 
-- [ ] добавить `weekChipBorderColor(darkTheme)` с двумя цветами и комментарием, зачем нужна рамка
-- [ ] добавить в `ThemeTest` проверки для обеих тем: `onSecondaryContainer` на `secondaryContainer` не меньше 4,5:1, рамка на `background` не меньше 1,3:1
-- [ ] run tests - must pass before next task
+- [x] добавить `weekChipBorderColor(darkTheme)` с двумя цветами и комментарием, зачем нужна рамка
+- [x] добавить в `ThemeTest` проверки для обеих тем: `onSecondaryContainer` на `secondaryContainer` не меньше 4,5:1, рамка на `background` не меньше 1,3:1
+- [x] run tests - must pass before next task
 
 ### Task 4: Нижняя панель вкладок
 

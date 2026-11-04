@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import kotlin.math.abs
 
 class ThemeTest {
@@ -155,6 +156,39 @@ class ThemeTest {
             assertTrue(
                 "контраст галочки: тёмная тема $darkTheme",
                 contrast(progressCheckColor(darkTheme), marker) >= 3f,
+            )
+        }
+    }
+
+    @Test
+    fun `текст плашки недели читается в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст onSecondaryContainer: тёмная тема $darkTheme",
+                contrast(scheme.onSecondaryContainer, scheme.secondaryContainer) >= 4.5f,
+            )
+        }
+    }
+
+    /** Фон окна из `colors.xml`: его подставляет RunTimerTheme, а в схеме его нет. */
+    private fun windowBackground(darkTheme: Boolean): Color {
+        val name = if (darkTheme) "window_background_dark" else "window_background_light"
+        val xml = File("src/main/res/values/colors.xml").readText()
+        val hex = Regex("""<color name="$name">#([0-9A-Fa-f]{6})</color>""").find(xml)
+            ?.groupValues?.get(1) ?: error("нет цвета $name в colors.xml")
+        return Color(0xFF000000 or hex.toLong(16))
+    }
+
+    // Порог 1.3:1, как у дорожки кольца: смысл несёт фон плашки, рамка лишь подсказывает, что на
+    // неё можно нажать, и не должна сливаться с фоном формы. Сейчас около 1.46 в светлой теме и 2.4 в тёмной
+    @Test
+    fun `рамка плашки недели видна на фоне в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            assertTrue(
+                "контраст рамки плашки на фоне: тёмная тема $darkTheme",
+                contrast(weekChipBorderColor(darkTheme), windowBackground(darkTheme)) >= 1.3f,
             )
         }
     }

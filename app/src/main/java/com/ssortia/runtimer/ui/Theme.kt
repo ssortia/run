@@ -135,6 +135,14 @@ fun progressTrackColor(darkTheme: Boolean): Color = if (darkTheme) ProgressTrack
 /** Галочка пройденной недели поверх закрашенного круга цвета `marker` бега. */
 fun progressCheckColor(darkTheme: Boolean): Color = if (darkTheme) ProgressCheckDark else ProgressCheckLight
 
+// Рамка плашки недели в шапке формы. Смысл несёт фон плашки (secondaryContainer), рамка вместе с
+// тенью лишь подсказывает, что плашку можно нажать: без неё плашка похожа на подпись
+private val WeekChipBorderLight = Color(0xFFB7D3C8)
+private val WeekChipBorderDark = Color(0xFF2F5A4E)
+
+/** Рамка плашки недели на фоне формы. */
+fun weekChipBorderColor(darkTheme: Boolean): Color = if (darkTheme) WeekChipBorderDark else WeekChipBorderLight
+
 /** Отсчёт идёт в цветах бега: бегун сразу видит цвет первого отрезка. */
 fun countdownColors(darkTheme: Boolean): SegmentColors = segmentColors(isRun = true, darkTheme)
 
