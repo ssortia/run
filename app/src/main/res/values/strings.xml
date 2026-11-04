@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RunTimer</string>
+    <string name="app_name">Бег</string>
     <string name="notification_channel">Ход тренировки</string>
     <string name="segment_run">Бег</string>
     <string name="segment_walk">Ходьба</string>
