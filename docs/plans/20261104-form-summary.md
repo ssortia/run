@@ -91,10 +91,10 @@
 - Create: `app/src/main/java/com/ssortia/runtimer/ui/SummaryPlacement.kt`
 - Create: `app/src/test/java/com/ssortia/runtimer/ui/SummaryPlacementTest.kt`
 
-- [ ] `SummaryPlacement` и `summaryPlacement(viewport, bottom, largeSummary, smallSummary)` по правилу из Technical Details
-- [ ] тесты: места хватает (крупный, слот = свободное место, total = viewport)
-- [ ] тесты: крупный не влез, малый влез (раскрытая карточка); не влез и малый (total > viewport, прокрутка); граница `large == free`
-- [ ] run tests - must pass before next task
+- [x] `SummaryPlacement` и `summaryPlacement(viewport, bottom, largeSummary, smallSummary)` по правилу из Technical Details
+- [x] тесты: места хватает (крупный, слот = свободное место, total = viewport)
+- [x] тесты: крупный не влез, малый влез (раскрытая карточка); не влез и малый (total > viewport, прокрутка); граница `large == free`
+- [x] run tests - must pass before next task
 
 ### Task 3: Состояние формы в ветке Idle
 
