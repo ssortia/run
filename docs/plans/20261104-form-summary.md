@@ -78,12 +78,12 @@
 - Create: `app/src/test/java/com/ssortia/runtimer/WorkoutSummaryTest.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] `SummaryLabels`, `segmentCount(workout)`, `workoutSummaryParts(workout, segmentsText, labels)` и `summaryDescription(title, time, parts)` в `WorkoutSummary.kt`
-- [ ] ресурсы `summary_title` «Вся тренировка», `summary_run`, `summary_walk`, `<plurals name="summary_segments">`, `summary_none` «—», `summary_invalid_description` «Вся тренировка, время не задано»; «мин» берётся из `minutes_short`
-- [ ] тест `summaryDescription`: «Вся тренировка, 22:00, 11 отрезков, бег 12 мин, шаг 10 мин»
-- [ ] тесты: целые минуты (неделя 2 → «11 отрезков · бег 12 мин · шаг 10 мин»), «м:сс» (4:30 × 3 → «бег 13:30»), 4:30 × 4 → «бег 18 мин»
-- [ ] тесты: один повтор без шага (неделя 10 → «1 отрезок · бег 30 мин»), час и больше («1:02:30» и «90 мин»), `segmentCount`
-- [ ] run tests - must pass before next task
+- [x] `SummaryLabels`, `segmentCount(workout)`, `workoutSummaryParts(workout, segmentsText, labels)` и `summaryDescription(title, time, parts)` в `WorkoutSummary.kt`
+- [x] ресурсы `summary_title` «Вся тренировка», `summary_run`, `summary_walk`, `<plurals name="summary_segments">`, `summary_none` «—», `summary_invalid_description` «Вся тренировка, время не задано»; «мин» берётся из `minutes_short`
+- [x] тест `summaryDescription`: «Вся тренировка, 22:00, 11 отрезков, бег 12 мин, шаг 10 мин»
+- [x] тесты: целые минуты (неделя 2 → «11 отрезков · бег 12 мин · шаг 10 мин»), «м:сс» (4:30 × 3 → «бег 13:30»), 4:30 × 4 → «бег 18 мин»
+- [x] тесты: один повтор без шага (неделя 10 → «1 отрезок · бег 30 мин»), час и больше («1:02:30» и «90 мин»), `segmentCount`
+- [x] run tests - must pass before next task
 
 ### Task 2: Раздача свободного места
 
