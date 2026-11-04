@@ -4,6 +4,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,10 +44,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
@@ -112,7 +111,9 @@ fun WorkoutScreen(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ),
             ) {
-                val startEnabled = settings.validate() == null
+                val error = settings.validate()
+                val startEnabled = error == null
+                val start = { onStart(settings) }
                 Column(Modifier.fillMaxSize()) {
                     NavHost(
                         navController = navController,
@@ -128,6 +129,7 @@ fun WorkoutScreen(
                             // Раскрытая карточка и шторка программы хранятся в записи стека
                             SettingsContent(
                                 settings = settings,
+                                error = error,
                                 onSettingsChange = { settings = it },
                                 showBackgroundWarning = showBackgroundWarning,
                                 onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
@@ -167,7 +169,7 @@ fun WorkoutScreen(
                     BottomBar(
                         navController = navController,
                         startEnabled = startEnabled,
-                        onStart = { onStart(settings) },
+                        onStart = start,
                     )
                 }
                 // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
@@ -175,7 +177,7 @@ fun WorkoutScreen(
                 // кнопку заменяет заместитель в центральном слоте панели
                 StartFab(
                     enabled = startEnabled,
-                    onClick = { onStart(settings) },
+                    onClick = start,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .windowInsetsPadding(NavigationBarDefaults.windowInsets.only(WindowInsetsSides.Bottom))
@@ -202,6 +204,7 @@ private val BottomBarHeight = 80.dp
 private val StartFabSize = 72.dp
 private val StartFabRing = 4.dp
 private val StartFabIconSize = 36.dp
+private val StartFabElevation = 6.dp
 
 /**
  * На сколько «Старт» выступает над нижней панелью. Прокручиваемые колонки всех вкладок добавляют
@@ -220,7 +223,10 @@ internal val ScrollContentBottomPadding = 16.dp + StartFabOverlap
  * Центральный слот между «Историей» и «Прогрессом» занят не вкладкой, а заместителем «Старта» для
  * TalkBack: видимая кнопка лежит поверх панели в общем Box и скрыта от него, а Surface панели —
  * группа обхода, и соседа вне неё между вкладками не поставить. Заместитель внутри группы, поэтому
- * обход по геометрии читает «История, Старт, Прогресс».
+ * обход по геометрии читает «История, Старт, Прогресс». Заместитель ещё и нажимается без ряби: нижняя
+ * часть слота под видимой кнопкой выглядит её продолжением. Выступающую над панелью часть кнопки
+ * заместитель не покрывает (границы узла обрезаются по Surface панели), поэтому исследование
+ * касанием там находит элемент экрана под кнопкой.
  *
  * Без dropUnlessResumed: панель стоит вне NavHost, её LifecycleOwner — activity, а не запись
  * стека, и обёртка не следила бы за переходом между экранами. Двойное нажатие безопасно и так:
@@ -243,23 +249,23 @@ private fun BottomBar(
         selectedTextColor = MaterialTheme.colorScheme.primary,
     )
     val startLabel = stringResource(R.string.button_start)
-    val centerIndex = BottomTab.entries.size / 2
+    val startSlot = startSlotIndex()
     NavigationBar {
         BottomTab.entries.forEachIndexed { index, tab ->
-            if (index == centerIndex) {
+            if (index == startSlot) {
+                // clickable сам даёт роль, onClick и disabled() при недоступном «Старте»
                 Box(
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .semantics {
-                            role = Role.Button
-                            contentDescription = startLabel
-                            onClick {
-                                if (startEnabled) onStart()
-                                startEnabled
-                            }
-                            if (!startEnabled) disabled()
-                        },
+                        .clickable(
+                            interactionSource = null,
+                            indication = null,
+                            enabled = startEnabled,
+                            role = Role.Button,
+                            onClick = onStart,
+                        )
+                        .semantics { contentDescription = startLabel },
                 )
             }
             val selected = tab == current
@@ -273,7 +279,8 @@ private fun BottomBar(
                     }
                 },
                 icon = { Icon(painter = tabIcon(tab), contentDescription = null) },
-                label = { Text(stringResource(tab.labelRes)) },
+                // В одну строку: перенос сделал бы панель выше BottomBarHeight, и «Старт» закрыл бы подписи
+                label = { Text(stringResource(tab.labelRes), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 colors = itemColors,
             )
         }
@@ -292,8 +299,12 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
     val onSurface = MaterialTheme.colorScheme.onSurface
     // Недоступная как у M3 (12 % и 38 % onSurface), но заливка смешана с фоном, иначе сквозь
     // полупрозрачную кнопку проступала бы граница панели
-    val containerColor = if (enabled) colors.background else onSurface.copy(alpha = 0.12f).compositeOver(background)
-    val contentColor = if (enabled) colors.content else onSurface.copy(alpha = 0.38f)
+    val containerColor = if (enabled) {
+        colors.background
+    } else {
+        onSurface.copy(alpha = DisabledContainerAlpha).compositeOver(background)
+    }
+    val contentColor = if (enabled) colors.content else onSurface.copy(alpha = DisabledContentAlpha)
     Surface(
         onClick = onClick,
         enabled = enabled,
@@ -301,7 +312,7 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
         color = containerColor,
         contentColor = contentColor,
         border = BorderStroke(StartFabRing, background),
-        shadowElevation = if (enabled) 6.dp else 0.dp,
+        shadowElevation = if (enabled) StartFabElevation else 0.dp,
         modifier = modifier
             .size(StartFabSize)
             .clearAndSetSemantics {},
@@ -309,7 +320,7 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(R.string.button_start),
+                contentDescription = null,
                 modifier = Modifier.size(StartFabIconSize),
             )
         }

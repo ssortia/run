@@ -24,6 +24,12 @@ class BottomTabTest {
     }
 
     @Test
+    fun `«Старт» стоит между «Историей» и «Прогрессом»`() {
+        assertEquals(BottomTab.HISTORY, BottomTab.entries[startSlotIndex() - 1])
+        assertEquals(BottomTab.PROGRESS, BottomTab.entries[startSlotIndex()])
+    }
+
+    @Test
     fun `без маршрута и для неизвестного маршрута вкладки нет`() {
         assertNull(bottomTabOf(null))
         assertNull(bottomTabOf("countdown"))
