@@ -18,4 +18,10 @@ enum class BottomTab(val route: String, @StringRes val labelRes: Int) {
     SETTINGS(ROUTE_APP_SETTINGS, R.string.tab_settings),
 }
 
+/**
+ * Позиция «Старта» в нижней панели: он встаёт перед вкладкой с этим индексом, в середине панели
+ * между «Историей» и «Прогрессом». Новая вкладка сдвинет его, это поймает `BottomTabTest`.
+ */
+fun startSlotIndex(): Int = BottomTab.entries.size / 2
+
 fun bottomTabOf(route: String?): BottomTab? = BottomTab.entries.firstOrNull { it.route == route }
