@@ -120,8 +120,8 @@
 ## Implementation Steps
 
 ### Task 0: Отдельный коммит задачи ui-polish
-- [ ] если в рабочей копии остались правки `ActiveContent.kt` и `SettingsContent.kt` и файл `docs/tasks/completed/20261104-ui-polish.md`, закоммитить их отдельным коммитом («fix: высота карточек формы и полоса прогресса тренировки») до начала Task 1. Если их уже закоммитили, пропустить
-- [ ] run tests - must pass before next task
+- [x] (коммит делает оркестратор) если в рабочей копии остались правки `ActiveContent.kt` и `SettingsContent.kt` и файл `docs/tasks/completed/20261104-ui-polish.md`, закоммитить их отдельным коммитом («fix: высота карточек формы и полоса прогресса тренировки») до начала Task 1. Если их уже закоммитили, пропустить
+- [x] run tests - must pass before next task
 
 ### Task 1: Повторы только кнопками
 

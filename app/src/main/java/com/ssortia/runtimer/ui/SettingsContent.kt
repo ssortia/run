@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -168,6 +169,10 @@ private enum class Segment { RUN, WALK }
 
 // «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
 private val StartButtonHeight = 56.dp
+// Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы»: по строке повторов с полем 56.dp и
+// отступами 8.dp, чтобы карточки формы были одной высоты
+private val CardRowHeight = 72.dp
+private val RoundsCardVerticalPadding = 8.dp
 private val PresetCheckSize = 24.dp
 private val RoundsFieldWidth = 80.dp
 
@@ -450,7 +455,8 @@ private fun SegmentCard(
                 .fillMaxWidth()
                 .clickable(role = Role.Button, onClick = onToggle)
                 .semantics { stateDescription = stateText }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .heightIn(min = CardRowHeight)
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -515,9 +521,13 @@ private fun SegmentCard(
 @Composable
 private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
     val label = stringResource(R.string.field_rounds)
-    SectionCard {
+    SectionCard(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = RoundsCardVerticalPadding),
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = CardRowHeight - RoundsCardVerticalPadding * 2),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
