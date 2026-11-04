@@ -102,15 +102,6 @@ fun WorkoutScreen(
                             initial = initial,
                             showBackgroundWarning = showBackgroundWarning,
                             onStart = onStart,
-                            onOpenHistory = dropUnlessResumed {
-                                navController.navigate(ROUTE_HISTORY)
-                            },
-                            onOpenProgress = dropUnlessResumed {
-                                navController.navigate(ROUTE_PROGRESS)
-                            },
-                            onOpenSettings = dropUnlessResumed {
-                                navController.navigate(ROUTE_APP_SETTINGS)
-                            },
                             onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                         )
                     }

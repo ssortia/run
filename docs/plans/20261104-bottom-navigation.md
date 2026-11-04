@@ -182,12 +182,12 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] заменить заголовок `app_name` и четыре `IconButton` на `AppTopBar(title = tab_workout, actions = { WeekChip(...) })`, плашка `WeekChip` устроена по Solution Overview
-- [ ] плашка ставит `showProgram = true`, шторка и её поведение не меняются, описание для TalkBack из `preset_chip_description`, добавить строки `preset_custom` и `preset_chip_description`
-- [ ] убрать подпись `preset_week_match` под заголовком и удалить эту строку
-- [ ] убрать параметры `onOpenHistory`, `onOpenProgress`, `onOpenSettings` у `SettingsContent` и их передачу в `WorkoutScreen.kt`
-- [ ] тесты: Compose-код по соглашению тестами не покрыт, контрасты плашки покрыты в Task 3; прогнать `./gradlew test` и `lintDebug` (неиспользуемые ресурсы)
-- [ ] run tests - must pass before next task
+- [x] заменить заголовок `app_name` и четыре `IconButton` на `AppTopBar(title = tab_workout, actions = { WeekChip(...) })`, плашка `WeekChip` устроена по Solution Overview
+- [x] плашка ставит `showProgram = true`, шторка и её поведение не меняются, описание для TalkBack из `preset_chip_description`, добавить строки `preset_custom` и `preset_chip_description`
+- [x] убрать подпись `preset_week_match` под заголовком и удалить эту строку
+- [x] убрать параметры `onOpenHistory`, `onOpenProgress`, `onOpenSettings` у `SettingsContent` и их передачу в `WorkoutScreen.kt`
+- [x] тесты: Compose-код по соглашению тестами не покрыт, контрасты плашки покрыты в Task 3; прогнать `./gradlew test` и `lintDebug` (неиспользуемые ресурсы)
+- [x] run tests - must pass before next task
 
 ### Task 6: Экраны без стрелки «Назад»
 

@@ -3,6 +3,7 @@ package com.ssortia.runtimer.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -166,6 +166,7 @@ private val CardRowHeight = 72.dp
 private val RoundsCardVerticalPadding = 8.dp
 private val PresetCheckSize = 24.dp
 private val RoundsFieldWidth = 80.dp
+private val WeekChipHeight = 40.dp
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,9 +175,6 @@ fun SettingsContent(
     initial: WorkoutSettings,
     showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenProgress: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -193,42 +191,18 @@ fun SettingsContent(
 
     Column(modifier = modifier.fillMaxSize()) {
         AppTopBar(
-            title = stringResource(R.string.app_name),
+            title = stringResource(R.string.tab_workout),
             actions = {
-                IconButton(onClick = { showProgram = true }) {
-                    Icon(
-                        imageVector = Icons.Outlined.DateRange,
-                        contentDescription = stringResource(R.string.preset_title),
-                    )
-                }
-                IconButton(onClick = onOpenHistory) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_history),
-                        contentDescription = stringResource(R.string.button_history),
-                    )
-                }
-                IconButton(onClick = onOpenProgress) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_flag),
-                        contentDescription = stringResource(R.string.button_progress),
-                    )
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = stringResource(R.string.button_settings),
-                    )
-                }
+                WeekChip(
+                    text = if (selectedWeek != null) {
+                        stringResource(R.string.preset_week, selectedWeek)
+                    } else {
+                        stringResource(R.string.preset_custom)
+                    },
+                    onClick = { showProgram = true },
+                )
             },
         )
-        if (selectedWeek != null) {
-            Text(
-                text = stringResource(R.string.preset_week_match, selectedWeek),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
 
         Column(
             modifier = Modifier
@@ -321,6 +295,44 @@ fun SettingsContent(
                     }
                 },
             )
+        }
+    }
+}
+
+/**
+ * Плашка недели в шапке формы, открывает шторку программы. Рамка и лёгкая тень подсказывают,
+ * что её можно нажать. `Surface(onClick)` сам задаёт `Role.Button`.
+ */
+@Composable
+private fun WeekChip(text: String, onClick: () -> Unit) {
+    val description = stringResource(R.string.preset_chip_description, text)
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        border = BorderStroke(1.dp, weekChipBorderColor(LocalDarkTheme.current)),
+        shadowElevation = 1.dp,
+        // Слот actions даёт справа только 4 dp
+        modifier = Modifier
+            .padding(end = 12.dp)
+            .height(WeekChipHeight)
+            .semantics { contentDescription = description },
+    ) {
+        // Текст плашки уже вошёл в описание, иначе TalkBack прочитал бы его дважды
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .clearAndSetSemantics {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DateRange,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(text = text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
         }
     }
 }
