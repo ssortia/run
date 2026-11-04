@@ -6,7 +6,7 @@
 
 Прогресс не хранится, а каждый раз считается из истории (`RunHistory.runs`), поэтому удаление записи в истории сразу меняет его. Схема базы, `RunRecord`, сервис, форма и история не меняются.
 
-Задача: `docs/tasks/20261103-program-progress.md`. Макет: https://claude.ai/artifact/WKnsAn8dCvkNbCqtUVcdik, артборды «Прогресс» и «Тёмная · прогресс».
+Задача: `docs/tasks/completed/20261103-program-progress.md`. Макет: https://claude.ai/artifact/WKnsAn8dCvkNbCqtUVcdik, артборды «Прогресс» и «Тёмная · прогресс».
 
 ## Context (from discovery)
 
@@ -143,18 +143,18 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 
 ### Task 5: Verify acceptance criteria
 
-- [x] verify all requirements from Overview and `docs/tasks/20261103-program-progress.md` are implemented: только завершённые пробежки, порог 4, кольцо по четвертям, «—» без пробежек, состояние до прихода данных, ничего не хранится отдельно
+- [x] verify all requirements from Overview and `docs/tasks/completed/20261103-program-progress.md` are implemented: только завершённые пробежки, порог 4, кольцо по четвертям, «—» без пробежек, состояние до прихода данных, ничего не хранится отдельно
 - [x] verify edge cases are handled: неделя 10 без ходьбы, ходьба 1:30, пробежки сверх четырёх, параметры не из программы
 - [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
 - [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`, новых предупреждений нет
 
 ### Task 6: [Final] Update documentation
 
-- [ ] добавить в `USER_STORIES.md` историю US-16 «Видеть прогресс по программе» («Как бегун по программе, я хочу видеть, какие недели и сколько раз я уже пробежал, чтобы самому решать, когда переходить дальше») с критериями приёмки из разделов «Экран» и «Правила» задачи
-- [ ] обновить `README.md`: описание приложения, строки таблицы структуры для `ProgramProgress.kt`, `ProgressRowText.kt`, `ui/ProgressContent.kt`, `ui/WorkoutScreen.kt` (маршрут прогресса), `ui/SettingsContent.kt` (четвёртая иконка)
-- [ ] обновить `CLAUDE.md`: в «Архитектуре» четыре маршрута с `progress`; прогресс считается из истории и не хранится, удаление записи меняет его; порог `RUNS_TO_PASS_WEEK`; в «Неочевидное»: неделя записи определяется без ходьбы при одном повторе, потому что такая ходьба не выполняется
-- [ ] отметить выполненные пункты задачи и перенести `docs/tasks/20261103-program-progress.md` в `docs/tasks/completed/` (останется только ручная проверка)
-- [ ] move this plan to `docs/plans/completed/`
+- [x] добавить в `USER_STORIES.md` историю US-16 «Видеть прогресс по программе» («Как бегун по программе, я хочу видеть, какие недели и сколько раз я уже пробежал, чтобы самому решать, когда переходить дальше») с критериями приёмки из разделов «Экран» и «Правила» задачи
+- [x] обновить `README.md`: описание приложения, строки таблицы структуры для `ProgramProgress.kt`, `ProgressRowText.kt`, `ui/ProgressContent.kt`, `ui/WorkoutScreen.kt` (маршрут прогресса), `ui/SettingsContent.kt` (четвёртая иконка)
+- [x] обновить `CLAUDE.md`: в «Архитектуре» четыре маршрута с `progress`; прогресс считается из истории и не хранится, удаление записи меняет его; порог `RUNS_TO_PASS_WEEK`; в «Неочевидное»: неделя записи определяется без ходьбы при одном повторе, потому что такая ходьба не выполняется
+- [x] отметить выполненные пункты задачи и перенести `docs/tasks/20261103-program-progress.md` в `docs/tasks/completed/` (останется только ручная проверка)
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 
