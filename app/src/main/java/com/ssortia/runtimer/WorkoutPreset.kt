@@ -6,7 +6,7 @@ data class WorkoutPreset(val week: Int, val settings: WorkoutSettings)
 /**
  * Программа на 10 недель. Бег за тренировку растёт на 2–3 минуты в неделю, а перед последней
  * неделей те же 30 минут бега идут двумя отрезками. Отрезки кратны 30 сек, общее время каждой
- * недели — целые минуты. Ходьба 90 сек записана как 1 мин 30 сек, как в форме.
+ * недели — целые минуты. Шаг 90 сек записан как 1 мин 30 сек, как в форме.
  */
 val WORKOUT_PRESETS: List<WorkoutPreset> = listOf(
     WorkoutPreset(1, WorkoutSettings(runMin = 1, runSec = 0, walkMin = 2, walkSec = 0, rounds = 7)),
@@ -26,8 +26,8 @@ fun presetWeekOf(settings: WorkoutSettings): Int? =
     WORKOUT_PRESETS.firstOrNull { it.settings == settings }?.week
 
 /**
- * Неделя с теми же бегом, ходьбой и повторами, что у [record], или null. Ходьба берётся
- * выполненная ([effectiveWalkSec]): при одном повторе она нулевая.
+ * Неделя с теми же бегом, шагом и повторами, что у [record], или null. Шаг берётся
+ * выполненный ([effectiveWalkSec]): при одном повторе он нулевой.
  */
 fun presetWeekOf(record: RunRecord): Int? {
     val workout = Workout(record.runSec, record.effectiveWalkSec, record.rounds)

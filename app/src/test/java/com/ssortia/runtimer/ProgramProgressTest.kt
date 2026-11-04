@@ -22,7 +22,7 @@ class ProgramProgressTest {
         completed = completed,
     )
 
-    // Бег, ходьба и повторы недель программы в секундах, записаны вручную, а не через toWorkout()
+    // Бег, шаг и повторы недель программы в секундах, записаны вручную, а не через toWorkout()
     private val weekParams = mapOf(
         1 to Triple(60, 120, 7),
         2 to Triple(120, 120, 6),
@@ -128,31 +128,31 @@ class ProgramProgressTest {
     }
 
     @Test
-    fun `ходьба 90 секунд совпадает с неделями 5 и 6`() {
+    fun `шаг 90 секунд совпадает с неделями 5 и 6`() {
         assertEquals(5, presetWeekOf(record(runSec = 420, walkSec = 90, rounds = 3)))
         assertEquals(6, presetWeekOf(record(runSec = 480, walkSec = 90, rounds = 3)))
     }
 
     @Test
-    fun `неделя 10 без ходьбы`() {
+    fun `неделя 10 без шага`() {
         assertEquals(10, presetWeekOf(record(runSec = 1800, walkSec = 0, rounds = 1)))
     }
 
     @Test
-    fun `ходьба при одном повторе не мешает найти неделю 10`() {
+    fun `шаг при одном повторе не мешает найти неделю 10`() {
         assertEquals(10, presetWeekOf(record(runSec = 1800, walkSec = 120, rounds = 1)))
     }
 
     @Test
-    fun `ходьба при нескольких повторах учитывается`() {
+    fun `шаг при нескольких повторах учитывается`() {
         assertNull(presetWeekOf(record(runSec = 60, walkSec = 90, rounds = 7)))
     }
 
     @Test
     fun `соседние параметры недель не засчитываются`() {
-        // Бег недели 7 без ходьбы: при двух повторах ходьба выполняется и должна совпасть
+        // Бег недели 7 без шага: при двух повторах шаг выполняется и должен совпасть
         assertNull(presetWeekOf(record(runSec = 780, walkSec = 0, rounds = 2)))
-        // Один повтор с бегом не 30 минут не неделя 10, даже без учёта ходьбы
+        // Один повтор с бегом не 30 минут не неделя 10, даже без учёта шага
         assertNull(presetWeekOf(record(runSec = 600, walkSec = 120, rounds = 1)))
     }
 

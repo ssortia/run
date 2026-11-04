@@ -62,7 +62,7 @@ class RunRowTextTest {
     }
 
     @Test
-    fun `без ходьбы время ходьбы не показывается`() {
+    fun `без шага время шага не показывается`() {
         val text = row(record(1_800_000, completed = true, runSec = 1_800, walkSec = 0, rounds = 1))
 
         assertNull(text.walkTime)
@@ -71,7 +71,7 @@ class RunRowTextTest {
     }
 
     @Test
-    fun `при одном повторе ходьба не показывается, даже если задана`() {
+    fun `при одном повторе шаг не показывается, даже если задан`() {
         val text = row(record(runSec = 1_800, walkSec = 90, rounds = 1))
 
         assertNull(text.walkTime)

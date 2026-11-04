@@ -48,13 +48,13 @@ class SignalSoundTest {
 
     @Test
     fun `после продолжения музыка приглушается, если до сигнала не больше секунды`() {
-        // Бег 60 с, ходьба 30 с, 2 повтора: сигналы на 60 с, 90 с и финал на 150 с
+        // Бег 60 с, шаг 30 с, 2 повтора: сигналы на 60 с, 90 с и финал на 150 с
         val workout = Workout(runSec = 60, walkSec = 30, rounds = 2)
 
         assertFalse(shouldDuckAfterResume(workout, 58_999, duckMusic = true))
         assertTrue(shouldDuckAfterResume(workout, 59_000, duckMusic = true))
         assertTrue(shouldDuckAfterResume(workout, 59_500, duckMusic = true))
-        // Ходьба кончается сигналом так же, как бег
+        // Шаг кончается сигналом так же, как бег
         assertTrue(shouldDuckAfterResume(workout, 89_500, duckMusic = true))
         assertTrue(shouldDuckAfterResume(workout, 149_500, duckMusic = true))
         assertFalse(shouldDuckAfterResume(workout, 60_000, duckMusic = true))

@@ -44,7 +44,7 @@ class WorkoutSettingsTest {
     }
 
     @Test
-    fun `нулевое время ходьбы`() {
+    fun `нулевое время шага`() {
         assertEquals(
             SettingsError.WALK_ZERO,
             WorkoutSettings(walkMin = 0, walkSec = 0, rounds = 2).validate(),
@@ -104,7 +104,7 @@ class WorkoutSettingsTest {
         val workout = WorkoutSettings(99, 59, 99, 59, 99).toWorkout()
         val totalMs = 11_998_000L * 99 - 5_999_000L
 
-        // 99 повторов по 11 998 с без последней ходьбы: 197 отрезков с индексами 0..196
+        // 99 повторов по 11 998 с без последнего шага: 197 отрезков с индексами 0..196
         assertEquals(196, workout.at(totalMs - 1)?.index)
         assertNull(workout.at(totalMs))
     }

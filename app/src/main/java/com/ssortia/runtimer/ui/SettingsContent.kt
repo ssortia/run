@@ -128,7 +128,7 @@ private enum class Segment { RUN, WALK }
 
 // «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
 private val StartButtonHeight = 56.dp
-// Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы», чтобы карточки формы были одной высоты
+// Высота свёрнутых карточек «Бег», «Шаг» и «Повторы», чтобы карточки формы были одной высоты
 private val CardRowHeight = 72.dp
 private val PresetCheckSize = 24.dp
 private val RoundsValueWidth = 80.dp

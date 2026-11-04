@@ -9,7 +9,7 @@ class NotificationTextTest {
         rounds,
         paused,
         runLabel = "Бег",
-        walkLabel = "Ходьба",
+        walkLabel = "Шаг",
         roundLabel = "Повтор",
         pausedLabel = "Пауза",
     )
@@ -30,10 +30,10 @@ class NotificationTextTest {
     }
 
     @Test
-    fun `отрезок ходьбы`() {
+    fun `отрезок шага`() {
         val position = Position(index = 1, isRun = false, round = 1, remainingMs = 90_000)
 
-        assertEquals("Ходьба · 1:30 · Повтор 1/7", text(position))
+        assertEquals("Шаг · 1:30 · Повтор 1/7", text(position))
     }
 
     @Test
@@ -54,7 +54,7 @@ class NotificationTextTest {
     fun `позиция из тренировки`() {
         val position = Workout(runSec = 10, walkSec = 20, rounds = 3).at(45_000)!!
 
-        assertEquals("Ходьба · 0:15 · Повтор 2/3", text(position, rounds = 3))
+        assertEquals("Шаг · 0:15 · Повтор 2/3", text(position, rounds = 3))
     }
 
     @Test

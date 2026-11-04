@@ -11,9 +11,9 @@ data class Position(
 )
 
 /**
- * Тренировка: rounds повторов пары «бег + ходьба», в последнем повторе только бег.
- * Время бега и число повторов больше нуля, время ходьбы тоже, кроме тренировки из одного
- * повтора: там ходьбы нет, и она может быть нулевой.
+ * Тренировка: rounds повторов пары «бег + шаг», в последнем повторе только бег.
+ * Время бега и число повторов больше нуля, время шага тоже, кроме тренировки из одного
+ * повтора: там шага нет, и он может быть нулевым.
  */
 data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
     private val runMs = runSec * 1000L
@@ -43,7 +43,7 @@ data class Workout(val runSec: Int, val walkSec: Int, val rounds: Int) {
 /** Возвращает null, если параметры не дают корректную тренировку: сервис такой запрос отклоняет. */
 fun workoutOrNull(runSec: Int, walkSec: Int, rounds: Int): Workout? = when {
     runSec <= 0 || rounds <= 0 || walkSec < 0 -> null
-    // То же правило, что в WorkoutSettings.validate(): без ходьбы можно только при одном повторе
+    // То же правило, что в WorkoutSettings.validate(): без шага можно только при одном повторе
     walkSec == 0 && rounds > 1 -> null
     else -> Workout(runSec, walkSec, rounds)
 }

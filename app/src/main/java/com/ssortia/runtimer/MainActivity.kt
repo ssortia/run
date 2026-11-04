@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // Значки следуют за цветом экрана: тёмный фон ходьбы бывает и в светлой теме
+            // Значки следуют за цветом экрана: тёмный фон шага бывает и в светлой теме
             val darkIcons = darkStatusIcons(state, darkTheme)
             LaunchedEffect(darkIcons, darkTheme, idle) {
                 enableEdgeToEdge(

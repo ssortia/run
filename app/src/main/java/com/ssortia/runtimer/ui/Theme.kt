@@ -34,7 +34,7 @@ private val OnEmeraldContainerLight = Color(0xFF0B2B24)
 private val EmeraldContainerDark = Color(0xFF1F3A33)
 private val OnEmeraldContainerDark = Color(0xFFD1FAE5)
 
-// Бег зелёный, ходьба синяя: отрезки различаются оттенком и надписью, яркость у них близкая
+// Бег зелёный, шаг синий: отрезки различаются оттенком и надписью, яркость у них близкая
 private val RunLight = SegmentColors(background = Emerald, content = Color.White, marker = Emerald)
 private val WalkLight = SegmentColors(background = WalkBlue, content = Color.White, marker = WalkBlue)
 private val RunDark = SegmentColors(
