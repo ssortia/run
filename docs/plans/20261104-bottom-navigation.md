@@ -167,13 +167,13 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/Components.kt`
 - Create: `app/src/main/res/drawable/ic_timer.xml`
 
-- [ ] добавить иконку вкладки «Тренировка» `ic_timer.xml` из Material Symbols (outlined, 24 dp, как `ic_history.xml`)
-- [ ] в ветке `Idle` обернуть `NavHost` в `Column` с `windowInsetsPadding(WindowInsets.safeDrawing.only(Top + Horizontal))`, убрать `safeDrawingPadding()` с `NavHost`, под ним (`weight(1f)`) поставить `NavigationBar` с вкладками из `BottomTab.entries`, иконки сопоставить в Compose-коде
-- [ ] выбранную вкладку брать из `navController.currentBackStackEntryAsState()` через `bottomTabOf`, переключать по схеме из Solution Overview (`if (!selected)`, `popUpTo(ROUTE_SETTINGS) { saveState = true }`, `launchSingleTop`, `restoreState`), рядом комментарий, почему без `dropUnlessResumed`
-- [ ] иконка и подпись выбранной вкладки цвета `primary` через `NavigationBarItemDefaults.colors`, остальное по умолчанию, `windowInsets` у `NavigationBar` по умолчанию
-- [ ] обновить устаревшие комментарии: KDoc `AppTopBar` («отступы … уже даёт NavHost (`safeDrawingPadding`)») и комментарий в `WorkoutScreen.kt` про `safeDrawing` и `imePadding()`
-- [ ] тесты: маршруты и вкладки покрыты в Task 2, навигация проверяется вручную (Post-Completion); прогнать `./gradlew test` и `lintDebug`
-- [ ] run tests - must pass before next task
+- [x] добавить иконку вкладки «Тренировка» `ic_timer.xml` из Material Symbols (outlined, 24 dp, как `ic_history.xml`)
+- [x] в ветке `Idle` обернуть `NavHost` в `Column` с `windowInsetsPadding(WindowInsets.safeDrawing.only(Top + Horizontal))`, убрать `safeDrawingPadding()` с `NavHost`, под ним (`weight(1f)`) поставить `NavigationBar` с вкладками из `BottomTab.entries`, иконки сопоставить в Compose-коде
+- [x] выбранную вкладку брать из `navController.currentBackStackEntryAsState()` через `bottomTabOf`, переключать по схеме из Solution Overview (`if (!selected)`, `popUpTo(ROUTE_SETTINGS) { saveState = true }`, `launchSingleTop`, `restoreState`), рядом комментарий, почему без `dropUnlessResumed`
+- [x] иконка и подпись выбранной вкладки цвета `primary` через `NavigationBarItemDefaults.colors`, остальное по умолчанию, `windowInsets` у `NavigationBar` по умолчанию
+- [x] обновить устаревшие комментарии: KDoc `AppTopBar` («отступы … уже даёт NavHost (`safeDrawingPadding`)») и комментарий в `WorkoutScreen.kt` про `safeDrawing` и `imePadding()`
+- [x] тесты: маршруты и вкладки покрыты в Task 2, навигация проверяется вручную (Post-Completion); прогнать `./gradlew test` и `lintDebug`
+- [x] run tests - must pass before next task
 
 ### Task 5: Новая шапка формы
 

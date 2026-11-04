@@ -4,20 +4,39 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.WorkoutSettings
@@ -55,70 +74,81 @@ fun WorkoutScreen(
             // контроллера остаются в activity до её уничтожения, но ViewModel в них нет, и это
             // несколько пустых объектов за тренировку
             val navController = rememberNavController()
-            NavHost(
-                navController = navController,
-                startDestination = ROUTE_SETTINGS,
-                // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
-                // глотал бы нажатия
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                // safeDrawing включает клавиатуру, поэтому отдельный imePadding() не нужен
-                modifier = Modifier.safeDrawingPadding(),
+            // Отступы сверху и по бокам поглощаются здесь, поэтому NavigationBar не добавит боковые
+            // второй раз, а снизу системную панель он учитывает сам, и его фон уходит под жестовую
+            // полосу. Клавиатуры вне тренировки нет, отдельный учёт ime не нужен
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ),
             ) {
-                screen(ROUTE_SETTINGS) {
-                    // Настройки читаются при создании маршрута: после тренировки стека нет, и форма
-                    // берёт сохранённые значения. Несохранённые правки, пока открыт другой экран,
-                    // хранит rememberSaveable записи стека
-                    val initial = remember { loadSettings() }
-                    SettingsContent(
-                        initial = initial,
-                        showBackgroundWarning = showBackgroundWarning,
-                        onStart = onStart,
-                        onOpenHistory = dropUnlessResumed {
-                            navController.navigate(ROUTE_HISTORY)
-                        },
-                        onOpenProgress = dropUnlessResumed {
-                            navController.navigate(ROUTE_PROGRESS)
-                        },
-                        onOpenSettings = dropUnlessResumed {
-                            navController.navigate(ROUTE_APP_SETTINGS)
-                        },
-                        onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
-                    )
+                NavHost(
+                    navController = navController,
+                    startDestination = ROUTE_SETTINGS,
+                    // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
+                    // глотал бы нажатия
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    screen(ROUTE_SETTINGS) {
+                        // Настройки читаются при создании маршрута: после тренировки стека нет, и форма
+                        // берёт сохранённые значения. Несохранённые правки, пока открыт другой экран,
+                        // хранит rememberSaveable записи стека
+                        val initial = remember { loadSettings() }
+                        SettingsContent(
+                            initial = initial,
+                            showBackgroundWarning = showBackgroundWarning,
+                            onStart = onStart,
+                            onOpenHistory = dropUnlessResumed {
+                                navController.navigate(ROUTE_HISTORY)
+                            },
+                            onOpenProgress = dropUnlessResumed {
+                                navController.navigate(ROUTE_PROGRESS)
+                            },
+                            onOpenSettings = dropUnlessResumed {
+                                navController.navigate(ROUTE_APP_SETTINGS)
+                            },
+                            onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
+                        )
+                    }
+                    screen(ROUTE_APP_SETTINGS) {
+                        AppSettingsContent(
+                            loadVolume = loadVolume,
+                            onVolumeChange = onVolumeChange,
+                            loadVibration = loadVibration,
+                            onVibrationChange = onVibrationChange,
+                            loadDuckMusic = loadDuckMusic,
+                            onDuckMusicChange = onDuckMusicChange,
+                            loadStartDelay = loadStartDelay,
+                            onStartDelayChange = onStartDelayChange,
+                            themeMode = themeMode,
+                            onThemeModeChange = onThemeModeChange,
+                            onBack = dropUnlessResumed { navController.popBackStack() },
+                        )
+                    }
+                    screen(ROUTE_HISTORY) {
+                        // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
+                        val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                        HistoryContent(
+                            records = records,
+                            onDelete = onDeleteRun,
+                            onBack = dropUnlessResumed { navController.popBackStack() },
+                        )
+                    }
+                    screen(ROUTE_PROGRESS) {
+                        // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
+                        val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                        val progress = remember(records) { records?.let(::programProgress) }
+                        ProgressContent(
+                            progress = progress,
+                            onBack = dropUnlessResumed { navController.popBackStack() },
+                        )
+                    }
                 }
-                screen(ROUTE_APP_SETTINGS) {
-                    AppSettingsContent(
-                        loadVolume = loadVolume,
-                        onVolumeChange = onVolumeChange,
-                        loadVibration = loadVibration,
-                        onVibrationChange = onVibrationChange,
-                        loadDuckMusic = loadDuckMusic,
-                        onDuckMusicChange = onDuckMusicChange,
-                        loadStartDelay = loadStartDelay,
-                        onStartDelayChange = onStartDelayChange,
-                        themeMode = themeMode,
-                        onThemeModeChange = onThemeModeChange,
-                        onBack = dropUnlessResumed { navController.popBackStack() },
-                    )
-                }
-                screen(ROUTE_HISTORY) {
-                    // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
-                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                    HistoryContent(
-                        records = records,
-                        onDelete = onDeleteRun,
-                        onBack = dropUnlessResumed { navController.popBackStack() },
-                    )
-                }
-                screen(ROUTE_PROGRESS) {
-                    // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
-                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                    val progress = remember(records) { records?.let(::programProgress) }
-                    ProgressContent(
-                        progress = progress,
-                        onBack = dropUnlessResumed { navController.popBackStack() },
-                    )
-                }
+                BottomBar(navController)
             }
         }
 
@@ -131,6 +161,54 @@ fun WorkoutScreen(
             onResume = onResume,
         )
     }
+}
+
+/**
+ * Нижняя панель вкладок. Выбранная вкладка берётся из маршрута текущей записи стека. Переход
+ * сбрасывает стек до формы с сохранением состояния вкладок, поэтому в стеке не больше двух
+ * записей: «Назад» с любой вкладки ведёт на форму, а запись формы не пересоздаётся.
+ *
+ * Без dropUnlessResumed: панель стоит вне NavHost, её LifecycleOwner — activity, которая всегда
+ * RESUMED, и обёртка ничего бы не защищала. Двойное нажатие безопасно и так: переход идемпотентен
+ * благодаря popUpTo и launchSingleTop, нажатие на текущую вкладку ничего не делает, а popBackStack
+ * вкладки не вызывают, так что пустого NavHost не будет.
+ */
+@Composable
+private fun BottomBar(navController: NavHostController) {
+    val entry by navController.currentBackStackEntryAsState()
+    val current = bottomTabOf(entry?.destination?.route)
+    // Индикатор M3 по умолчанию в светлой теме почти не виден, поэтому выбранную вкладку
+    // выделяет цвет primary у иконки и подписи
+    val itemColors = NavigationBarItemDefaults.colors(
+        selectedIconColor = MaterialTheme.colorScheme.primary,
+        selectedTextColor = MaterialTheme.colorScheme.primary,
+    )
+    NavigationBar {
+        BottomTab.entries.forEach { tab ->
+            val selected = tab == current
+            NavigationBarItem(
+                selected = selected,
+                onClick = {
+                    if (!selected) navController.navigate(tab.route) {
+                        popUpTo(ROUTE_SETTINGS) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                icon = { Icon(painter = tabIcon(tab), contentDescription = null) },
+                label = { Text(stringResource(tab.labelRes)) },
+                colors = itemColors,
+            )
+        }
+    }
+}
+
+@Composable
+private fun tabIcon(tab: BottomTab): Painter = when (tab) {
+    BottomTab.WORKOUT -> painterResource(R.drawable.ic_timer)
+    BottomTab.HISTORY -> painterResource(R.drawable.ic_history)
+    BottomTab.PROGRESS -> painterResource(R.drawable.ic_flag)
+    BottomTab.SETTINGS -> rememberVectorPainter(Icons.Outlined.Settings)
 }
 
 /**
