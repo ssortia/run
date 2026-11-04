@@ -25,11 +25,6 @@ import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
 import kotlinx.coroutines.flow.Flow
 
-private const val ROUTE_SETTINGS = "settings"
-private const val ROUTE_APP_SETTINGS = "app_settings"
-private const val ROUTE_HISTORY = "history"
-private const val ROUTE_PROGRESS = "progress"
-
 @Composable
 fun WorkoutScreen(
     state: WorkoutState,

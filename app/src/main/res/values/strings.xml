@@ -14,6 +14,7 @@
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>
     <string name="button_resume">Продолжить</string>
+    <string name="tab_workout">Тренировка</string>
     <string name="button_settings">Настройки</string>
     <string name="button_history">История</string>
     <string name="button_back">Назад</string>

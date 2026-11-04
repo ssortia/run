@@ -144,9 +144,9 @@
 - Modify: `app/src/main/res/values/strings.xml`
 - Create: `app/src/test/java/com/ssortia/runtimer/ui/BottomTabTest.kt`
 
-- [ ] создать `BottomTab` и `bottomTabOf(route)`, перенести константы маршрутов из `WorkoutScreen.kt`, добавить строку `tab_workout`
-- [ ] написать тесты: первая вкладка стоит на стартовом маршруте `settings`; `bottomTabOf` возвращает нужную вкладку для каждого маршрута и `null` для `null` и неизвестного маршрута
-- [ ] run tests - must pass before next task
+- [x] создать `BottomTab` и `bottomTabOf(route)`, перенести константы маршрутов из `WorkoutScreen.kt`, добавить строку `tab_workout`
+- [x] написать тесты: первая вкладка стоит на стартовом маршруте `settings`; `bottomTabOf` возвращает нужную вкладку для каждого маршрута и `null` для `null` и неизвестного маршрута
+- [x] run tests - must pass before next task
 
 ### Task 3: Цвет рамки плашки недели
 
