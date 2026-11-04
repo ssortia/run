@@ -17,7 +17,7 @@ class ProgressRowTextTest {
 
     private val labels = ProgressLabels(
         run = "Бег",
-        walk = "Ходьба",
+        walk = "Шаг",
         min = "мин",
         sec = "с",
         ringPassed = "Неделя пройдена",
@@ -62,7 +62,7 @@ class ProgressRowTextTest {
         assertEquals(
             ProgressRowText(
                 title = "Неделя 3",
-                details = "Бег 3:00 · Ходьба 2:00 · ×5",
+                details = "Бег 3:00 · Шаг 2:00 · ×5",
                 runs = "0 раз",
                 runsSpoken = false,
                 date = null,
@@ -76,7 +76,7 @@ class ProgressRowTextTest {
     fun `непройденная неделя с датой последней пробежки, число читает кольцо`() {
         val row = row(week = 5, completedRuns = 3, lastCompletedAtMs = Instant.parse("2026-10-20T07:30:00Z").toEpochMilli())
 
-        assertEquals("Бег 7:00 · Ходьба 1:30 · ×3", row.details)
+        assertEquals("Бег 7:00 · Шаг 1:30 · ×3", row.details)
         assertEquals("3 раз", row.runs)
         assertEquals("20 октября", row.date)
         assertEquals("Пробежек 3 из 4", row.ringDescription)

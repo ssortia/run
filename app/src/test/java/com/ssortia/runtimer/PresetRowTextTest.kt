@@ -6,27 +6,27 @@ import org.junit.Test
 class PresetRowTextTest {
     private fun row(week: Int): PresetRowText {
         val preset = WORKOUT_PRESETS.first { it.week == week }
-        return presetRowText(preset, "Неделя $week", "Бег", "Ходьба", "мин", "с")
+        return presetRowText(preset, "Неделя $week", "Бег", "Шаг", "мин", "с")
     }
 
     @Test
     fun `неделя 2`() {
-        assertEquals(PresetRowText("Неделя 2", "Бег 2:00 · Ходьба 2:00 · ×6", "22 мин"), row(2))
+        assertEquals(PresetRowText("Неделя 2", "Бег 2:00 · Шаг 2:00 · ×6", "22 мин"), row(2))
     }
 
     @Test
-    fun `ходьба с секундами`() {
-        assertEquals("Бег 8:00 · Ходьба 1:30 · ×3", row(6).details)
+    fun `шаг с секундами`() {
+        assertEquals("Бег 8:00 · Шаг 1:30 · ×3", row(6).details)
     }
 
     @Test
-    fun `неделя 10 без ходьбы`() {
+    fun `неделя 10 без шага`() {
         assertEquals("Бег 30:00 · ×1", row(10).details)
         assertEquals("30 мин", row(10).total)
     }
 
     @Test
-    fun `общее время без последней ходьбы`() {
+    fun `общее время без последнего шага`() {
         assertEquals("23 мин", row(3).total)
         assertEquals("27 мин", row(7).total)
     }

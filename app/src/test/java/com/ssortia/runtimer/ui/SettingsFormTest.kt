@@ -93,7 +93,7 @@ class SettingsFormTest {
     }
 
     @Test
-    fun `неделя 10 без ходьбы показывает ходьбу 0 00 и проходит проверку`() {
+    fun `неделя 10 без шага показывает шаг 0 00 и проходит проверку`() {
         val week10 = WORKOUT_PRESETS.first { it.week == 10 }.settings
         assertEquals("0:00", segmentTimeText(week10.walkMin, week10.walkSec))
         assertNull(week10.validate())

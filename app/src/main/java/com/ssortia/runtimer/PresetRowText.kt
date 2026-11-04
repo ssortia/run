@@ -4,8 +4,8 @@ package com.ssortia.runtimer
 data class PresetRowText(val title: String, val details: String, val total: String)
 
 /**
- * Текст строки недели. [weekTitle] уже готов («Неделя 3»). Ходьба без времени не показывается
- * (неделя 10). Общее время равно длительности тренировки: последняя ходьба в него не входит.
+ * Текст строки недели. [weekTitle] уже готов («Неделя 3»). Шаг без времени не показывается
+ * (неделя 10). Общее время равно длительности тренировки: последний шаг в него не входит.
  */
 fun presetRowText(
     preset: WorkoutPreset,

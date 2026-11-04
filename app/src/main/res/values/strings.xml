@@ -3,7 +3,7 @@
     <string name="app_name">Бег</string>
     <string name="notification_channel">Ход тренировки</string>
     <string name="segment_run">Бег</string>
-    <string name="segment_walk">Ходьба</string>
+    <string name="segment_walk">Шаг</string>
     <string name="round_label">Повтор</string>
     <string name="notification_paused">Пауза</string>
     <string name="field_rounds">Повторы</string>
@@ -48,7 +48,7 @@
     <string name="preset_custom">Своя тренировка</string>
     <string name="preset_chip_description">%1$s, выбрать неделю программы</string>
     <string name="error_run_zero">Время бега должно быть больше нуля</string>
-    <string name="error_walk_zero">Время ходьбы должно быть больше нуля, если повторов больше одного</string>
+    <string name="error_walk_zero">Время шага должно быть больше нуля, если повторов больше одного</string>
     <string name="error_rounds_range">Число повторов должно быть от 1 до %1$d</string>
     <string name="error_seconds_range">Секунды должны быть от 0 до %1$d</string>
     <string name="error_minutes_range">Минуты должны быть от 0 до %1$d</string>

@@ -6,7 +6,7 @@ import org.junit.Test
 import java.time.Instant
 
 class RunRecordTest {
-    // 8 повторов по 1:00 бега и 1:30 ходьбы, всего 18:30
+    // 8 повторов по 1:00 бега и 1:30 шага, всего 18:30
     private val workout = Workout(runSec = 60, walkSec = 90, rounds = 8)
     private val startedAt = Instant.parse("2026-11-03T07:30:00Z").toEpochMilli()
 

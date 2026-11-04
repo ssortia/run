@@ -5,7 +5,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WorkoutTest {
-    // 10 с бега, 5 с ходьбы, 3 повтора: всего 40 с и 5 отрезков
+    // 10 с бега, 5 с шага, 3 повтора: всего 40 с и 5 отрезков
     private val workout = Workout(runSec = 10, walkSec = 5, rounds = 3)
 
     @Test
@@ -17,7 +17,7 @@ class WorkoutTest {
     }
 
     @Test
-    fun `бег сменяется ходьбой ровно на границе`() {
+    fun `бег сменяется шагом ровно на границе`() {
         assertEquals(
             Position(index = 0, isRun = true, round = 1, remainingMs = 1),
             workout.at(9_999),
@@ -29,7 +29,7 @@ class WorkoutTest {
     }
 
     @Test
-    fun `ходьба сменяется бегом следующего повтора`() {
+    fun `шаг сменяется бегом следующего повтора`() {
         assertEquals(
             Position(index = 1, isRun = false, round = 1, remainingMs = 1),
             workout.at(14_999),
@@ -41,7 +41,7 @@ class WorkoutTest {
     }
 
     @Test
-    fun `номер повтора считается с единицы и растёт после ходьбы`() {
+    fun `номер повтора считается с единицы и растёт после шага`() {
         val rounds = listOf(0L, 14_999, 15_000, 29_999, 30_000, 39_999).map { workout.at(it)?.round }
 
         assertEquals(listOf(1, 1, 2, 2, 3, 3), rounds)
@@ -106,12 +106,12 @@ class WorkoutTest {
     }
 
     @Test
-    fun `нулевая ходьба при одном повторе даёт тренировку`() {
+    fun `нулевой шаг при одном повторе даёт тренировку`() {
         assertEquals(Workout(1, 0, 1), workoutOrNull(runSec = 1, walkSec = 0, rounds = 1))
     }
 
     @Test
-    fun `один повтор без ходьбы длится как бег и всё время показывает бег`() {
+    fun `один повтор без шага длится как бег и всё время показывает бег`() {
         val single = Workout(runSec = 3, walkSec = 0, rounds = 1)
 
         assertEquals(3_000L, single.totalMs)

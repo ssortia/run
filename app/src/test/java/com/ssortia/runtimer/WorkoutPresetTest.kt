@@ -54,7 +54,7 @@ class WorkoutPresetTest {
         WORKOUT_PRESETS.forEach {
             val workout = it.settings.toWorkout()
             assertEquals("бег недели ${it.week}", 0, workout.runSec % 30)
-            assertEquals("ходьба недели ${it.week}", 0, workout.walkSec % 30)
+            assertEquals("шаг недели ${it.week}", 0, workout.walkSec % 30)
         }
     }
 

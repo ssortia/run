@@ -11,7 +11,7 @@ class WorkoutStateTest {
     private val run = Position(index = 0, isRun = true, round = 1, remainingMs = 10_000)
     private val walk = Position(index = 1, isRun = false, round = 1, remainingMs = 10_000)
 
-    // 10 с бега, 10 с ходьбы, 2 повтора: всего 30 с и 3 отрезка
+    // 10 с бега, 10 с шага, 2 повтора: всего 30 с и 3 отрезка
     private val workout = Workout(runSec = 10, walkSec = 10, rounds = 2)
 
     @Test
@@ -285,7 +285,7 @@ class WorkoutStateTest {
 
     @Test
     fun `финал показывает последний отрезок с нулевым остатком`() {
-        // Предыдущий шаг был в ходьбе: запоздавший финал всё равно показывает последний бег
+        // Предыдущий шаг цикла пришёлся на отрезок шага: запоздавший финал всё равно показывает последний бег
         val tick = tickAt(workout, 45_000, previousIndex = 1)
 
         assertEquals(
@@ -314,7 +314,7 @@ class WorkoutStateTest {
     }
 
     @Test
-    fun `один повтор без ходьбы даёт только финальный сигнал`() {
+    fun `один повтор без шага даёт только финальный сигнал`() {
         val ticks = simulate(Workout(runSec = 3, walkSec = 0, rounds = 1), 250)
 
         assertEquals(listOf(Signal.FINISH), ticks.mapNotNull { it.signal })
