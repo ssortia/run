@@ -22,11 +22,13 @@ import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
+import com.ssortia.runtimer.programProgress
 import kotlinx.coroutines.flow.Flow
 
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_APP_SETTINGS = "app_settings"
 private const val ROUTE_HISTORY = "history"
+private const val ROUTE_PROGRESS = "progress"
 
 @Composable
 fun WorkoutScreen(
@@ -80,6 +82,9 @@ fun WorkoutScreen(
                         onOpenHistory = dropUnlessResumed {
                             navController.navigate(ROUTE_HISTORY)
                         },
+                        onOpenProgress = dropUnlessResumed {
+                            navController.navigate(ROUTE_PROGRESS)
+                        },
                         onOpenSettings = dropUnlessResumed {
                             navController.navigate(ROUTE_APP_SETTINGS)
                         },
@@ -107,6 +112,15 @@ fun WorkoutScreen(
                     HistoryContent(
                         records = records,
                         onDelete = onDeleteRun,
+                        onBack = dropUnlessResumed { navController.popBackStack() },
+                    )
+                }
+                screen(ROUTE_PROGRESS) {
+                    // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
+                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                    val progress = remember(records) { records?.let(::programProgress) }
+                    ProgressContent(
+                        progress = progress,
                         onBack = dropUnlessResumed { navController.popBackStack() },
                     )
                 }

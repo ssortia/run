@@ -179,6 +179,7 @@ fun SettingsContent(
     showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenProgress: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
@@ -208,6 +209,12 @@ fun SettingsContent(
                     Icon(
                         painter = painterResource(R.drawable.ic_history),
                         contentDescription = stringResource(R.string.button_history),
+                    )
+                }
+                IconButton(onClick = onOpenProgress) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_flag),
+                        contentDescription = stringResource(R.string.button_progress),
                     )
                 }
                 IconButton(onClick = onOpenSettings) {

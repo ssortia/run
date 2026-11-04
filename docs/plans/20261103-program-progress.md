@@ -135,11 +135,11 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 
-- [ ] добавить `ic_flag.xml` из Material Symbols (flag, Outlined, 24 dp, Apache 2.0) с комментарием о происхождении, как у `ic_history.xml`
-- [ ] добавить параметр `onOpenProgress` в `SettingsContent` и `IconButton` с флажком между «Историей» и «Настройками», `contentDescription` из `button_progress`
-- [ ] добавить маршрут `ROUTE_PROGRESS = "progress"` в `WorkoutScreen` через `screen()`: `runs.collectAsStateWithLifecycle(initialValue = null)`, `remember(records) { records?.let(::programProgress) }`, возврат `dropUnlessResumed { navController.popBackStack() }`; переход с формы в `dropUnlessResumed`
-- [ ] Compose-код тестами не покрывается; проверить сборку и что существующие тесты проходят
-- [ ] run tests - must pass before next task
+- [x] добавить `ic_flag.xml` из Material Symbols (flag, Outlined, 24 dp, Apache 2.0) с комментарием о происхождении, как у `ic_history.xml`
+- [x] добавить параметр `onOpenProgress` в `SettingsContent` и `IconButton` с флажком между «Историей» и «Настройками», `contentDescription` из `button_progress`
+- [x] добавить маршрут `ROUTE_PROGRESS = "progress"` в `WorkoutScreen` через `screen()`: `runs.collectAsStateWithLifecycle(initialValue = null)`, `remember(records) { records?.let(::programProgress) }`, возврат `dropUnlessResumed { navController.popBackStack() }`; переход с формы в `dropUnlessResumed`
+- [x] Compose-код тестами не покрывается; проверить сборку и что существующие тесты проходят
+- [x] run tests - must pass before next task
 
 ### Task 5: Verify acceptance criteria
 
