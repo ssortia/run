@@ -118,13 +118,13 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/ProgressContent.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/AppSettingsContent.kt`
 
-- [ ] общий `Box` ветки `Idle`, отступы `safeDrawing.only(Top + Horizontal)` перенесены на него с `Column`
-- [ ] `BottomBar`: в центральном слоте между «Историей» и «Прогрессом» доступный заместитель «Старта» (роль кнопки, описание, `onClick`, `disabled()`), вкладки по-прежнему по `BottomTab.entries`; обновить KDoc `BottomBar`
-- [ ] `StartFab` по Technical Details поверх панели с `clearAndSetSemantics {}`, `enabled = settings.validate() == null`, `onClick = { onStart(settings) }`, отступ снизу из `navigationBars` и `BottomBarHeight`
-- [ ] удалить из `SettingsContent` закреплённый нижний блок, кнопку «Старт» и `StartButtonHeight`, поправить KDoc про `onStart`; предупреждение о фоне и ошибку перенести под карточки в прокручиваемую колонку
-- [ ] константа `StartFabOverlap` и нижний отступ под выступ в прокручиваемых колонках формы, истории, прогресса и настроек
-- [ ] `BottomTabTest` без изменений, тесты зелёные (новой логики в задаче нет, она в Task 2)
-- [ ] run tests - must pass before next task
+- [x] общий `Box` ветки `Idle`, отступы `safeDrawing.only(Top + Horizontal)` перенесены на него с `Column`
+- [x] `BottomBar`: в центральном слоте между «Историей» и «Прогрессом» доступный заместитель «Старта» (роль кнопки, описание, `onClick`, `disabled()`), вкладки по-прежнему по `BottomTab.entries`; обновить KDoc `BottomBar`
+- [x] `StartFab` по Technical Details поверх панели с `clearAndSetSemantics {}`, `enabled = settings.validate() == null`, `onClick = { onStart(settings) }`, отступ снизу из `navigationBars` и `BottomBarHeight` (взяты `NavigationBarDefaults.windowInsets` снизу, те же отступы, что у самой панели)
+- [x] удалить из `SettingsContent` закреплённый нижний блок, кнопку «Старт» и `StartButtonHeight`, поправить KDoc про `onStart`; предупреждение о фоне и ошибку перенести под карточки в прокручиваемую колонку
+- [x] константа `StartFabOverlap` и нижний отступ под выступ в прокручиваемых колонках формы, истории, прогресса и настроек (общая `ScrollContentBottomPadding` = 16 dp + `StartFabOverlap`)
+- [x] `BottomTabTest` без изменений, тесты зелёные (новой логики в задаче нет, она в Task 2)
+- [x] run tests - must pass before next task
 
 ### Task 5: Блок итога и раскладка формы
 

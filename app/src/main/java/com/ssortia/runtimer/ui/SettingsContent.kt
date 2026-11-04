@@ -26,8 +26,6 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -126,8 +124,6 @@ internal val WorkoutSettingsSaver = listSaver<WorkoutSettings, Int>(
 /** Отрезок, карточка которого раскрыта. */
 private enum class Segment { RUN, WALK }
 
-// «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
-private val StartButtonHeight = 56.dp
 // Высота свёрнутых карточек «Бег», «Шаг» и «Повторы», чтобы карточки формы были одной высоты
 private val CardRowHeight = 72.dp
 private val PresetCheckSize = 24.dp
@@ -136,7 +132,8 @@ private val WeekChipHeight = 40.dp
 
 /**
  * Форма настроек. Состояние [settings] хранит ветка Idle у WorkoutScreen, форма меняет его только
- * через [onSettingsChange]. [onStart] вызывается только с настройками, прошедшими проверку.
+ * через [onSettingsChange]. «Старт» не на форме, а в центре нижней панели: он запускает эти же
+ * настройки с любой вкладки. Предупреждение о фоне и ошибка проверки стоят под карточками.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,7 +141,6 @@ fun SettingsContent(
     settings: WorkoutSettings,
     onSettingsChange: (WorkoutSettings) -> Unit,
     showBackgroundWarning: Boolean,
-    onStart: (WorkoutSettings) -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,7 +171,7 @@ fun SettingsContent(
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = ScrollContentBottomPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SegmentCard(
@@ -202,15 +198,6 @@ fun SettingsContent(
                 value = settings.rounds,
                 onValueChange = { onSettingsChange(settings.copy(rounds = it)) },
             )
-        }
-
-        // Нижний блок закреплён: карточки прокручиваются, а «Старт» всегда виден
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
             if (showBackgroundWarning) {
                 BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
             }
@@ -221,27 +208,8 @@ fun SettingsContent(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            // Цвета бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих темах
-            // изумрудный с белым текстом
-            val startColors = segmentColors(isRun = true, LocalDarkTheme.current)
-            Button(
-                onClick = { onStart(settings) },
-                enabled = error == null,
-                shape = MaterialTheme.shapes.large,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = startColors.background,
-                    contentColor = startColors.content,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(StartButtonHeight),
-            ) {
-                Text(
-                    text = stringResource(R.string.button_start),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
         }
+
     }
 
     if (showProgram) {
