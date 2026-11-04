@@ -1,25 +1,23 @@
 package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -27,7 +25,6 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,7 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -51,17 +48,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -81,60 +77,21 @@ import com.ssortia.runtimer.wheelOptions
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-/** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
-data class SettingsInput(
-    val runMin: String,
-    val runSec: String,
-    val walkMin: String,
-    val walkSec: String,
-    val rounds: String,
-) {
-    fun toSettings() = WorkoutSettings(
-        runMin = parseField(runMin),
-        runSec = parseField(runSec),
-        walkMin = parseField(walkMin),
-        walkSec = parseField(walkSec),
-        rounds = parseField(rounds),
-    )
-
-    companion object {
-        fun from(settings: WorkoutSettings) = SettingsInput(
-            runMin = settings.runMin.toString(),
-            runSec = settings.runSec.toString(),
-            walkMin = settings.walkMin.toString(),
-            walkSec = settings.walkSec.toString(),
-            rounds = settings.rounds.toString(),
-        )
-    }
-}
-
-/** Оставляет только цифры ASCII: так вставка из буфера не занесёт в поле минус или пробел. */
-fun digitsOnly(text: String): String = text.filter { it in '0'..'9' }
-
-/**
- * Текст приходит из поля, уже прошедшего [digitsOnly]. Пустое поле считается нулём. Число,
- * не вмещающееся в Int, заменяется на [Int.MAX_VALUE]: пользователь получит ошибку диапазона
- * из [WorkoutSettings.validate], а не ноль.
- */
-fun parseField(text: String): Int =
-    if (text.isEmpty()) 0 else text.toIntOrNull() ?: Int.MAX_VALUE
-
-/** Повторы из поля, прижатые к 1..[MAX_ROUNDS]: пустое поле и 0 считаются одним повтором. */
-private fun clampedRounds(text: String): Int = parseField(text).coerceIn(1, MAX_ROUNDS)
+/** Повторы, прижатые к 1..[MAX_ROUNDS]: 0 и число вне диапазона из сохранённых настроек. */
+private fun clampedRounds(value: Int): Int = value.coerceIn(1, MAX_ROUNDS)
 
 /**
  * Шаг степпера повторов. Значение прижимается до и после прибавления [delta], поэтому
  * переполнения нет, а число вне диапазона сразу возвращается в допустимые пределы.
  */
-fun stepRounds(text: String, delta: Int): String =
-    (clampedRounds(text) + delta).coerceIn(1, MAX_ROUNDS).toString()
+fun stepRounds(value: Int, delta: Int): Int = (clampedRounds(value) + delta).coerceIn(1, MAX_ROUNDS)
 
-fun canDecreaseRounds(text: String): Boolean = clampedRounds(text) > 1
+fun canDecreaseRounds(value: Int): Boolean = clampedRounds(value) > 1
 
-fun canIncreaseRounds(text: String): Boolean = clampedRounds(text) < MAX_ROUNDS
+fun canIncreaseRounds(value: Int): Boolean = clampedRounds(value) < MAX_ROUNDS
 
 /**
- * Время отрезка в строке карточки, «м:сс», из уже разобранных полей формы. Значение не
+ * Время отрезка в строке карточки, «м:сс». Значение не
  * прижимается к диапазону: неверное сохранённое видно как есть, а ошибку покажет проверка формы.
  */
 fun segmentTimeText(minutes: Int, seconds: Int): String =
@@ -157,9 +114,13 @@ fun SettingsError.messageArgs(): Array<Any> = when (this) {
     SettingsError.MINUTES_RANGE -> arrayOf(MAX_MINUTES)
 }
 
-internal val SettingsInputSaver = listSaver<SettingsInput, String>(
+/**
+ * Несохранённые правки формы. Значения хранятся как есть, без прижатия: неверное сохранённое
+ * видно на форме, а ошибку покажет [WorkoutSettings.validate].
+ */
+internal val WorkoutSettingsSaver = listSaver<WorkoutSettings, Int>(
     save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds) },
-    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
+    restore = { WorkoutSettings(it[0], it[1], it[2], it[3], it[4]) },
 )
 
 /** Отрезок, карточка которого раскрыта. */
@@ -167,64 +128,44 @@ private enum class Segment { RUN, WALK }
 
 // «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
 private val StartButtonHeight = 56.dp
+// Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы», чтобы карточки формы были одной высоты
+private val CardRowHeight = 72.dp
 private val PresetCheckSize = 24.dp
-private val RoundsFieldWidth = 80.dp
+private val RoundsValueWidth = 80.dp
+private val WeekChipHeight = 40.dp
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
     showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var input by rememberSaveable(stateSaver = SettingsInputSaver) {
-        mutableStateOf(SettingsInput.from(initial))
-    }
+    var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) { mutableStateOf(initial) }
     // Раскрыта не больше одной карточки отрезка, null — обе свёрнуты
     var expanded by rememberSaveable { mutableStateOf<Segment?>(null) }
     // Шторка программы не маршрут, а состояние формы
     var showProgram by rememberSaveable { mutableStateOf(false) }
-    val settings = input.toSettings()
     val error = settings.validate()
     val selectedWeek = presetWeekOf(settings)
 
     Column(modifier = modifier.fillMaxSize()) {
         AppTopBar(
-            title = stringResource(R.string.app_name),
+            title = stringResource(R.string.tab_workout),
             actions = {
-                IconButton(onClick = { showProgram = true }) {
-                    Icon(
-                        imageVector = Icons.Outlined.DateRange,
-                        contentDescription = stringResource(R.string.preset_title),
-                    )
-                }
-                IconButton(onClick = onOpenHistory) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_history),
-                        contentDescription = stringResource(R.string.button_history),
-                    )
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = stringResource(R.string.button_settings),
-                    )
-                }
+                WeekChip(
+                    text = if (selectedWeek != null) {
+                        stringResource(R.string.preset_week, selectedWeek)
+                    } else {
+                        stringResource(R.string.preset_custom)
+                    },
+                    onClick = { showProgram = true },
+                )
             },
         )
-        if (selectedWeek != null) {
-            Text(
-                text = stringResource(R.string.preset_week_match, selectedWeek),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
 
         Column(
             modifier = Modifier
@@ -237,39 +178,37 @@ fun SettingsContent(
             SegmentCard(
                 label = stringResource(R.string.segment_run),
                 isRun = true,
-                minutes = input.runMin,
-                seconds = input.runSec,
+                minutes = settings.runMin,
+                seconds = settings.runSec,
                 expanded = expanded == Segment.RUN,
                 onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
-                onMinutesChange = { input = input.copy(runMin = it.toString()) },
-                onSecondsChange = { input = input.copy(runSec = it.toString()) },
+                onMinutesChange = { settings = settings.copy(runMin = it) },
+                onSecondsChange = { settings = settings.copy(runSec = it) },
             )
             SegmentCard(
                 label = stringResource(R.string.segment_walk),
                 isRun = false,
-                minutes = input.walkMin,
-                seconds = input.walkSec,
+                minutes = settings.walkMin,
+                seconds = settings.walkSec,
                 expanded = expanded == Segment.WALK,
                 onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
-                onMinutesChange = { input = input.copy(walkMin = it.toString()) },
-                onSecondsChange = { input = input.copy(walkSec = it.toString()) },
+                onMinutesChange = { settings = settings.copy(walkMin = it) },
+                onSecondsChange = { settings = settings.copy(walkSec = it) },
             )
             RoundsCard(
-                value = input.rounds,
-                onValueChange = { input = input.copy(rounds = it) },
+                value = settings.rounds,
+                onValueChange = { settings = settings.copy(rounds = it) },
             )
         }
 
-        // Нижний блок закреплён: поля прокручиваются, а «Старт» всегда виден и поднимается
-        // над клавиатурой вместе с отступом safeDrawing у NavHost
+        // Нижний блок закреплён: карточки прокручиваются, а «Старт» всегда виден
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // При открытой клавиатуре баннер отнял бы у полей почти всё место
-            if (showBackgroundWarning && !WindowInsets.isImeVisible) {
+            if (showBackgroundWarning) {
                 BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
             }
             if (error != null) {
@@ -312,12 +251,55 @@ fun SettingsContent(
             ProgramSheetContent(
                 selectedWeek = selectedWeek,
                 onSelect = { preset ->
-                    input = SettingsInput.from(preset.settings)
+                    settings = preset.settings
                     // Флаг снимается только после скрытия, чтобы не разойтись с состоянием шторки
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) showProgram = false
                     }
                 },
+            )
+        }
+    }
+}
+
+/**
+ * Плашка недели в шапке формы, открывает шторку программы. Рамка и лёгкая тень подсказывают,
+ * что её можно нажать. `Surface(onClick)` сам задаёт `Role.Button`.
+ */
+@Composable
+private fun WeekChip(text: String, onClick: () -> Unit) {
+    val description = stringResource(R.string.preset_chip_description, text)
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        border = BorderStroke(1.dp, weekChipBorderColor(LocalDarkTheme.current)),
+        shadowElevation = 1.dp,
+        // Слот actions даёт справа только 4 dp
+        modifier = Modifier
+            .padding(end = 12.dp)
+            .heightIn(min = WeekChipHeight)
+            .semantics { contentDescription = description },
+    ) {
+        // Текст плашки уже вошёл в описание, иначе TalkBack прочитал бы его дважды
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .clearAndSetSemantics {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DateRange,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -343,8 +325,12 @@ private fun ProgramSheetContent(
     ) {
         Text(
             text = stringResource(R.string.preset_title),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
         )
         WORKOUT_PRESETS.forEach { preset ->
             val text = presetRowText(
@@ -413,7 +399,8 @@ private fun PresetRow(text: PresetRowText, selected: Boolean, onClick: () -> Uni
 
 /**
  * Карточка отрезка: в свёрнутом виде точка, подпись и время, нажатие раскрывает барабаны минут
- * и секунд. Барабаны пишут в те же строковые поля формы, поэтому проверка и сохранение прежние.
+ * и секунд. Барабаны пишут в те же поля [WorkoutSettings] формы, поэтому проверка и сохранение
+ * от них не зависят.
  * Значение не на шаге барабана (7 секунд из прежней версии) остаётся в списке, пока его не
  * прокрутили.
  */
@@ -421,15 +408,13 @@ private fun PresetRow(text: PresetRowText, selected: Boolean, onClick: () -> Uni
 private fun SegmentCard(
     label: String,
     isRun: Boolean,
-    minutes: String,
-    seconds: String,
+    minutes: Int,
+    seconds: Int,
     expanded: Boolean,
     onToggle: () -> Unit,
     onMinutesChange: (Int) -> Unit,
     onSecondsChange: (Int) -> Unit,
 ) {
-    val minutesValue = parseField(minutes)
-    val secondsValue = parseField(seconds)
     val stateText = stringResource(if (expanded) R.string.state_expanded else R.string.state_collapsed)
 
     SectionCard(contentPadding = PaddingValues(0.dp)) {
@@ -438,7 +423,8 @@ private fun SegmentCard(
                 .fillMaxWidth()
                 .clickable(role = Role.Button, onClick = onToggle)
                 .semantics { stateDescription = stateText }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .heightIn(min = CardRowHeight)
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -456,7 +442,7 @@ private fun SegmentCard(
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = segmentTimeText(minutesValue, secondsValue),
+                text = segmentTimeText(minutes, seconds),
                 style = MaterialTheme.typography.headlineSmall.merge(TabularNumbers),
                 color = if (expanded) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurface,
@@ -476,18 +462,18 @@ private fun SegmentCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TimeWheel(
-                    options = remember(minutesValue) { wheelOptions(MAX_MINUTES, 1, minutesValue) },
-                    value = minutesValue,
+                    options = remember(minutes) { wheelOptions(MAX_MINUTES, 1, minutes) },
+                    value = minutes,
                     onSelect = onMinutesChange,
                     contentDescription = stringResource(R.string.wheel_minutes, label),
                     unitLabel = stringResource(R.string.minutes_short),
                     modifier = Modifier.weight(1f),
                 )
                 TimeWheel(
-                    options = remember(secondsValue) {
-                        wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, secondsValue)
+                    options = remember(seconds) {
+                        wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, seconds)
                     },
-                    value = secondsValue,
+                    value = seconds,
                     onSelect = onSecondsChange,
                     contentDescription = stringResource(R.string.wheel_seconds, label),
                     unitLabel = stringResource(R.string.seconds_short),
@@ -499,13 +485,22 @@ private fun SegmentCard(
     }
 }
 
-/** Степпер повторов. Поле остаётся редактируемым, чтобы 20 повторов не набирать нажатиями. */
+/**
+ * Степпер повторов. Число меняется только кнопками: повторов в [WORKOUT_PRESETS] немного, а
+ * предел [MAX_ROUNDS] достижим и кнопками, поэтому поле ввода с клавиатурой не нужно. Значение
+ * показывается как есть, неверное сохранённое видно, а ошибку покажет проверка формы.
+ *
+ * Объявление liveRegion срабатывает при любой смене числа, в том числе при выборе недели в
+ * шторке: тогда TalkBack прочитает «Повторы: N» вместе с закрытием шторки.
+ */
 @Composable
-private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
+private fun RoundsCard(value: Int, onValueChange: (Int) -> Unit) {
     val label = stringResource(R.string.field_rounds)
-    SectionCard {
+    SectionCard(contentPadding = PaddingValues(horizontal = 16.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = CardRowHeight),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -520,11 +515,21 @@ private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
                 enabled = canDecreaseRounds(value),
                 onClick = { onValueChange(stepRounds(value, -1)) },
             )
-            NumberField(
-                label = label,
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.width(RoundsFieldWidth),
+            val valueDescription = stringResource(R.string.rounds_value, value)
+            Text(
+                text = value.toString(),
+                modifier = Modifier
+                    .width(RoundsValueWidth)
+                    // liveRegion объявляет новое значение после «+» и «−»
+                    .semantics {
+                        contentDescription = valueDescription
+                        liveRegion = LiveRegionMode.Polite
+                    },
+                style = MaterialTheme.typography.titleLarge.merge(TabularNumbers),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
             )
             StepButton(
                 glyph = "+",
@@ -584,27 +589,4 @@ private fun BackgroundWarning(onOpenAppDetails: () -> Unit) {
             }
         }
     }
-}
-
-/** Поле повторов: только цифры, число по центру. Подпись стоит слева в строке и задана для TalkBack. */
-@Composable
-private fun NumberField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { onValueChange(digitsOnly(it)) },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.titleLarge
-            .merge(TabularNumbers)
-            .merge(TextStyle(textAlign = TextAlign.Center)),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done,
-        ),
-        modifier = modifier.semantics { contentDescription = label },
-    )
 }

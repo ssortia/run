@@ -122,18 +122,24 @@ class MainActivity : ComponentActivity() {
 
             // Значки следуют за цветом экрана: тёмный фон ходьбы бывает и в светлой теме
             val darkIcons = darkStatusIcons(state, darkTheme)
-            LaunchedEffect(darkIcons, darkTheme) {
+            LaunchedEffect(darkIcons, darkTheme, idle) {
                 enableEdgeToEdge(
                     statusBarStyle = if (darkIcons) {
                         SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
                     } else {
                         SystemBarStyle.dark(Color.TRANSPARENT)
                     },
-                    // Как по умолчанию в enableEdgeToEdge, но по выбранной теме, а не по системной
-                    navigationBarStyle = SystemBarStyle.auto(
-                        NAV_BAR_LIGHT_SCRIM,
-                        NAV_BAR_DARK_SCRIM,
-                    ) { darkTheme },
+                    navigationBarStyle = when {
+                        // На форме под системной панелью лежит фон NavigationBar, подложка кнопок
+                        // сделала бы полосу двухцветной. Стиль light/dark, а не auto, ещё и выключает
+                        // принудительный контраст API 29+, который рисует ту же подложку сам
+                        idle && darkTheme -> SystemBarStyle.dark(Color.TRANSPARENT)
+                        idle -> SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                        // На отсчёте и тренировке фон цветной, а значки панели следуют за темой,
+                        // поэтому подложка остаётся: как по умолчанию в enableEdgeToEdge, но по
+                        // выбранной теме, а не по системной
+                        else -> SystemBarStyle.auto(NAV_BAR_LIGHT_SCRIM, NAV_BAR_DARK_SCRIM) { darkTheme }
+                    },
                 )
             }
 

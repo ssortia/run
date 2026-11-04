@@ -72,6 +72,9 @@ fun ActiveContent(
                 modifier = Modifier.fillMaxWidth(),
                 color = colors.content,
                 trackColor = colors.content.copy(alpha = 0.3f),
+                // Без точки на конце дорожки и зазора: иначе пустая полоса выглядит заполненной
+                gapSize = 0.dp,
+                drawStopIndicator = {},
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 // В половине экрана «Продолжить» не помещается в titleLarge с обычными отступами

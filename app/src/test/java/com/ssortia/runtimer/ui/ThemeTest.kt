@@ -8,6 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import kotlin.math.abs
 
 class ThemeTest {
@@ -21,6 +22,20 @@ class ThemeTest {
         val lighter = maxOf(a.luminance(), b.luminance())
         val darker = minOf(a.luminance(), b.luminance())
         return (lighter + 0.05f) / (darker + 0.05f)
+    }
+
+    /**
+     * Фон окна из `colors.xml`: его подставляет RunTimerTheme, а в схеме его нет. Оба цвета
+     * должны лежать в `values/`, а не в `values-night/`, иначе тест их не найдёт. Путь задан
+     * от модуля `app`, рабочего каталога unit-тестов Gradle.
+     */
+    private fun windowBackground(darkTheme: Boolean): Color {
+        val name = if (darkTheme) "window_background_dark" else "window_background_light"
+        val file = File("src/main/res/values/colors.xml")
+        check(file.exists()) { "нет ${file.absolutePath}: тест запускается из каталога модуля app" }
+        val hex = Regex("""<color name="$name">#([0-9A-Fa-f]{6})</color>""").find(file.readText())
+            ?.groupValues?.get(1) ?: error("нет цвета $name в colors.xml")
+        return Color(0xFF000000 or hex.toLong(16))
     }
 
     @Test
@@ -116,6 +131,97 @@ class ThemeTest {
                     contrast(marker, appColorScheme(darkTheme).surfaceContainer) >= 3f,
                 )
             }
+        }
+    }
+
+    // Закрашенные части кольца недели и деления полосы рисуются `marker` бега, незакрашенные
+    // дорожкой: число пробежек должно читаться по кольцу, а пустое кольцо быть видно на карточке
+    @Test
+    fun `закрашенная часть кольца отличается от дорожки в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val marker = segmentColors(isRun = true, darkTheme).marker
+
+            assertTrue(
+                "контраст marker и дорожки: тёмная тема $darkTheme",
+                contrast(marker, progressTrackColor(darkTheme)) >= 3f,
+            )
+        }
+    }
+
+    // Порог 1.3:1 ниже 3:1 для графики из WCAG намеренно: дорожка не несёт смысла сама по себе,
+    // число пробежек передают закрашенные части (marker на дорожке не меньше 3:1) и подпись
+    // «N раз» рядом, а заметная дорожка спорила бы с ними. Тест лишь не даёт ей слиться с
+    // карточкой: в светлой теме сейчас около 1.37, в тёмной больше.
+    @Test
+    fun `дорожка кольца видна на карточке в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            assertTrue(
+                "контраст дорожки на surfaceContainer: тёмная тема $darkTheme",
+                contrast(progressTrackColor(darkTheme), appColorScheme(darkTheme).surfaceContainer) >= 1.3f,
+            )
+        }
+    }
+
+    @Test
+    fun `галочка пройденной недели читается на закрашенном круге в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val marker = segmentColors(isRun = true, darkTheme).marker
+
+            assertTrue(
+                "контраст галочки: тёмная тема $darkTheme",
+                contrast(progressCheckColor(darkTheme), marker) >= 3f,
+            )
+        }
+    }
+
+    @Test
+    fun `текст плашки недели читается в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст onSecondaryContainer: тёмная тема $darkTheme",
+                contrast(scheme.onSecondaryContainer, scheme.secondaryContainer) >= 4.5f,
+            )
+        }
+    }
+
+    // Порог 1.3:1, как у дорожки кольца: смысл несёт фон плашки, рамка лишь подсказывает, что на
+    // неё можно нажать, и не должна сливаться с фоном формы
+    @Test
+    fun `рамка плашки недели видна на фоне в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            assertTrue(
+                "контраст рамки плашки на фоне: тёмная тема $darkTheme",
+                contrast(weekChipBorderColor(darkTheme), windowBackground(darkTheme)) >= 1.3f,
+            )
+        }
+    }
+
+    // Выбранная вкладка нижней панели: значок primary на индикаторе M3 по умолчанию
+    // (secondaryContainer), это графика, поэтому порог 3:1
+    @Test
+    fun `значок выбранной вкладки виден на индикаторе в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст primary на secondaryContainer: тёмная тема $darkTheme",
+                contrast(scheme.primary, scheme.secondaryContainer) >= 3f,
+            )
+        }
+    }
+
+    // Невыбранные вкладки берут onSurfaceVariant на фоне NavigationBar (surfaceContainer)
+    @Test
+    fun `подписи невыбранных вкладок читаются на панели в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст onSurfaceVariant на surfaceContainer: тёмная тема $darkTheme",
+                contrast(scheme.onSurfaceVariant, scheme.surfaceContainer) >= 4.5f,
+            )
         }
     }
 

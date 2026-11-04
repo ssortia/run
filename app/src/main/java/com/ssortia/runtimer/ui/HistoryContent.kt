@@ -55,7 +55,6 @@ import java.time.ZoneId
 fun HistoryContent(
     records: List<RunRecord>?,
     onDelete: (Long) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingDeleteId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -71,7 +70,7 @@ fun HistoryContent(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        AppTopBar(title = stringResource(R.string.history_title), onBack = onBack)
+        AppTopBar(title = stringResource(R.string.history_title))
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {

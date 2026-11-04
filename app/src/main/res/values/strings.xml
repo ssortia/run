@@ -9,13 +9,14 @@
     <string name="field_rounds">Повторы</string>
     <string name="rounds_decrease">Меньше повторов</string>
     <string name="rounds_increase">Больше повторов</string>
+    <string name="rounds_value">Повторы: %1$d</string>
     <string name="button_start">Старт</string>
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>
     <string name="button_resume">Продолжить</string>
-    <string name="button_settings">Настройки</string>
-    <string name="button_history">История</string>
-    <string name="button_back">Назад</string>
+    <string name="tab_workout">Тренировка</string>
+    <string name="tab_settings">Настройки</string>
+    <string name="tab_history">История</string>
     <string name="button_delete">Удалить</string>
     <string name="button_cancel">Отмена</string>
     <string name="button_open_app_details">Настройки батареи</string>
@@ -44,7 +45,8 @@
     <string name="round_progress">Повтор %1$d из %2$d</string>
     <string name="preset_title">Программа</string>
     <string name="preset_week">Неделя %1$d</string>
-    <string name="preset_week_match">Неделя %1$d программы</string>
+    <string name="preset_custom">Своя тренировка</string>
+    <string name="preset_chip_description">%1$s, выбрать неделю программы</string>
     <string name="error_run_zero">Время бега должно быть больше нуля</string>
     <string name="error_walk_zero">Время ходьбы должно быть больше нуля, если повторов больше одного</string>
     <string name="error_rounds_range">Число повторов должно быть от 1 до %1$d</string>
@@ -60,4 +62,22 @@
     <string name="history_delete_title">Удалить пробежку?</string>
     <string name="history_delete_text">Запись от %1$s будет удалена без возможности восстановления</string>
     <string name="history_delete_description">Удалить пробежку %1$s</string>
+    <string name="tab_progress">Прогресс</string>
+    <string name="progress_title">Прогресс</string>
+    <plurals name="progress_summary">
+        <item quantity="one">из %d недели пройдено</item>
+        <item quantity="few">из %d недель пройдено</item>
+        <item quantity="many">из %d недель пройдено</item>
+        <item quantity="other">из %d недели пройдено</item>
+    </plurals>
+    <string name="progress_summary_description">Пройдено недель: %1$d из %2$d</string>
+    <string name="progress_ring_passed">Неделя пройдена</string>
+    <string name="progress_ring_count">Пробежек %1$d из %2$d</string>
+    <string name="progress_no_runs">—</string>
+    <plurals name="progress_runs">
+        <item quantity="one">%d раз</item>
+        <item quantity="few">%d раза</item>
+        <item quantity="many">%d раз</item>
+        <item quantity="other">%d раз</item>
+    </plurals>
 </resources>
