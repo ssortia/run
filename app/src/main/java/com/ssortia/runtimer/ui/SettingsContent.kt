@@ -208,10 +208,13 @@ fun SettingsContent(
             val viewport = with(density) {
                 constraints.maxHeight - FormTopPadding.roundToPx() - ScrollContentBottomPadding.roundToPx()
             }.coerceAtLeast(0)
+            // Обратная прокрутка отсчитывает смещение от нижнего края: по умолчанию видны
+            // карточки у панели, а при смене высоты (раскрытие карточки, предупреждение, шрифт)
+            // смещение от низа сохраняется, и колонка растёт вверх, унося итог из вида
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState(), reverseScrolling = true)
                     .padding(
                         start = 16.dp,
                         top = FormTopPadding,
@@ -298,7 +301,7 @@ fun SettingsContent(
  * ширине времени [largeTimeWidth]. Решение принимает только [summaryPlacement]. Размещается
  * только выбранный вариант: неразмещённый не попадает в дерево доступности, и TalkBack не находит
  * два итога. Высота раскладки не меньше [viewport] (в пикселях), а когда итог не помещается и в
- * малом виде, колонка вокруг прокручивается.
+ * малом виде, колонка вокруг прокручивается от нижнего края, и итог уходит вверх.
  */
 @Composable
 private fun FormLayout(
