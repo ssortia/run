@@ -131,11 +131,11 @@
 **Files:**
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 
-- [ ] `WorkoutSummary` composable: подпись `summary_title` (`onSurfaceVariant`), время `formatTotal(workout.totalMs)` с `TabularNumbers` в крупном или малом стиле, строка `workoutSummaryParts(...).joinToString(" · ")` (`onSurfaceVariant`); при ошибке «—» и альфа 0,38 без вызова `toWorkout()`
-- [ ] семантика одним узлом: `clearAndSetSemantics { contentDescription = summaryDescription(...) }` (при ошибке `summary_invalid_description`), без `liveRegion`
-- [ ] `BoxWithConstraints` + `verticalScroll` + `SubcomposeLayout`: нижняя часть (карточки, предупреждение, ошибка, отступ), итог крупный или малый по `summaryPlacement` с `viewport = maxHeight − вертикальные отступы колонки`, итог по центру слота, размещается только выбранный вариант
-- [ ] тесты новой логики уже в Task 1–2; дополнить их случаями, найденными при сборке раскладки, если такие появятся
-- [ ] run tests and lint (`./gradlew test assembleDebug lintDebug`) - must pass before next task
+- [x] `WorkoutSummary` composable: подпись `summary_title` (`onSurfaceVariant`), время `formatTotal(workout.totalMs)` с `TabularNumbers` в крупном или малом стиле, строка `workoutSummaryParts(...).joinToString(" · ")` (`onSurfaceVariant`); при ошибке «—» и альфа 0,38 без вызова `toWorkout()`
+- [x] семантика одним узлом: `clearAndSetSemantics { contentDescription = summaryDescription(...) }` (при ошибке `summary_invalid_description`), без `liveRegion`
+- [x] `BoxWithConstraints` + `verticalScroll` + `SubcomposeLayout`: нижняя часть (карточки, предупреждение, ошибка, отступ), итог крупный или малый по `summaryPlacement` с `viewport = maxHeight − вертикальные отступы колонки`, итог по центру слота, размещается только выбранный вариант
+- [x] тесты новой логики уже в Task 1–2; дополнить их случаями, найденными при сборке раскладки, если такие появятся (новых случаев не нашлось: отрицательное свободное место уже покрыто правилом «малый, даже если не влез»)
+- [x] run tests and lint (`./gradlew test assembleDebug lintDebug`) - must pass before next task
 
 ### Task 6: Verify acceptance criteria
 - [ ] verify all requirements from `docs/tasks/20261104-form-summary.md` are implemented (пункты 1–8)

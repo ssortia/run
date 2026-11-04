@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -45,7 +46,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -58,6 +62,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
@@ -65,12 +71,17 @@ import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SECONDS_WHEEL_STEP
 import com.ssortia.runtimer.SettingsError
+import com.ssortia.runtimer.SummaryLabels
 import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.PresetRowText
 import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
+import com.ssortia.runtimer.formatTotal
 import com.ssortia.runtimer.presetRowText
 import com.ssortia.runtimer.presetWeekOf
+import com.ssortia.runtimer.segmentCount
+import com.ssortia.runtimer.summaryDescription
+import com.ssortia.runtimer.workoutSummaryParts
 import com.ssortia.runtimer.wheelOptions
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -129,6 +140,10 @@ private val CardRowHeight = 72.dp
 private val PresetCheckSize = 24.dp
 private val RoundsValueWidth = 80.dp
 private val WeekChipHeight = 40.dp
+private val FormTopPadding = 16.dp
+
+// Прозрачность недоступного содержимого, как у M3
+private const val DisabledAlpha = 0.38f
 
 /**
  * Форма настроек. Состояние [settings] хранит ветка Idle у WorkoutScreen, форма меняет его только
@@ -166,50 +181,69 @@ fun SettingsContent(
             },
         )
 
-        Column(
+        // Высота области прокрутки за вычетом вертикальных отступов колонки: иначе раскладка
+        // была бы выше области на эти отступы и колонка прокручивалась бы всегда
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = ScrollContentBottomPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .fillMaxWidth(),
         ) {
-            SegmentCard(
-                label = stringResource(R.string.segment_run),
-                isRun = true,
-                minutes = settings.runMin,
-                seconds = settings.runSec,
-                expanded = expanded == Segment.RUN,
-                onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
-                onMinutesChange = { onSettingsChange(settings.copy(runMin = it)) },
-                onSecondsChange = { onSettingsChange(settings.copy(runSec = it)) },
-            )
-            SegmentCard(
-                label = stringResource(R.string.segment_walk),
-                isRun = false,
-                minutes = settings.walkMin,
-                seconds = settings.walkSec,
-                expanded = expanded == Segment.WALK,
-                onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
-                onMinutesChange = { onSettingsChange(settings.copy(walkMin = it)) },
-                onSecondsChange = { onSettingsChange(settings.copy(walkSec = it)) },
-            )
-            RoundsCard(
-                value = settings.rounds,
-                onValueChange = { onSettingsChange(settings.copy(rounds = it)) },
-            )
-            if (showBackgroundWarning) {
-                BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
-            }
-            if (error != null) {
-                Text(
-                    text = stringResource(error.messageRes(), *error.messageArgs()),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
+            val viewport = maxHeight - FormTopPadding - ScrollContentBottomPadding
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = 16.dp,
+                        top = FormTopPadding,
+                        end = 16.dp,
+                        bottom = ScrollContentBottomPadding,
+                    ),
+            ) {
+                FormLayout(
+                    viewport = viewport,
+                    summary = { large -> WorkoutSummary(settings = settings, large = large) },
+                    bottom = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            SegmentCard(
+                                label = stringResource(R.string.segment_run),
+                                isRun = true,
+                                minutes = settings.runMin,
+                                seconds = settings.runSec,
+                                expanded = expanded == Segment.RUN,
+                                onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
+                                onMinutesChange = { onSettingsChange(settings.copy(runMin = it)) },
+                                onSecondsChange = { onSettingsChange(settings.copy(runSec = it)) },
+                            )
+                            SegmentCard(
+                                label = stringResource(R.string.segment_walk),
+                                isRun = false,
+                                minutes = settings.walkMin,
+                                seconds = settings.walkSec,
+                                expanded = expanded == Segment.WALK,
+                                onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
+                                onMinutesChange = { onSettingsChange(settings.copy(walkMin = it)) },
+                                onSecondsChange = { onSettingsChange(settings.copy(walkSec = it)) },
+                            )
+                            RoundsCard(
+                                value = settings.rounds,
+                                onValueChange = { onSettingsChange(settings.copy(rounds = it)) },
+                            )
+                            if (showBackgroundWarning) {
+                                BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
+                            }
+                            if (error != null) {
+                                Text(
+                                    text = stringResource(error.messageRes(), *error.messageArgs()),
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    },
                 )
             }
         }
-
     }
 
     if (showProgram) {
@@ -230,6 +264,119 @@ fun SettingsContent(
                 },
             )
         }
+    }
+}
+
+/** Слоты [FormLayout]: нижняя часть и два варианта итога. */
+private enum class FormSlot { BOTTOM, LARGE_SUMMARY, SMALL_SUMMARY }
+
+/**
+ * Раскладка формы: итог по центру свободного места над нижней частью (карточки, предупреждение,
+ * ошибка). Сначала меряется нижняя часть, затем итог с крупным временем; если он не помещается
+ * в оставшееся место [viewport], итог меряется заново с меньшим. Решение принимает
+ * [summaryPlacement]. Размещается только выбранный вариант: неразмещённый не попадает в дерево
+ * доступности, и TalkBack не находит два итога. Высота раскладки не меньше [viewport], а когда
+ * итог не помещается и в малом виде, колонка вокруг прокручивается.
+ */
+@Composable
+private fun FormLayout(
+    viewport: Dp,
+    summary: @Composable (large: Boolean) -> Unit,
+    bottom: @Composable () -> Unit,
+) {
+    SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
+        // Колонка с прокруткой даёт бесконечную высоту, итог и нижняя часть меряются без предела
+        val free = constraints.copy(minWidth = constraints.maxWidth, minHeight = 0, maxHeight = Constraints.Infinity)
+        val bottomPlaceable = subcompose(FormSlot.BOTTOM, bottom).first().measure(free)
+        val large = subcompose(FormSlot.LARGE_SUMMARY) { summary(true) }.first().measure(free)
+        val viewportPx = viewport.roundToPx().coerceAtLeast(0)
+        val freeHeight = viewportPx - bottomPlaceable.height
+        // Малый вариант составляется только когда крупный не влез
+        val small = if (large.height <= freeHeight) {
+            null
+        } else {
+            subcompose(FormSlot.SMALL_SUMMARY) { summary(false) }.first().measure(free)
+        }
+        val placement = summaryPlacement(
+            viewport = viewportPx,
+            bottom = bottomPlaceable.height,
+            largeSummary = large.height,
+            smallSummary = small?.height ?: large.height,
+        )
+        val chosen = if (placement.useLarge) large else small ?: large
+        layout(constraints.maxWidth, placement.totalHeight) {
+            chosen.placeRelative(
+                x = (constraints.maxWidth - chosen.width) / 2,
+                y = (placement.slotHeight - chosen.height) / 2,
+            )
+            bottomPlaceable.placeRelative(x = 0, y = placement.slotHeight)
+        }
+    }
+}
+
+/**
+ * Итог тренировки над карточками: общее время и состав. При неверных настройках
+ * [WorkoutSettings.toWorkout] не вызывается: вместо времени «—», состав пуст, блок приглушён и
+ * занимает ту же высоту. Для TalkBack итог читается одной фразой, без liveRegion: время меняется
+ * вместе с карточками, а их изменения объявляются сами.
+ */
+@Composable
+private fun WorkoutSummary(settings: WorkoutSettings, large: Boolean) {
+    val title = stringResource(R.string.summary_title)
+    val valid = settings.validate() == null
+    val time: String
+    val partsText: String
+    val description: String
+    if (valid) {
+        val workout = settings.toWorkout()
+        val count = segmentCount(workout)
+        val parts = workoutSummaryParts(
+            workout = workout,
+            segmentsText = pluralStringResource(R.plurals.summary_segments, count, count),
+            labels = SummaryLabels(
+                run = stringResource(R.string.summary_run),
+                walk = stringResource(R.string.summary_walk),
+                min = stringResource(R.string.minutes_short),
+            ),
+        )
+        time = formatTotal(workout.totalMs)
+        partsText = parts.joinToString(" · ")
+        description = summaryDescription(title, time, parts)
+    } else {
+        time = stringResource(R.string.summary_none)
+        partsText = ""
+        description = stringResource(R.string.summary_invalid_description)
+    }
+    val timeStyle = if (large) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .alpha(if (valid) 1f else DisabledAlpha)
+            .clearAndSetSemantics { contentDescription = description },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = time,
+            style = timeStyle.merge(TabularNumbers),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
+        )
+        // Пустая строка при ошибке держит ту же высоту, чтобы карточки не прыгали
+        Text(
+            text = partsText,
+            style = MaterialTheme.typography.bodyLarge.merge(TabularNumbers),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
