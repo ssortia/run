@@ -16,10 +16,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /** Зазор над заголовком группы, кроме первой: отделяет группы карточек друг от друга. */
 val SectionGroupGap = 16.dp
@@ -67,15 +71,21 @@ fun SectionCard(
     }
 }
 
-/** Заголовок группы над карточкой: мелкий, цветом подписей, для TalkBack это заголовок. */
+/**
+ * Заголовок группы над карточкой: мелкий, прописными, цветом подписей. Прописные только в
+ * отображении: TalkBack получает исходную строку, иначе часть синтезаторов читает слово по буквам.
+ */
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
-        text = text,
+        text = text.toUpperCase(Locale.current),
         modifier = modifier
             .padding(horizontal = 4.dp)
-            .semantics { heading() },
-        style = MaterialTheme.typography.labelLarge,
+            .clearAndSetSemantics {
+                heading()
+                contentDescription = text
+            },
+        style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, letterSpacing = 0.6.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

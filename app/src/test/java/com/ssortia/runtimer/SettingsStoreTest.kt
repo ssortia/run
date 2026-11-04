@@ -125,10 +125,10 @@ class SettingsStoreTest {
 
     @Test
     fun `сохранённая громкость читается обратно`() {
-        store.saveSignalVolume(35)
+        store.saveSignalVolume(30)
 
-        assertEquals(35, store.loadSignalVolume())
-        assertEquals(35, SettingsStore(prefs).loadSignalVolume())
+        assertEquals(30, store.loadSignalVolume())
+        assertEquals(30, SettingsStore(prefs).loadSignalVolume())
     }
 
     @Test
@@ -169,16 +169,25 @@ class SettingsStoreTest {
     }
 
     @Test
-    fun `громкость не на шаге ползунка читается как есть`() {
-        prefs.values["signal_volume"] = 37
+    fun `громкость прежних версий не на шаге приводится к шагу при чтении`() {
+        prefs.values["signal_volume"] = 35
+        assertEquals(40, store.loadSignalVolume())
 
-        assertEquals(37, store.loadSignalVolume())
+        prefs.values["signal_volume"] = 37
+        assertEquals(40, store.loadSignalVolume())
+    }
+
+    @Test
+    fun `громкость приводится к шагу при записи`() {
+        store.saveSignalVolume(15)
+
+        assertEquals(20, prefs.values["signal_volume"])
     }
 
     @Test
     fun `громкость прижимается к диапазону при записи`() {
-        store.saveSignalVolume(0)
-        assertEquals(10, prefs.values["signal_volume"])
+        store.saveSignalVolume(-10)
+        assertEquals(0, prefs.values["signal_volume"])
 
         store.saveSignalVolume(150)
         assertEquals(100, prefs.values["signal_volume"])
@@ -186,8 +195,8 @@ class SettingsStoreTest {
 
     @Test
     fun `повреждённая громкость прижимается при чтении`() {
-        prefs.values["signal_volume"] = 0
-        assertEquals(10, store.loadSignalVolume())
+        prefs.values["signal_volume"] = -10
+        assertEquals(0, store.loadSignalVolume())
 
         prefs.values["signal_volume"] = 150
         assertEquals(100, store.loadSignalVolume())

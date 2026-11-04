@@ -31,6 +31,8 @@
     <string name="group_workout">Тренировка</string>
     <string name="group_appearance">Оформление</string>
     <string name="setting_theme">Тема</string>
+    <string name="volume_hint_vibration_only">Сигналы без звука, останется вибрация</string>
+    <string name="volume_hint_no_signals">Сигналов не будет: звук и вибрация выключены</string>
     <string name="theme_system">Как в системе</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>

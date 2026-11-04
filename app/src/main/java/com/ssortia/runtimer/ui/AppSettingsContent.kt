@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
@@ -28,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_VOLUME_PERCENT
 import com.ssortia.runtimer.MIN_VOLUME_PERCENT
@@ -39,6 +42,7 @@ import com.ssortia.runtimer.VOLUME_SLIDER_STEPS
 import com.ssortia.runtimer.sliderToPercent
 import com.ssortia.runtimer.sliderToStartDelay
 import com.ssortia.runtimer.startDelayToSlider
+import com.ssortia.runtimer.volumeHint
 
 /**
  * Экран настроек приложения. Значения сохраняются сразу: переключатель при переключении,
@@ -87,7 +91,14 @@ fun AppSettingsContent(
                     valueRange = MIN_VOLUME_PERCENT.toFloat()..MAX_VOLUME_PERCENT.toFloat(),
                     steps = VOLUME_SLIDER_STEPS,
                     onValueChangeFinished = { onVolumeChange(sliderToPercent(volume)) },
+                    hint = volumeHint(
+                        volumePercent = sliderToPercent(volume),
+                        vibration = vibration,
+                        vibrationOnly = stringResource(R.string.volume_hint_vibration_only),
+                        noSignals = stringResource(R.string.volume_hint_no_signals),
+                    ),
                 )
+                RowDivider()
                 SwitchSettingRow(
                     label = stringResource(R.string.setting_vibration),
                     checked = vibration,
@@ -96,6 +107,7 @@ fun AppSettingsContent(
                         onVibrationChange(it)
                     },
                 )
+                RowDivider()
                 SwitchSettingRow(
                     label = stringResource(R.string.setting_duck_music),
                     checked = duckMusic,
@@ -128,12 +140,13 @@ fun AppSettingsContent(
                 modifier = Modifier.padding(top = SectionGroupGap),
             )
             SectionCard {
-                Column(Modifier.selectableGroup()) {
-                    Text(
-                        text = stringResource(R.string.setting_theme),
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                // Подписи «Тема» нет, группу называет заголовок «Оформление», а TalkBack описание группы
+                val themeLabel = stringResource(R.string.setting_theme)
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .semantics { contentDescription = themeLabel },
+                ) {
                     for (mode in ThemeMode.entries) {
                         RadioSettingRow(
                             label = stringResource(mode.labelRes()),
@@ -160,19 +173,20 @@ private fun SliderSettingRow(
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
     onValueChangeFinished: () -> Unit,
+    hint: String? = null,
 ) {
     val description = stringResource(R.string.setting_value_description, label, value)
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+    Column(modifier = Modifier.padding(top = RowVerticalPadding)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = label,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium.merge(TabularNumbers),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge.merge(TabularNumbers),
+                fontWeight = FontWeight.Medium,
             )
         }
         Slider(
@@ -183,8 +197,27 @@ private fun SliderSettingRow(
             steps = steps,
             onValueChangeFinished = onValueChangeFinished,
         )
+        // Не красная и не блокирует старт: ноль выбран намеренно, подсказка лишь напоминает о нём
+        if (hint != null) {
+            Text(
+                text = hint,
+                modifier = Modifier.padding(bottom = RowVerticalPadding),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
+
+/** Разделитель строк внутри карточки. */
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+// Отступ строк карточки: строка с переключателем 56 dp, как в макете с разделителями
+private val RowVerticalPadding = 12.dp
+private val RadioRowMinHeight = 48.dp
 
 @Composable
 private fun SwitchSettingRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
@@ -193,12 +226,12 @@ private fun SwitchSettingRow(label: String, checked: Boolean, onCheckedChange: (
             .fillMaxWidth()
             // Строка целиком переключает настройку, а сам Switch без обработчика
             .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
-            .padding(vertical = 8.dp),
+            .padding(vertical = RowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
         Switch(checked = checked, onCheckedChange = null)
@@ -218,7 +251,7 @@ private fun RadioSettingRow(label: String, selected: Boolean, onClick: () -> Uni
             .fillMaxWidth()
             // Строка целиком выбирает вариант, а сама RadioButton без обработчика
             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(vertical = 8.dp),
+            .heightIn(min = RadioRowMinHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)

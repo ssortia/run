@@ -31,14 +31,14 @@ class SettingsStore(private val prefs: SharedPreferences) {
     }
 
     /**
-     * Громкость сигналов хранится отдельно от тренировки. Значение вне диапазона прижимается к нему,
-     * значение внутри диапазона, но не на шаге ползунка, возвращается как есть.
+     * Громкость сигналов хранится отдельно от тренировки. Значение приводится к диапазону и шагу
+     * ползунка, см. `snapVolume`: прежние версии хранили значения с шагом 5% и от 10%.
      */
-    fun loadSignalVolume(): Int = clampVolume(prefs.getInt(KEY_SIGNAL_VOLUME, DEFAULT_VOLUME_PERCENT))
+    fun loadSignalVolume(): Int = snapVolume(prefs.getInt(KEY_SIGNAL_VOLUME, DEFAULT_VOLUME_PERCENT))
 
     fun saveSignalVolume(percent: Int) {
         prefs.edit()
-            .putInt(KEY_SIGNAL_VOLUME, clampVolume(percent))
+            .putInt(KEY_SIGNAL_VOLUME, snapVolume(percent))
             .apply()
     }
 
