@@ -56,10 +56,9 @@
 // ProgramProgress.kt
 const val RUNS_TO_PASS_WEEK = 4
 
-data class WeekProgress(val week: Int, val completedRuns: Int, val lastCompletedAtMs: Long?) {
+data class WeekProgress(val preset: WorkoutPreset, val completedRuns: Int, val lastCompletedAtMs: Long?) {
+    val week: Int get() = preset.week
     val passed: Boolean get() = completedRuns >= RUNS_TO_PASS_WEEK
-    /** Сколько частей кольца закрашено, от 0 до 4. */
-    val filledQuarters: Int get() = completedRuns.coerceAtMost(RUNS_TO_PASS_WEEK)
 }
 
 /** Неделя программы с теми же бегом, ходьбой и повторами, что у записи, или null. */
@@ -73,11 +72,11 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - `presetWeekOf(record)` сравнивает `Workout(runSec, if (rounds == 1) 0 else walkSec, rounds)` записи с `preset.settings.toWorkout()`: так ходьба 1 мин 30 сек недель 5–6 совпадает с 90 секундами записи. Ходьба при одном повторе не выполняется (её не показывает и `runRowText`), а форма разрешает её задать, поэтому «Бег 30:00, Ходьба 2:00, ×1» засчитывается неделе 10. Перегрузка рядом с `presetWeekOf(settings)` в `WorkoutPreset.kt`.
 - `lastCompletedAtMs` — максимум `startedAtMs` завершённых пробежек недели, а не первая запись списка: функция не должна зависеть от порядка, в котором `RunHistory.runs` отдаёт записи.
 - `ProgressRowText.kt`: `progressDateFormatter(zone, locale)` с шаблоном `d MMMM` и `progressDateText(startedAtMs, formatter)`. Шаблон `d MMM` не берём: сокращённый месяц в `ru` пишется с точкой («окт.»), и в JDK и на телефоне точка может различаться. Года в дате нет сознательно: программа длится 2–3 месяца, а при переходе через Новый год дата всё равно однозначна по контексту ближайших пробежек.
-- Ресурсы `strings.xml`: `progress_title` «Прогресс» для заголовка экрана, `button_progress` «Прогресс» для иконки на форме (по образцу `history_title` и `button_history`), `progress_summary` «из %1$d недель пройдено» (крупное число отдельно, как в макете), `progress_ring_passed` «Неделя пройдена», `progress_ring_count` «Пробежек %1$d из %2$d», `progress_summary_description` для полосы «Пройдено недель: %1$d из %2$d». `<plurals name="progress_runs">` с `one` «%d раз», `few` «%d раза», `many` и `other` «%d раз».
-- Цвета: закрашенные части, галочка и деления — `segmentColors(isRun = true, darkTheme).marker`; незакрашенные части и деления — новый `progressTrackColor(darkTheme)` в `ui/Theme.kt`: `#DCDCD8` в светлой и `#3A3B40` в тёмной теме (тон поля на карточке почти не виден). Галочка на закрашенном круге: белая в светлой теме, `#111214` в тёмной, как в макете; цвет отдаёт функция `progressCheckColor(darkTheme)` рядом с `progressTrackColor` в `Theme.kt`, литералов в экране нет.
-- Кольцо: `Canvas` 24 dp, четыре `drawArc` по 90° минус зазор около 8°, начиная с −90° (сверху) по часовой стрелке, `Stroke` около 2 dp с `StrokeCap.Butt`. Пройденная неделя: закрашенный круг и галочка (`Icons.Outlined.Check` поверх или путь в `Canvas`). У значка `Modifier.semantics { contentDescription = … }`.
-- Полоса итога: `Row` из 10 `Box` высотой 8 dp с `weight(1f)`, скругление 4 dp, зазор 4 dp; для TalkBack полоса одна с описанием «Пройдено недель: N из 10», деления без описаний.
-- Список недель: обычный `Column` в `verticalScroll`, не `LazyColumn`: строк всего 10. Разделители между строками `outlineVariant`, строка около 56 dp, не нажимается. Строка помечена `semantics(mergeDescendants = true) {}`, чтобы TalkBack читал неделю одной фразой.
+- Ресурсы `strings.xml`: `progress_title` «Прогресс» для заголовка экрана, `button_progress` «Прогресс» для иконки на форме (по образцу `history_title` и `button_history`), `<plurals name="progress_summary">` «из %d недели/недель пройдено» (крупное число отдельно, как в макете), `progress_ring_passed` «Неделя пройдена», `progress_ring_count` «Пробежек %1$d из %2$d», `progress_no_runs` «—», `progress_summary_description` для итога «Пройдено недель: %1$d из %2$d». `<plurals name="progress_runs">` с `one` «%d раз», `few` «%d раза», `many` и `other` «%d раз».
+- Цвета: закрашенные части, круг пройденной недели и деления — `segmentColors(isRun = true, darkTheme).marker`; незакрашенные части и деления — новый `progressTrackColor(darkTheme)` в `ui/Theme.kt`: `#DCDCD8` в светлой и `#3A3B40` в тёмной теме (тон поля на карточке почти не виден). Галочка на закрашенном круге: белая в светлой теме, `#111214` в тёмной, как в макете; цвет отдаёт функция `progressCheckColor(darkTheme)` рядом с `progressTrackColor` в `Theme.kt`, литералов в экране нет.
+- Кольцо: `Canvas` 24 dp, четыре `drawArc` по 90° минус зазор около 8°, начиная с −90° (сверху) по часовой стрелке, `Stroke` около 2 dp с `StrokeCap.Butt`. Пройденная неделя: `Box` с `background(marker, CircleShape)` и галочкой `Icons.Outlined.Check`. Для TalkBack у кольца описание `progress_ring_count` «Пробежек N из 4», у круга `progress_ring_passed` «Неделя пройдена». У непройденной недели видимое число «N раза» скрыто от TalkBack (`ProgressRowText.runsSpoken`), иначе число прочиталось бы дважды; у пройденной оно читается, потому что пробежек может быть больше четырёх.
+- Полоса итога: `Row` из 10 `Box` высотой 8 dp с `weight(1f)`, скругление 4 dp, зазор 4 dp. Для TalkBack карточка итога целиком одна фраза «Пройдено недель: N из 10» (`clearAndSetSemantics`), число, подпись и деления без своих описаний.
+- Список недель: обычный `Column` в `verticalScroll`, не `LazyColumn`: строк всего 10. Разделители между строками `outlineVariant`, строка около 56 dp, не нажимается. Строка помечена `semantics(mergeDescendants = true) {}`, чтобы TalkBack читал неделю одной фразой; «—» у недели без пробежек скрыт от TalkBack. Текст строки собирает чистая `progressRowText(week, weekTitle, runsText, labels, formatter)` в `ProgressRowText.kt`, неделя берётся из `WeekProgress.preset`, а не сопоставлением списков по позиции.
 - Пока `records == null`, под `AppTopBar` ничего не показывается.
 
 ## What Goes Where
@@ -169,3 +168,10 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - кольцо и его незакрашенные части различимы в светлой и тёмной теме, экран совпадает с макетом
 - системная «Назад» и стрелка возвращают на форму без потери несохранённых правок, двойное нажатие на флажок не кладёт два экрана
 - TalkBack читает строку недели одной фразой вместе с «Пробежек 3 из 4» или «Неделя пройдена» и описание полосы
+
+## Изменения после ревью
+
+- `WeekProgress` хранит `preset` вместо номера недели (`week` выводится из него), строки экрана строятся по `progress`, а не по `WORKOUT_PRESETS.zip(progress)`. `filledQuarters` убран: кольцо закрашивает части по `completedRuns`, круг с галочкой заменяет его с порога.
+- Правило «ходьба при одном повторе не выполняется» вынесено в `RunRecord.effectiveWalkSec`, его используют `presetWeekOf(record)` и `runRowText`.
+- Текст строки недели собирает `progressRowText` в `ProgressRowText.kt` и проверяет `ProgressRowTextTest`. `progress_summary` стал `<plurals>`, «—» вынесен в `progress_no_runs` и скрыт от TalkBack. Описание кольца «Пробежек N из 4» (`progress_ring_count`) оставлено по требованию US-16, а чтобы число не звучало дважды, у непройденной недели видимое «N раза» скрыто от TalkBack (`runsSpoken`).
+- Тесты: параметры недель записаны вручную, а не через `toWorkout()`; путь сервиса `workoutOrNull` → `runRecordOrNull` → `programProgress`; граница года по зоне; соседние параметры (780/0/2, 600/120/1).

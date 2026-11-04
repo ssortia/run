@@ -62,10 +62,16 @@
     <string name="history_delete_description">Удалить пробежку %1$s</string>
     <string name="button_progress">Прогресс</string>
     <string name="progress_title">Прогресс</string>
-    <string name="progress_summary">из %1$d недель пройдено</string>
+    <plurals name="progress_summary">
+        <item quantity="one">из %d недели пройдено</item>
+        <item quantity="few">из %d недель пройдено</item>
+        <item quantity="many">из %d недель пройдено</item>
+        <item quantity="other">из %d недели пройдено</item>
+    </plurals>
     <string name="progress_summary_description">Пройдено недель: %1$d из %2$d</string>
     <string name="progress_ring_passed">Неделя пройдена</string>
     <string name="progress_ring_count">Пробежек %1$d из %2$d</string>
+    <string name="progress_no_runs">—</string>
     <plurals name="progress_runs">
         <item quantity="one">%d раз</item>
         <item quantity="few">%d раза</item>

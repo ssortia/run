@@ -126,12 +126,14 @@ fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
 // Незакрашенные части кольца и деления полосы прогресса: тон поля на карточке почти не виден
 private val ProgressTrackLight = Color(0xFFDCDCD8)
 private val ProgressTrackDark = Color(0xFF3A3B40)
+private val ProgressCheckLight = Color.White
+private val ProgressCheckDark = Color(0xFF111214)
 
 /** Незакрашенные части кольца недели и деления полосы на экране прогресса. Закрашенные берут `marker` бега. */
 fun progressTrackColor(darkTheme: Boolean): Color = if (darkTheme) ProgressTrackDark else ProgressTrackLight
 
 /** Галочка пройденной недели поверх закрашенного круга цвета `marker` бега. */
-fun progressCheckColor(darkTheme: Boolean): Color = if (darkTheme) Color(0xFF111214) else Color.White
+fun progressCheckColor(darkTheme: Boolean): Color = if (darkTheme) ProgressCheckDark else ProgressCheckLight
 
 /** Отсчёт идёт в цветах бега: бегун сразу видит цвет первого отрезка. */
 fun countdownColors(darkTheme: Boolean): SegmentColors = segmentColors(isRun = true, darkTheme)

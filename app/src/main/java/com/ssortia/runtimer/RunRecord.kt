@@ -18,6 +18,13 @@ data class RunRecord(
     val completed: Boolean,
 )
 
+/**
+ * Ходьба, которая выполнялась: при одном повторе последняя ходьба не идёт, а форма разрешает
+ * её задать, поэтому она считается нулевой. По этому правилу запись показывает история и
+ * относит к неделе программы [presetWeekOf].
+ */
+val RunRecord.effectiveWalkSec: Int get() = if (rounds == 1) 0 else walkSec
+
 /** Остановленная раньше тренировка в историю не попадает. */
 const val MIN_STOPPED_RUN_MS = 30_000L
 

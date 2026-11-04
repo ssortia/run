@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,23 +29,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ssortia.runtimer.ProgressLabels
+import com.ssortia.runtimer.ProgressRowText
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RUNS_TO_PASS_WEEK
-import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.WeekProgress
-import com.ssortia.runtimer.WorkoutPreset
-import com.ssortia.runtimer.presetRowText
 import com.ssortia.runtimer.progressDateFormatter
-import com.ssortia.runtimer.progressDateText
+import com.ssortia.runtimer.progressRowText
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -94,28 +95,31 @@ private fun SummaryCard(progress: List<WeekProgress>) {
     val darkTheme = LocalDarkTheme.current
     val filled = segmentColors(isRun = true, darkTheme).marker
     val track = progressTrackColor(darkTheme)
-    val barDescription = stringResource(R.string.progress_summary_description, passed, progress.size)
+    val description = stringResource(R.string.progress_summary_description, passed, progress.size)
 
-    SectionCard(contentPadding = PaddingValues(16.dp)) {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Для TalkBack итог читается одной фразой, число, подпись и деления без своих описаний
+    SectionCard(
+        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = passed.toString(),
+                modifier = Modifier.alignByBaseline(),
                 style = MaterialTheme.typography.displaySmall.merge(TabularNumbers),
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = stringResource(R.string.progress_summary, progress.size),
-                modifier = Modifier.padding(bottom = 6.dp),
+                text = pluralStringResource(R.plurals.progress_summary, progress.size, progress.size),
+                modifier = Modifier.alignByBaseline(),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // Для TalkBack полоса одна с описанием, деления без описаний
         Row(
             modifier = Modifier
                 .padding(top = 12.dp)
-                .fillMaxWidth()
-                .semantics { contentDescription = barDescription },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             progress.forEach { week ->
@@ -132,43 +136,34 @@ private fun SummaryCard(progress: List<WeekProgress>) {
 
 @Composable
 private fun WeeksCard(progress: List<WeekProgress>, dateFormatter: DateTimeFormatter) {
-    val runLabel = stringResource(R.string.segment_run)
-    val walkLabel = stringResource(R.string.segment_walk)
-    val minLabel = stringResource(R.string.minutes_short)
-    val secLabel = stringResource(R.string.seconds_short)
+    val labels = ProgressLabels(
+        run = stringResource(R.string.segment_run),
+        walk = stringResource(R.string.segment_walk),
+        min = stringResource(R.string.minutes_short),
+        sec = stringResource(R.string.seconds_short),
+        ringPassed = stringResource(R.string.progress_ring_passed),
+        ringCount = stringResource(R.string.progress_ring_count),
+    )
 
     SectionCard(contentPadding = PaddingValues(horizontal = 16.dp)) {
-        // Оба списка идут по порядку недель программы
-        WORKOUT_PRESETS.zip(progress).forEachIndexed { index, (preset, week) ->
+        progress.forEachIndexed { index, week ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            WeekRow(
-                preset = preset,
+            val text = progressRowText(
                 week = week,
-                weekTitle = stringResource(R.string.preset_week, preset.week),
-                runLabel = runLabel,
-                walkLabel = walkLabel,
-                minLabel = minLabel,
-                secLabel = secLabel,
-                dateFormatter = dateFormatter,
+                weekTitle = stringResource(R.string.preset_week, week.week),
+                runsText = pluralStringResource(R.plurals.progress_runs, week.completedRuns, week.completedRuns),
+                labels = labels,
+                formatter = dateFormatter,
             )
+            WeekRow(text, week)
         }
     }
 }
 
 @Composable
-private fun WeekRow(
-    preset: WorkoutPreset,
-    week: WeekProgress,
-    weekTitle: String,
-    runLabel: String,
-    walkLabel: String,
-    minLabel: String,
-    secLabel: String,
-    dateFormatter: DateTimeFormatter,
-) {
-    val text = presetRowText(preset, weekTitle, runLabel, walkLabel, minLabel, secLabel)
+private fun WeekRow(text: ProgressRowText, week: WeekProgress) {
     val numbers = MaterialTheme.typography.bodyMedium.merge(TabularNumbers)
-    // Строка читается TalkBack одной фразой вместе с описанием кольца
+    // Строка читается TalkBack одной фразой вместе с описанием кольца или круга
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,7 +173,7 @@ private fun WeekRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        WeekRing(week)
+        WeekRing(week, text.ringDescription)
         Column(modifier = Modifier.weight(1f)) {
             Text(text = text.title, style = MaterialTheme.typography.titleMedium)
             Text(
@@ -188,14 +183,18 @@ private fun WeekRow(
             )
         }
         Column(horizontalAlignment = Alignment.End) {
+            // У непройденной недели число уже названо описанием кольца
             Text(
-                text = pluralStringResource(R.plurals.progress_runs, week.completedRuns, week.completedRuns),
+                text = text.runs,
+                modifier = if (text.runsSpoken) Modifier else Modifier.clearAndSetSemantics {},
                 style = MaterialTheme.typography.titleSmall.merge(TabularNumbers),
                 maxLines = 1,
                 softWrap = false,
             )
+            // Без пробежек тире видно, но не читается: «Пробежек 0 из 4» уже сказано
             Text(
-                text = week.lastCompletedAtMs?.let { progressDateText(it, dateFormatter) } ?: "—",
+                text = text.date ?: stringResource(R.string.progress_no_runs),
+                modifier = if (text.date == null) Modifier.clearAndSetSemantics {} else Modifier,
                 style = numbers,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -206,51 +205,47 @@ private fun WeekRow(
 }
 
 /**
- * Кольцо недели: четыре части по числу пробежек до порога, закрашиваются по часовой стрелке
- * сверху. Пройденная неделя показывается закрашенным кругом с галочкой.
+ * Кольцо недели: [RUNS_TO_PASS_WEEK] частей по числу пробежек до порога, закрашиваются по часовой
+ * стрелке сверху. Пройденная неделя показывается закрашенным кругом с галочкой. [description]
+ * читает TalkBack: «Пробежек 2 из 4» у кольца, «Неделя пройдена» у круга.
  */
 @Composable
-private fun WeekRing(week: WeekProgress) {
+private fun WeekRing(week: WeekProgress, description: String) {
     val darkTheme = LocalDarkTheme.current
     val filled = segmentColors(isRun = true, darkTheme).marker
     val track = progressTrackColor(darkTheme)
-    val description = if (week.passed) {
-        stringResource(R.string.progress_ring_passed)
-    } else {
-        stringResource(R.string.progress_ring_count, week.completedRuns, RUNS_TO_PASS_WEEK)
-    }
 
-    Box(
-        modifier = Modifier
-            .size(RingSize)
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (week.passed) {
-            Canvas(Modifier.size(RingSize)) { drawCircle(color = filled) }
+    if (week.passed) {
+        Box(
+            modifier = Modifier
+                .size(RingSize)
+                .background(filled, CircleShape)
+                .semantics { contentDescription = description },
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = progressCheckColor(darkTheme),
             )
-        } else {
-            Canvas(Modifier.size(RingSize)) {
-                val strokePx = RingStroke.toPx()
-                val inset = strokePx / 2
-                val arcSize = Size(size.width - strokePx, size.height - strokePx)
-                val sweep = 360f / RUNS_TO_PASS_WEEK - RING_GAP_DEG
-                for (part in 0 until RUNS_TO_PASS_WEEK) {
-                    drawArc(
-                        color = if (part < week.filledQuarters) filled else track,
-                        startAngle = -90f + RING_GAP_DEG / 2 + part * 360f / RUNS_TO_PASS_WEEK,
-                        sweepAngle = sweep,
-                        useCenter = false,
-                        topLeft = Offset(inset, inset),
-                        size = arcSize,
-                        style = Stroke(width = strokePx, cap = StrokeCap.Butt),
-                    )
-                }
+        }
+    } else {
+        Canvas(Modifier.size(RingSize).semantics { contentDescription = description }) {
+            val strokePx = RingStroke.toPx()
+            val inset = strokePx / 2
+            val arcSize = Size(size.width - strokePx, size.height - strokePx)
+            val sweep = 360f / RUNS_TO_PASS_WEEK - RING_GAP_DEG
+            for (part in 0 until RUNS_TO_PASS_WEEK) {
+                drawArc(
+                    color = if (part < week.completedRuns) filled else track,
+                    startAngle = -90f + RING_GAP_DEG / 2 + part * 360f / RUNS_TO_PASS_WEEK,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arcSize,
+                    style = Stroke(width = strokePx, cap = StrokeCap.Butt),
+                )
             }
         }
     }

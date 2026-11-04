@@ -22,9 +22,23 @@ class ProgramProgressTest {
         completed = completed,
     )
 
+    // Бег, ходьба и повторы недель программы в секундах, записаны вручную, а не через toWorkout()
+    private val weekParams = mapOf(
+        1 to Triple(60, 120, 7),
+        2 to Triple(120, 120, 6),
+        3 to Triple(180, 120, 5),
+        4 to Triple(270, 120, 4),
+        5 to Triple(420, 90, 3),
+        6 to Triple(480, 90, 3),
+        7 to Triple(780, 60, 2),
+        8 to Triple(840, 60, 2),
+        9 to Triple(900, 60, 2),
+        10 to Triple(1800, 0, 1),
+    )
+
     private fun weekRecord(week: Int, startedAtMs: Long = 0L, completed: Boolean = true): RunRecord {
-        val workout = WORKOUT_PRESETS.first { it.week == week }.settings.toWorkout()
-        return record(workout.runSec, workout.walkSec, workout.rounds, startedAtMs, completed)
+        val (runSec, walkSec, rounds) = weekParams.getValue(week)
+        return record(runSec, walkSec, rounds, startedAtMs, completed)
     }
 
     private fun List<WeekProgress>.week(week: Int) = first { it.week == week }
@@ -37,7 +51,6 @@ class ProgramProgressTest {
             assertEquals(0, it.completedRuns)
             assertNull(it.lastCompletedAtMs)
             assertFalse(it.passed)
-            assertEquals(0, it.filledQuarters)
         }
     }
 
@@ -73,21 +86,20 @@ class ProgramProgressTest {
     fun `три пробежки не проходят неделю`() {
         val week = programProgress(List(3) { weekRecord(1) }).week(1)
         assertFalse(week.passed)
-        assertEquals(3, week.filledQuarters)
+        assertEquals(3, week.completedRuns)
     }
 
     @Test
     fun `четыре пробежки проходят неделю`() {
         val week = programProgress(List(4) { weekRecord(1) }).week(1)
         assertTrue(week.passed)
-        assertEquals(4, week.filledQuarters)
+        assertEquals(4, week.completedRuns)
     }
 
     @Test
-    fun `пробежки сверх четырёх считаются, а кольцо не переполняется`() {
+    fun `пробежки сверх четырёх считаются`() {
         val week = programProgress(List(6) { weekRecord(1) }).week(1)
         assertTrue(week.passed)
-        assertEquals(4, week.filledQuarters)
         assertEquals(6, week.completedRuns)
     }
 
@@ -95,6 +107,24 @@ class ProgramProgressTest {
     fun `пройденные недели не по порядку`() {
         val progress = programProgress(List(4) { weekRecord(1) } + List(4) { weekRecord(3) })
         assertEquals(listOf(1, 3), progress.filter { it.passed }.map { it.week })
+        assertEquals(listOf(4, 0, 4, 0, 0, 0, 0, 0, 0, 0), progress.map { it.completedRuns })
+        assertNull(progress.week(2).lastCompletedAtMs)
+    }
+
+    @Test
+    fun `остановленные пробежки другой недели не смешиваются с завершёнными`() {
+        val progress = programProgress(
+            List(2) { weekRecord(1, startedAtMs = 100L) } +
+                List(3) { weekRecord(2, startedAtMs = 900L, completed = false) },
+        )
+        assertEquals(2, progress.week(1).completedRuns)
+        assertEquals(0, progress.week(2).completedRuns)
+        assertNull(progress.week(2).lastCompletedAtMs)
+    }
+
+    @Test
+    fun `строка недели совпадает с неделей из своей записи`() {
+        programProgress(emptyList()).forEach { assertEquals(it.week, it.preset.week) }
     }
 
     @Test
@@ -119,9 +149,38 @@ class ProgramProgressTest {
     }
 
     @Test
+    fun `соседние параметры недель не засчитываются`() {
+        // Бег недели 7 без ходьбы: при двух повторах ходьба выполняется и должна совпасть
+        assertNull(presetWeekOf(record(runSec = 780, walkSec = 0, rounds = 2)))
+        // Один повтор с бегом не 30 минут не неделя 10, даже без учёта ходьбы
+        assertNull(presetWeekOf(record(runSec = 600, walkSec = 120, rounds = 1)))
+    }
+
+    @Test
     fun `каждая неделя программы находит себя`() {
         WORKOUT_PRESETS.forEach {
             assertEquals("неделя ${it.week}", it.week, presetWeekOf(weekRecord(it.week)))
+        }
+    }
+
+    // Путь сервиса: настройки недели → workoutOrNull → runRecordOrNull в onDestroy → прогресс
+    @Test
+    fun `запись сервиса засчитывается своей неделе только при завершении`() {
+        WORKOUT_PRESETS.forEach { preset ->
+            val settings = preset.settings
+            val workout = requireNotNull(
+                workoutOrNull(
+                    runSec = settings.runMin * 60 + settings.runSec,
+                    walkSec = settings.walkMin * 60 + settings.walkSec,
+                    rounds = settings.rounds,
+                ),
+            ) { "неделя ${preset.week}" }
+            val finished = requireNotNull(runRecordOrNull(workout, 1_000L, elapsedMs = workout.totalMs))
+            val stopped = requireNotNull(runRecordOrNull(workout, 2_000L, elapsedMs = workout.totalMs - 1))
+
+            val week = programProgress(listOf(finished, stopped)).week(preset.week)
+            assertEquals("неделя ${preset.week}", 1, week.completedRuns)
+            assertEquals("неделя ${preset.week}", 1_000L, week.lastCompletedAtMs)
         }
     }
 }

@@ -56,7 +56,7 @@ fun runRowText(record: RunRecord, formatters: RunFormatters): RunRowText {
         day = formatters.day.format(startedAt),
         weekday = formatters.weekday.format(startedAt),
         runTime = formatTotal(record.runSec * 1000L),
-        walkTime = if (record.walkSec > 0 && record.rounds > 1) formatTotal(record.walkSec * 1000L) else null,
+        walkTime = record.effectiveWalkSec.takeIf { it > 0 }?.let { formatTotal(it * 1000L) },
         meta = "×${record.rounds} · ${formatters.time.format(startedAt)}",
         duration = formatElapsed(record.durationMs),
         completed = record.completed,
