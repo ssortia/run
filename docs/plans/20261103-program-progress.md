@@ -119,14 +119,14 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] добавить `progressTrackColor(darkTheme)` и `progressCheckColor(darkTheme)` в `ui/Theme.kt`, строки и `<plurals name="progress_runs">` в `strings.xml`
-- [ ] написать тесты в `ui/ThemeTest`: в обеих темах закрашенная часть (`marker`) отличается от дорожки с контрастом не меньше 3:1, дорожка отличается от карточки `surfaceContainer` (контраст не меньше 1,3), галочка читается на `marker` с контрастом не меньше 3:1
-- [ ] создать `ProgressContent(progress: List<WeekProgress>?, onBack)`: `AppTopBar` со стрелкой, при `null` больше ничего
-- [ ] карточка итога: крупное число пройденных недель с `TabularNumbers`, подпись, полоса из 10 делений по `passed`, описание полосы для TalkBack
-- [ ] карточка недель: строки строятся по `WORKOUT_PRESETS.zip(progress)` (оба списка по порядку недель), заголовок `stringResource(R.string.preset_week, week)` и параметры из `presetRowText`; кольцо из четырёх дуг или круг с галочкой с `contentDescription`; справа `pluralStringResource` и дата через `progressDateText` или «—»
-- [ ] формат даты создаётся один раз на экран (`remember` с зоной и локалью), как `runFormatters` в истории
-- [ ] остальной Compose-код тестами не покрывается (`CLAUDE.md`); убедиться, что `./gradlew assembleDebug` собирается и тесты проходят
-- [ ] run tests - must pass before next task
+- [x] добавить `progressTrackColor(darkTheme)` и `progressCheckColor(darkTheme)` в `ui/Theme.kt`, строки и `<plurals name="progress_runs">` в `strings.xml`
+- [x] написать тесты в `ui/ThemeTest`: в обеих темах закрашенная часть (`marker`) отличается от дорожки с контрастом не меньше 3:1, дорожка отличается от карточки `surfaceContainer` (контраст не меньше 1,3), галочка читается на `marker` с контрастом не меньше 3:1
+- [x] создать `ProgressContent(progress: List<WeekProgress>?, onBack)`: `AppTopBar` со стрелкой, при `null` больше ничего
+- [x] карточка итога: крупное число пройденных недель с `TabularNumbers`, подпись, полоса из 10 делений по `passed`, описание полосы для TalkBack
+- [x] карточка недель: строки строятся по `WORKOUT_PRESETS.zip(progress)` (оба списка по порядку недель), заголовок `stringResource(R.string.preset_week, week)` и параметры из `presetRowText`; кольцо из четырёх дуг или круг с галочкой с `contentDescription`; справа `pluralStringResource` и дата через `progressDateText` или «—»
+- [x] формат даты создаётся один раз на экран (`remember` с зоной и локалью), как `runFormatters` в истории
+- [x] остальной Compose-код тестами не покрывается (`CLAUDE.md`); убедиться, что `./gradlew assembleDebug` собирается и тесты проходят
+- [x] run tests - must pass before next task
 
 ### Task 4: Маршрут и вход с формы
 

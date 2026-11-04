@@ -119,6 +119,42 @@ class ThemeTest {
         }
     }
 
+    // Закрашенные части кольца недели и деления полосы рисуются `marker` бега, незакрашенные
+    // дорожкой: число пробежек должно читаться по кольцу, а пустое кольцо быть видно на карточке
+    @Test
+    fun `закрашенная часть кольца отличается от дорожки в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val marker = segmentColors(isRun = true, darkTheme).marker
+
+            assertTrue(
+                "контраст marker и дорожки: тёмная тема $darkTheme",
+                contrast(marker, progressTrackColor(darkTheme)) >= 3f,
+            )
+        }
+    }
+
+    @Test
+    fun `дорожка кольца видна на карточке в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            assertTrue(
+                "контраст дорожки на surfaceContainer: тёмная тема $darkTheme",
+                contrast(progressTrackColor(darkTheme), appColorScheme(darkTheme).surfaceContainer) >= 1.3f,
+            )
+        }
+    }
+
+    @Test
+    fun `галочка пройденной недели читается на закрашенном круге в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val marker = segmentColors(isRun = true, darkTheme).marker
+
+            assertTrue(
+                "контраст галочки: тёмная тема $darkTheme",
+                contrast(progressCheckColor(darkTheme), marker) >= 3f,
+            )
+        }
+    }
+
     @Test
     fun `значки на форме следуют за темой`() {
         assertTrue(darkStatusIcons(WorkoutState.Idle, darkTheme = false))
