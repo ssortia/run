@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
@@ -200,6 +201,8 @@ fun WorkoutScreen(
 // Высота NavigationBar без системной панели. Повторяет внутреннее значение M3 (NavigationBarHeight),
 // которое наружу не открыто: по нему «Старт» выступает над панелью на StartFabOverlap
 private val BottomBarHeight = 80.dp
+// Отступ крайних вкладок от краёв экрана. Симметричный, поэтому центральный слот остаётся под «Стартом»
+private val BottomBarEdgePadding = 16.dp
 // Заливка 64 dp и кольцо цвета фона по 4 dp с каждой стороны: BorderStroke рисуется внутри границ
 private val StartFabSize = 72.dp
 private val StartFabRing = 4.dp
@@ -207,10 +210,11 @@ private val StartFabIconSize = 36.dp
 private val StartFabElevation = 6.dp
 
 /**
- * На сколько «Старт» выступает над нижней панелью. Прокручиваемые колонки всех вкладок добавляют
- * его к нижнему отступу, иначе кнопка закроет последний элемент.
+ * На сколько «Старт» выступает над нижней панелью: на треть высоты, две трети кнопки лежат на
+ * панели. Прокручиваемые колонки всех вкладок добавляют его к нижнему отступу, иначе кнопка
+ * закроет последний элемент.
  */
-internal val StartFabOverlap = 40.dp
+internal val StartFabOverlap = StartFabSize / 3
 
 /** Нижний отступ прокручиваемой колонки вкладки: обычные 16 dp плюс выступ «Старта». */
 internal val ScrollContentBottomPadding = 16.dp + StartFabOverlap
@@ -251,6 +255,8 @@ private fun BottomBar(
     val startLabel = stringResource(R.string.button_start)
     val startSlot = startSlotIndex()
     NavigationBar {
+        // Отступы внутри ряда, а не modifier панели: фон панели остаётся во всю ширину экрана
+        Spacer(Modifier.width(BottomBarEdgePadding))
         BottomTab.entries.forEachIndexed { index, tab ->
             if (index == startSlot) {
                 // clickable сам даёт роль, onClick и disabled() при недоступном «Старте»
@@ -284,11 +290,12 @@ private fun BottomBar(
                 colors = itemColors,
             )
         }
+        Spacer(Modifier.width(BottomBarEdgePadding))
     }
 }
 
 /**
- * Круглый «Старт» в цветах бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих
+ * «Старт» скруглённым квадратом в цветах бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих
  * темах изумрудный с белым значком. Кольцо цвета фона отделяет кнопку от панели. Для TalkBack
  * кнопка скрыта, её читает заместитель в [BottomBar].
  */
@@ -308,7 +315,8 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
     Surface(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        // Скругление как у карточек формы
+        shape = MaterialTheme.shapes.large,
         color = containerColor,
         contentColor = contentColor,
         border = BorderStroke(StartFabRing, background),
