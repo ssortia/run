@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -153,8 +152,8 @@ private fun EmptyHistory(modifier: Modifier = Modifier) {
 private val DayColumnWidth = 40.dp
 
 /**
- * Карточка записи: день и день недели слева, бег и шаг в две колонки, справа длительность
- * со значком статуса и корзина. Время в колонке выровнено по правому краю с моноширинными
+ * Карточка записи: день и день недели слева, бег и шаг в две колонки, справа длительность,
+ * под ней значок и подпись статуса, и корзина. Время в колонке выровнено по правому краю с моноширинными
  * цифрами, чтобы «2:00» и «13:00» стояли друг под другом. На узком экране или с крупным шрифтом
  * первыми сокращаются подписи «Бег» и «Шаг» с многоточием, время остаётся целым.
  */
@@ -212,34 +211,59 @@ private fun RunCard(text: RunRowText, onDeleteClick: () -> Unit) {
                 )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.padding(start = 8.dp),
+                horizontalAlignment = Alignment.End,
+            ) {
                 Text(
                     text = text.duration,
                     style = MaterialTheme.typography.titleMedium.merge(TabularNumbers),
                     maxLines = 1,
                     softWrap = false,
                 )
-                Icon(
-                    imageVector = if (text.completed) Icons.Outlined.Check else Icons.Outlined.Close,
-                    contentDescription = stringResource(
-                        if (text.completed) R.string.history_completed else R.string.history_stopped,
-                    ),
-                    modifier = Modifier
-                        .padding(start = 4.dp)
-                        .size(18.dp),
-                    tint = if (text.completed) {
-                        MaterialTheme.colorScheme.primary
+                val statusColor = if (text.completed) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    // Статус читается подписью рядом. Квадрат меньше галочки, как в макете:
+                    // закрашенная фигура того же размера выглядит крупнее линии
+                    if (text.completed) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = statusColor,
+                        )
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-                IconButton(onClick = onDeleteClick) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = deleteDescription,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Icon(
+                            painter = painterResource(R.drawable.ic_stop),
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = statusColor,
+                        )
+                    }
+                    Text(
+                        text = stringResource(
+                            if (text.completed) R.string.history_completed else R.string.history_stopped,
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
+            }
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = deleteDescription,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
