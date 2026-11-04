@@ -143,10 +143,10 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 
 ### Task 5: Verify acceptance criteria
 
-- [ ] verify all requirements from Overview and `docs/tasks/20261103-program-progress.md` are implemented: только завершённые пробежки, порог 4, кольцо по четвертям, «—» без пробежек, состояние до прихода данных, ничего не хранится отдельно
-- [ ] verify edge cases are handled: неделя 10 без ходьбы, ходьба 1:30, пробежки сверх четырёх, параметры не из программы
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`, новых предупреждений нет
+- [x] verify all requirements from Overview and `docs/tasks/20261103-program-progress.md` are implemented: только завершённые пробежки, порог 4, кольцо по четвертям, «—» без пробежек, состояние до прихода данных, ничего не хранится отдельно
+- [x] verify edge cases are handled: неделя 10 без ходьбы, ходьба 1:30, пробежки сверх четырёх, параметры не из программы
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`, новых предупреждений нет
 
 ### Task 6: [Final] Update documentation
 
