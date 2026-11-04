@@ -14,7 +14,7 @@
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>
     <string name="button_resume">Продолжить</string>
-    <string name="tab_workout">Тренировка</string>
+    <string name="tab_workout">Таймер</string>
     <string name="tab_settings">Настройки</string>
     <string name="tab_history">История</string>
     <string name="button_delete">Удалить</string>
@@ -81,5 +81,16 @@
         <item quantity="few">%d раза</item>
         <item quantity="many">%d раз</item>
         <item quantity="other">%d раз</item>
+    </plurals>
+    <string name="summary_title">Вся тренировка</string>
+    <string name="summary_run">бег</string>
+    <string name="summary_walk">шаг</string>
+    <string name="summary_none">—</string>
+    <string name="summary_invalid_description">Вся тренировка, время не задано</string>
+    <plurals name="summary_segments">
+        <item quantity="one">%d отрезок</item>
+        <item quantity="few">%d отрезка</item>
+        <item quantity="many">%d отрезков</item>
+        <item quantity="other">%d отрезка</item>
     </plurals>
 </resources>

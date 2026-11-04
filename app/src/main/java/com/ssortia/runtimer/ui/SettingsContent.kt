@@ -6,12 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,8 +26,6 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -47,7 +45,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -60,6 +65,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.MAX_MINUTES
 import com.ssortia.runtimer.MAX_ROUNDS
@@ -67,10 +73,13 @@ import com.ssortia.runtimer.MAX_SECONDS
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.SECONDS_WHEEL_STEP
 import com.ssortia.runtimer.SettingsError
+import com.ssortia.runtimer.SummaryLabels
 import com.ssortia.runtimer.WORKOUT_PRESETS
 import com.ssortia.runtimer.PresetRowText
 import com.ssortia.runtimer.WorkoutPreset
 import com.ssortia.runtimer.WorkoutSettings
+import com.ssortia.runtimer.WorkoutSummaryText
+import com.ssortia.runtimer.workoutSummaryText
 import com.ssortia.runtimer.presetRowText
 import com.ssortia.runtimer.presetWeekOf
 import com.ssortia.runtimer.wheelOptions
@@ -126,30 +135,33 @@ internal val WorkoutSettingsSaver = listSaver<WorkoutSettings, Int>(
 /** Отрезок, карточка которого раскрыта. */
 private enum class Segment { RUN, WALK }
 
-// «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
-private val StartButtonHeight = 56.dp
 // Высота свёрнутых карточек «Бег», «Шаг» и «Повторы», чтобы карточки формы были одной высоты
 private val CardRowHeight = 72.dp
 private val PresetCheckSize = 24.dp
 private val RoundsValueWidth = 80.dp
 private val WeekChipHeight = 40.dp
+private val FormTopPadding = 16.dp
 
-/** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
+/**
+ * Форма настроек. Состояние [settings] хранит ветка Idle у WorkoutScreen, форма меняет его только
+ * через [onSettingsChange]. «Старт» не на форме, а в центре нижней панели: он запускает эти же
+ * настройки с любой вкладки. Предупреждение о фоне и ошибка проверки стоят под карточками.
+ * [error] — результат `settings.validate()`, его считает ветка Idle один раз и для «Старта».
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
-    initial: WorkoutSettings,
+    settings: WorkoutSettings,
+    error: SettingsError?,
+    onSettingsChange: (WorkoutSettings) -> Unit,
     showBackgroundWarning: Boolean,
-    onStart: (WorkoutSettings) -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) { mutableStateOf(initial) }
     // Раскрыта не больше одной карточки отрезка, null — обе свёрнуты
     var expanded by rememberSaveable { mutableStateOf<Segment?>(null) }
     // Шторка программы не маршрут, а состояние формы
     var showProgram by rememberSaveable { mutableStateOf(false) }
-    val error = settings.validate()
     val selectedWeek = presetWeekOf(settings)
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -167,75 +179,95 @@ fun SettingsContent(
             },
         )
 
-        Column(
+        val resources = LocalContext.current.resources
+        val labels = SummaryLabels(
+            run = stringResource(R.string.summary_run),
+            walk = stringResource(R.string.summary_walk),
+            min = stringResource(R.string.minutes_short),
+        )
+        val summary = workoutSummaryText(settings, error, labels) { count ->
+            resources.getQuantityString(R.plurals.summary_segments, count, count)
+        }
+        // Последний верный состав держит высоту строки при ошибке, чтобы карточки не прыгали.
+        // Обычное поле, а не состояние: оно нужно только для высоты и рекомпозицию не вызывает
+        val lastParts = remember { LastParts() }
+        if (summary != null) lastParts.text = summary.text
+        val time = summary?.time ?: stringResource(R.string.summary_none)
+        val largeTimeStyle = summaryTimeStyle(large = true)
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+
+        // Высота области прокрутки за вычетом вертикальных отступов колонки: иначе раскладка
+        // была бы выше области на эти отступы и колонка прокручивалась бы всегда. Отступы
+        // округляются до пикселей так же, как их округляет колонка
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .fillMaxWidth(),
         ) {
-            SegmentCard(
-                label = stringResource(R.string.segment_run),
-                isRun = true,
-                minutes = settings.runMin,
-                seconds = settings.runSec,
-                expanded = expanded == Segment.RUN,
-                onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
-                onMinutesChange = { settings = settings.copy(runMin = it) },
-                onSecondsChange = { settings = settings.copy(runSec = it) },
-            )
-            SegmentCard(
-                label = stringResource(R.string.segment_walk),
-                isRun = false,
-                minutes = settings.walkMin,
-                seconds = settings.walkSec,
-                expanded = expanded == Segment.WALK,
-                onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
-                onMinutesChange = { settings = settings.copy(walkMin = it) },
-                onSecondsChange = { settings = settings.copy(walkSec = it) },
-            )
-            RoundsCard(
-                value = settings.rounds,
-                onValueChange = { settings = settings.copy(rounds = it) },
-            )
-        }
-
-        // Нижний блок закреплён: карточки прокручиваются, а «Старт» всегда виден
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (showBackgroundWarning) {
-                BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
-            }
-            if (error != null) {
-                Text(
-                    text = stringResource(error.messageRes(), *error.messageArgs()),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-            // Цвета бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих темах
-            // изумрудный с белым текстом
-            val startColors = segmentColors(isRun = true, LocalDarkTheme.current)
-            Button(
-                onClick = { onStart(settings) },
-                enabled = error == null,
-                shape = MaterialTheme.shapes.large,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = startColors.background,
-                    contentColor = startColors.content,
-                ),
+            val viewport = with(density) {
+                constraints.maxHeight - FormTopPadding.roundToPx() - ScrollContentBottomPadding.roundToPx()
+            }.coerceAtLeast(0)
+            // Обратная прокрутка отсчитывает смещение от нижнего края: по умолчанию видны
+            // карточки у панели, а при смене высоты (раскрытие карточки, предупреждение, шрифт)
+            // смещение от низа сохраняется, и колонка растёт вверх, унося итог из вида
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(StartButtonHeight),
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState(), reverseScrolling = true)
+                    .padding(
+                        start = 16.dp,
+                        top = FormTopPadding,
+                        end = 16.dp,
+                        bottom = ScrollContentBottomPadding,
+                    ),
             ) {
-                Text(
-                    text = stringResource(R.string.button_start),
-                    style = MaterialTheme.typography.titleMedium,
+                FormLayout(
+                    viewport = viewport,
+                    largeTimeWidth = {
+                        textMeasurer.measure(time, largeTimeStyle, maxLines = 1, softWrap = false).size.width
+                    },
+                    summary = { large ->
+                        WorkoutSummary(summary = summary, time = time, placeholderParts = lastParts.text, large = large)
+                    },
+                    bottom = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            SegmentCard(
+                                label = stringResource(R.string.segment_run),
+                                isRun = true,
+                                minutes = settings.runMin,
+                                seconds = settings.runSec,
+                                expanded = expanded == Segment.RUN,
+                                onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
+                                onMinutesChange = { onSettingsChange(settings.copy(runMin = it)) },
+                                onSecondsChange = { onSettingsChange(settings.copy(runSec = it)) },
+                            )
+                            SegmentCard(
+                                label = stringResource(R.string.segment_walk),
+                                isRun = false,
+                                minutes = settings.walkMin,
+                                seconds = settings.walkSec,
+                                expanded = expanded == Segment.WALK,
+                                onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
+                                onMinutesChange = { onSettingsChange(settings.copy(walkMin = it)) },
+                                onSecondsChange = { onSettingsChange(settings.copy(walkSec = it)) },
+                            )
+                            RoundsCard(
+                                value = settings.rounds,
+                                onValueChange = { onSettingsChange(settings.copy(rounds = it)) },
+                            )
+                            if (showBackgroundWarning) {
+                                BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
+                            }
+                            if (error != null) {
+                                Text(
+                                    text = stringResource(error.messageRes(), *error.messageArgs()),
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    },
                 )
             }
         }
@@ -251,7 +283,7 @@ fun SettingsContent(
             ProgramSheetContent(
                 selectedWeek = selectedWeek,
                 onSelect = { preset ->
-                    settings = preset.settings
+                    onSettingsChange(preset.settings)
                     // Флаг снимается только после скрытия, чтобы не разойтись с состоянием шторки
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) showProgram = false
@@ -259,6 +291,97 @@ fun SettingsContent(
                 },
             )
         }
+    }
+}
+
+/**
+ * Раскладка формы: итог по центру свободного места над нижней частью (карточки, предупреждение,
+ * ошибка). Сначала меряется нижняя часть, затем итог с крупным временем; малый итог составляется
+ * и меряется, только если [summaryPlacement] отказал крупному по высоте свободного места или по
+ * ширине времени [largeTimeWidth]. Решение принимает только [summaryPlacement]. Размещается
+ * только выбранный вариант: неразмещённый не попадает в дерево доступности, и TalkBack не находит
+ * два итога. Высота раскладки не меньше [viewport] (в пикселях), а когда итог не помещается и в
+ * малом виде, колонка вокруг прокручивается от нижнего края, и итог уходит вверх.
+ */
+@Composable
+private fun FormLayout(
+    viewport: Int,
+    largeTimeWidth: () -> Int,
+    summary: @Composable (large: Boolean) -> Unit,
+    bottom: @Composable () -> Unit,
+) {
+    SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
+        // Колонка с прокруткой даёт бесконечную высоту, итог и нижняя часть меряются без предела
+        val free = constraints.copy(minWidth = constraints.maxWidth, minHeight = 0, maxHeight = Constraints.Infinity)
+        val bottomPlaceable = subcompose("bottom", bottom).first().measure(free)
+        val large = subcompose("largeSummary") { summary(true) }.first().measure(free)
+        var small: Placeable? = null
+        val placement = summaryPlacement(
+            viewport = viewport,
+            bottom = bottomPlaceable.height,
+            largeSummary = large.height,
+            largeFitsWidth = largeTimeWidth() <= constraints.maxWidth,
+        ) {
+            subcompose("smallSummary") { summary(false) }.first().measure(free).also { small = it }.height
+        }
+        val chosen = if (placement.useLarge) large else checkNotNull(small)
+        layout(constraints.maxWidth, placement.totalHeight) {
+            chosen.placeRelative(
+                x = (constraints.maxWidth - chosen.width) / 2,
+                y = (placement.slotHeight - chosen.height) / 2,
+            )
+            bottomPlaceable.placeRelative(x = 0, y = placement.slotHeight)
+        }
+    }
+}
+
+/** Последняя верная строка состава, см. [WorkoutSummary]. */
+private class LastParts(var text: String = "")
+
+@Composable
+private fun summaryTimeStyle(large: Boolean): TextStyle =
+    (if (large) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium)
+        .merge(TabularNumbers)
+
+/**
+ * Итог тренировки над карточками: общее время и состав. При неверных настройках [summary] null:
+ * вместо времени [time] «—», весь блок приглушён, а строка состава невидима и держит высоту
+ * последнего верного состава [placeholderParts]. Для TalkBack итог читается одной фразой, без
+ * liveRegion: время меняется вместе с карточками, а их изменения объявляются сами.
+ */
+@Composable
+private fun WorkoutSummary(summary: WorkoutSummaryText?, time: String, placeholderParts: String, large: Boolean) {
+    val title = stringResource(R.string.summary_title)
+    val description = summary?.description(title) ?: stringResource(R.string.summary_invalid_description)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .alpha(if (summary != null) 1f else DisabledContentAlpha)
+            .clearAndSetSemantics { contentDescription = description },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = time,
+            style = summaryTimeStyle(large),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false,
+        )
+        Text(
+            text = summary?.text ?: placeholderParts,
+            style = MaterialTheme.typography.bodyLarge.merge(TabularNumbers),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = if (summary != null) Modifier else Modifier.alpha(0f),
+        )
     }
 }
 

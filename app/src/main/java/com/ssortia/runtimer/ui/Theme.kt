@@ -118,6 +118,12 @@ internal fun appColorScheme(darkTheme: Boolean): ColorScheme = if (darkTheme) Da
 /** Цифры одинаковой ширины: время и счётчики не прыгают при смене значения. */
 val TabularNumbers = TextStyle(fontFeatureSettings = "tnum")
 
+/** Прозрачность недоступного содержимого (текст, значок), как у M3. */
+internal const val DisabledContentAlpha = 0.38f
+
+/** Прозрачность заливки недоступной кнопки, как у M3. */
+internal const val DisabledContainerAlpha = 0.12f
+
 fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
     darkTheme -> if (isRun) RunDark else WalkDark
     else -> if (isRun) RunLight else WalkLight

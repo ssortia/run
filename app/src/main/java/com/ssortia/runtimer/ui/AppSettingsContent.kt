@@ -78,7 +78,7 @@ fun AppSettingsContent(
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = ScrollContentBottomPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SectionTitle(stringResource(R.string.group_signals))
