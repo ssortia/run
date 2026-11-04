@@ -21,7 +21,10 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -74,6 +77,12 @@ fun WorkoutScreen(
             // контроллера остаются в activity до её уничтожения, но ViewModel в них нет, и это
             // несколько пустых объектов за тренировку
             val navController = rememberNavController()
+            // Настройки формы живут здесь, а не в записи маршрута, чтобы «Старт» вне NavHost
+            // запускал и несохранённые правки. Ветка покидает композицию при старте, поэтому после
+            // тренировки они читаются заново из SettingsStore
+            var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) {
+                mutableStateOf(loadSettings())
+            }
             // Отступы сверху и по бокам поглощаются здесь, поэтому NavigationBar не добавит боковые
             // второй раз, а снизу системную панель он учитывает сам, и его фон уходит под жестовую
             // полосу. Клавиатуры вне тренировки нет, отдельный учёт ime не нужен
@@ -94,12 +103,11 @@ fun WorkoutScreen(
                     modifier = Modifier.weight(1f),
                 ) {
                     screen(ROUTE_SETTINGS) {
-                        // Настройки читаются при создании маршрута: после тренировки стека нет, и форма
-                        // берёт сохранённые значения. Несохранённые правки, пока открыт другой экран,
-                        // хранит rememberSaveable записи стека
-                        val initial = remember { loadSettings() }
+                        // Настройки приходят из ветки Idle и переживают переход на другую вкладку.
+                        // Раскрытая карточка и шторка программы хранятся в записи стека
                         SettingsContent(
-                            initial = initial,
+                            settings = settings,
+                            onSettingsChange = { settings = it },
                             showBackgroundWarning = showBackgroundWarning,
                             onStart = onStart,
                             onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },

@@ -102,12 +102,12 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/SettingsContent.kt`
 
-- [ ] перенести `rememberSaveable(stateSaver = WorkoutSettingsSaver)` из `SettingsContent` в ветку `Idle` с начальным `loadSettings()`, убрать `remember { loadSettings() }` из маршрута `settings`
-- [ ] `SettingsContent(settings, onSettingsChange, showBackgroundWarning, onOpenAppDetails)`: карточки и шторка программы пишут через `onSettingsChange`; `expanded` и `showProgram` остаются в записи стека
-- [ ] временно оставить кнопку «Старт» в форме с `onStart(settings)`, чтобы задача собиралась и работала (убирается в Task 4)
-- [ ] обновить комментарий маршрута `settings` в `WorkoutScreen.kt` (настройки больше не читаются при создании маршрута)
-- [ ] убедиться, что `SettingsFormTest` и остальные тесты не опираются на старую сигнатуру, поправить при необходимости
-- [ ] run tests - must pass before next task
+- [x] перенести `rememberSaveable(stateSaver = WorkoutSettingsSaver)` из `SettingsContent` в ветку `Idle` с начальным `loadSettings()`, убрать `remember { loadSettings() }` из маршрута `settings`
+- [x] `SettingsContent(settings, onSettingsChange, showBackgroundWarning, onOpenAppDetails)`: карточки и шторка программы пишут через `onSettingsChange`; `expanded` и `showProgram` остаются в записи стека
+- [x] временно оставить кнопку «Старт» в форме с `onStart(settings)`, чтобы задача собиралась и работала (убирается в Task 4)
+- [x] обновить комментарий маршрута `settings` в `WorkoutScreen.kt` (настройки больше не читаются при создании маршрута)
+- [x] убедиться, что `SettingsFormTest` и остальные тесты не опираются на старую сигнатуру, поправить при необходимости (не опираются: `SettingsFormTest` проверяет только `WorkoutSettingsSaver`, он остался в `SettingsContent.kt`)
+- [x] run tests - must pass before next task
 
 ### Task 4: «Старт» в центре нижней панели
 

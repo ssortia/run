@@ -134,17 +134,20 @@ private val PresetCheckSize = 24.dp
 private val RoundsValueWidth = 80.dp
 private val WeekChipHeight = 40.dp
 
-/** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
+/**
+ * Форма настроек. Состояние [settings] хранит ветка Idle у WorkoutScreen, форма меняет его только
+ * через [onSettingsChange]. [onStart] вызывается только с настройками, прошедшими проверку.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
-    initial: WorkoutSettings,
+    settings: WorkoutSettings,
+    onSettingsChange: (WorkoutSettings) -> Unit,
     showBackgroundWarning: Boolean,
     onStart: (WorkoutSettings) -> Unit,
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) { mutableStateOf(initial) }
     // Раскрыта не больше одной карточки отрезка, null — обе свёрнуты
     var expanded by rememberSaveable { mutableStateOf<Segment?>(null) }
     // Шторка программы не маршрут, а состояние формы
@@ -182,8 +185,8 @@ fun SettingsContent(
                 seconds = settings.runSec,
                 expanded = expanded == Segment.RUN,
                 onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
-                onMinutesChange = { settings = settings.copy(runMin = it) },
-                onSecondsChange = { settings = settings.copy(runSec = it) },
+                onMinutesChange = { onSettingsChange(settings.copy(runMin = it)) },
+                onSecondsChange = { onSettingsChange(settings.copy(runSec = it)) },
             )
             SegmentCard(
                 label = stringResource(R.string.segment_walk),
@@ -192,12 +195,12 @@ fun SettingsContent(
                 seconds = settings.walkSec,
                 expanded = expanded == Segment.WALK,
                 onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
-                onMinutesChange = { settings = settings.copy(walkMin = it) },
-                onSecondsChange = { settings = settings.copy(walkSec = it) },
+                onMinutesChange = { onSettingsChange(settings.copy(walkMin = it)) },
+                onSecondsChange = { onSettingsChange(settings.copy(walkSec = it)) },
             )
             RoundsCard(
                 value = settings.rounds,
-                onValueChange = { settings = settings.copy(rounds = it) },
+                onValueChange = { onSettingsChange(settings.copy(rounds = it)) },
             )
         }
 
@@ -251,7 +254,7 @@ fun SettingsContent(
             ProgramSheetContent(
                 selectedWeek = selectedWeek,
                 onSelect = { preset ->
-                    settings = preset.settings
+                    onSettingsChange(preset.settings)
                     // Флаг снимается только после скрытия, чтобы не разойтись с состоянием шторки
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) showProgram = false
