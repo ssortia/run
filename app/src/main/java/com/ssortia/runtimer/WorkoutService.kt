@@ -43,6 +43,9 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     // null, если вибрация выключена в настройках
     private var buzzer: Buzzer? = null
+
+    // Звук сигналов включён: при нулевой громкости Beeper не создаётся, и предупреждения о звуке не нужны
+    private var soundOn = true
     // «Приглушать музыку»: поле, потому что её читает и handlePauseAction
     private var duckMusic = DEFAULT_DUCK_MUSIC
     // Создаётся после отсчёта, команда паузы может прийти раньше
@@ -162,7 +165,11 @@ class WorkoutService : Service() {
         val delayMs = settings.loadStartDelaySec() * 1000L
         wakeLock.acquire(wakeLockTimeoutMs(workout.totalMs, delayMs))
         duckMusic = settings.loadDuckMusic()
-        beeper = Beeper(audioManager, resources, settings.loadSignalVolume(), duckMusic)
+        val volume = settings.loadSignalVolume()
+        soundOn = isSoundOn(volume)
+        // При нулевой громкости Beeper не нужен: иначе он брал бы аудиофокус и приглушал музыку
+        // ради неслышного сигнала. Так же без Buzzer при выключенной вибрации
+        if (soundOn) beeper = Beeper(audioManager, resources, volume, duckMusic)
         if (settings.loadVibration()) buzzer = Buzzer(getSystemService(Vibrator::class.java))
         job = scope.launch { runLoop(workout, delayMs) }
     }
@@ -170,7 +177,7 @@ class WorkoutService : Service() {
     private suspend fun runLoop(workout: Workout, delayMs: Long) {
         // Момент старта считается один раз, поэтому шаги цикла и задержка не копят ошибку
         val startedAt = SystemClock.elapsedRealtime() + delayMs
-        val soundFailed = beeper?.isReady != true
+        val soundFailed = soundFailedWarning(soundOn, beeperReady = beeper?.isReady == true)
         if (delayMs > 0) {
             runCountdown(startedAt, soundFailed)
             // START идёт мимо tick.signal: всё, что реагирует на сигналы, нужно и здесь
@@ -192,7 +199,7 @@ class WorkoutService : Service() {
                 elapsedMs,
                 previousIndex,
                 soundFailed = soundFailed,
-                soundMuted = audioManager.isMediaMuted(),
+                soundMuted = soundMutedWarning(soundOn, audioManager.isMediaMuted()),
                 paused = clock.isPaused,
             )
             _state.value = tick.state
@@ -225,7 +232,7 @@ class WorkoutService : Service() {
                 startedAt,
                 now,
                 soundFailed = soundFailed,
-                soundMuted = audioManager.isMediaMuted(),
+                soundMuted = soundMutedWarning(soundOn, audioManager.isMediaMuted()),
             ) ?: break
             _state.value = tick.state
             // Отсчёт кончается сигналом START

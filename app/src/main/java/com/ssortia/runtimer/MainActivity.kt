@@ -193,6 +193,8 @@ class MainActivity : ComponentActivity() {
     private fun saveVolumeAndPreview(percent: Int) {
         store.saveSignalVolume(percent)
         releasePreview()
+        // На нуле звука нет намеренно: ни пробного сигнала, ни напоминания о громкости медиа
+        if (!isSoundOn(percent)) return
         // Иначе пробный сигнал молча не слышен, и ползунок выглядит сломанным
         if (audioManager.isMediaMuted()) {
             Toast.makeText(this, R.string.warning_muted, Toast.LENGTH_SHORT).show()
