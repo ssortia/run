@@ -32,7 +32,11 @@ sealed interface WorkoutState {
     ) : WorkoutState
 }
 
-enum class Signal { START, INTERVAL, FINISH }
+/** `COUNTDOWN` звучит за 2 и за 1 с до старта, `START` в момент старта. */
+enum class Signal { COUNTDOWN, START, INTERVAL, FINISH }
+
+/** Остатки до старта, на которых звучит `COUNTDOWN`, по убыванию. */
+val COUNTDOWN_SIGNALS_AT_MS = listOf(2_000L, 1_000L)
 
 /** Результат одного шага цикла тренировки. */
 data class WorkoutTick(
@@ -41,26 +45,49 @@ data class WorkoutTick(
     val finished: Boolean,
 )
 
-/** Результат одного шага отсчёта: что показать и сколько ждать до следующего шага. */
-data class CountdownTick(val state: WorkoutState.Countdown, val waitMs: Long)
+/**
+ * Результат одного шага отсчёта: что показать, какой сигнал подать и сколько ждать до следующего
+ * шага. На следующий шаг передаётся [remainingMs] этого шага.
+ */
+data class CountdownTick(
+    val state: WorkoutState.Countdown,
+    val signal: Signal?,
+    val remainingMs: Long,
+    val waitMs: Long,
+)
 
 /**
  * Считает шаг отсчёта на момент [now] или возвращает null, если [startedAt] уже наступил.
- * Ожидание не длиннее остатка, чтобы `START` не опоздал на шаг цикла.
+ * `COUNTDOWN` подаётся, когда остаток пересёк одну из границ [COUNTDOWN_SIGNALS_AT_MS] со времени
+ * прошлого шага с остатком [previousRemainingMs]. Если запоздавший шаг перепрыгнул обе границы,
+ * сигнал один. На первом шаге ([previousRemainingMs] = null) сигналов задним числом нет.
+ * Ожидание не перескакивает ближайшую границу и остаток, чтобы сигналы не опоздали на шаг цикла.
  */
 fun countdownTickAt(
     startedAt: Long,
     now: Long,
+    previousRemainingMs: Long?,
     soundFailed: Boolean = false,
     soundMuted: Boolean = false,
 ): CountdownTick? {
     val remainingMs = startedAt - now
     if (remainingMs <= 0) return null
+    val crossed = previousRemainingMs != null &&
+        COUNTDOWN_SIGNALS_AT_MS.any { it < previousRemainingMs && it >= remainingMs }
     return CountdownTick(
         state = WorkoutState.Countdown(wholeSeconds(remainingMs), soundFailed, soundMuted),
-        waitMs = minOf(TICK_MS, remainingMs),
+        signal = if (crossed) Signal.COUNTDOWN else null,
+        remainingMs = remainingMs,
+        waitMs = minOf(TICK_MS, msToNextCountdownSignal(remainingMs).takeIf { it > 0 } ?: TICK_MS),
     )
 }
+
+/**
+ * Время от остатка [remainingMs] до ближайшего сигнала отсчёта: границы из
+ * [COUNTDOWN_SIGNALS_AT_MS] или старта (остаток 0). Если остаток стоит ровно на границе, это 0.
+ */
+fun msToNextCountdownSignal(remainingMs: Long): Long =
+    remainingMs - (COUNTDOWN_SIGNALS_AT_MS.firstOrNull { it <= remainingMs } ?: 0L)
 
 /**
  * Считает шаг цикла на момент [elapsedMs]. На следующий шаг [previousIndex] берётся из

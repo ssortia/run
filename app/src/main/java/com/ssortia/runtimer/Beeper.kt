@@ -29,7 +29,7 @@ fun AudioManager.isMediaMuted(): Boolean = getStreamVolume(AudioManager.STREAM_M
  * музыки в полную громкость. Все методы вызываются только из главного потока.
  *
  * Готовятся только [signals]: чтение файлов из `res/raw` и создание дорожек идут
- * в конструкторе, в главном потоке, поэтому пробному сигналу незачем готовить все три.
+ * в конструкторе, в главном потоке, поэтому пробному сигналу незачем готовить все четыре.
  */
 class Beeper(
     private val audioManager: AudioManager,
@@ -41,8 +41,8 @@ class Beeper(
     // ATTRIBUTES объявлены в companion object: tracks заполняется при создании объекта,
     // и поле экземпляра ниже него было бы ещё null
     private val tracks: Map<Signal, AudioTrack?> = run {
-        // START и INTERVAL звучат одинаково: файл разбирается один раз, а дорожки у них свои,
-        // потому что у каждой свои stop() и reloadStaticData()
+        // Файл разбирается один раз, даже если его делят несколько сигналов, а дорожки у сигналов
+        // свои, потому что у каждой свои stop() и reloadStaticData()
         val sounds = signals.map(::soundOf).distinct().associateWith(::readSound)
         signals.associateWith { createTrack(it, sounds.getValue(soundOf(it))) }
     }
@@ -165,7 +165,9 @@ class Beeper(
     // Старт звучит так же, как смена отрезка
     @RawRes
     private fun soundOf(signal: Signal): Int = when (signal) {
-        Signal.START, Signal.INTERVAL -> R.raw.signal_interval
+        Signal.COUNTDOWN -> R.raw.signal_countdown
+        Signal.START -> R.raw.signal_start
+        Signal.INTERVAL -> R.raw.signal_interval
         Signal.FINISH -> R.raw.signal_finish
     }
 

@@ -35,6 +35,14 @@ class VibrationTest {
         assertFalse(vibrationFor(Signal.FINISH).contentEquals(vibrationFor(Signal.INTERVAL)))
         assertFalse(vibrationFor(Signal.START).contentEquals(vibrationFor(Signal.INTERVAL)))
         assertFalse(vibrationFor(Signal.START).contentEquals(vibrationFor(Signal.FINISH)))
+        assertFalse(vibrationFor(Signal.COUNTDOWN).contentEquals(vibrationFor(Signal.START)))
+        assertFalse(vibrationFor(Signal.COUNTDOWN).contentEquals(vibrationFor(Signal.INTERVAL)))
+    }
+
+    @Test
+    fun `вибрация отсчёта короче старта и заканчивается до следующего сигнала`() {
+        assertTrue(vibrationDurationMs(Signal.COUNTDOWN) < vibrationDurationMs(Signal.START))
+        assertTrue(vibrationDurationMs(Signal.COUNTDOWN) < 1_000)
     }
 
     @Test
@@ -46,6 +54,7 @@ class VibrationTest {
 
     @Test
     fun `длительности паттернов`() {
+        assertEquals(150L, vibrationDurationMs(Signal.COUNTDOWN))
         assertEquals(600L, vibrationDurationMs(Signal.START))
         assertEquals(400L, vibrationDurationMs(Signal.INTERVAL))
         assertEquals(1600L, vibrationDurationMs(Signal.FINISH))
@@ -57,10 +66,11 @@ class VibrationTest {
     }
 
     @Test
-    fun `старт и смена отрезка один импульс, финал три`() {
+    fun `отсчёт, старт и смена отрезка один импульс, финал три`() {
         // Импульсы стоят на нечётных местах паттерна
         fun pulses(signal: Signal) = vibrationFor(signal).size / 2
 
+        assertEquals(1, pulses(Signal.COUNTDOWN))
         assertEquals(1, pulses(Signal.START))
         assertEquals(1, pulses(Signal.INTERVAL))
         assertEquals(3, pulses(Signal.FINISH))
