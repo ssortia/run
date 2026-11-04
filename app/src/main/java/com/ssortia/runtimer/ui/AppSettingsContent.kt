@@ -59,7 +59,6 @@ fun AppSettingsContent(
     onStartDelayChange: (Int) -> Unit,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var volume by remember { mutableFloatStateOf(loadVolume().toFloat()) }
@@ -68,7 +67,7 @@ fun AppSettingsContent(
     var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        AppTopBar(title = stringResource(R.string.button_settings), onBack = onBack)
+        AppTopBar(title = stringResource(R.string.button_settings))
 
         Column(
             modifier = Modifier

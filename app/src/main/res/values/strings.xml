@@ -17,7 +17,6 @@
     <string name="tab_workout">Тренировка</string>
     <string name="button_settings">Настройки</string>
     <string name="button_history">История</string>
-    <string name="button_back">Назад</string>
     <string name="button_delete">Удалить</string>
     <string name="button_cancel">Отмена</string>
     <string name="button_open_app_details">Настройки батареи</string>

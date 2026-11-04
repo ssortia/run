@@ -63,7 +63,6 @@ private const val RING_GAP_DEG = 8f
 @Composable
 fun ProgressContent(
     progress: List<WeekProgress>?,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locale = LocalConfiguration.current.locales[0]
@@ -71,7 +70,7 @@ fun ProgressContent(
     val dateFormatter = remember(zone, locale) { progressDateFormatter(zone, locale) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        AppTopBar(title = stringResource(R.string.progress_title), onBack = onBack)
+        AppTopBar(title = stringResource(R.string.progress_title))
 
         if (progress != null) {
             Column(

@@ -117,7 +117,6 @@ fun WorkoutScreen(
                             onStartDelayChange = onStartDelayChange,
                             themeMode = themeMode,
                             onThemeModeChange = onThemeModeChange,
-                            onBack = dropUnlessResumed { navController.popBackStack() },
                         )
                     }
                     screen(ROUTE_HISTORY) {
@@ -126,7 +125,6 @@ fun WorkoutScreen(
                         HistoryContent(
                             records = records,
                             onDelete = onDeleteRun,
-                            onBack = dropUnlessResumed { navController.popBackStack() },
                         )
                     }
                     screen(ROUTE_PROGRESS) {
@@ -135,7 +133,6 @@ fun WorkoutScreen(
                         val progress = remember(records) { records?.let(::programProgress) }
                         ProgressContent(
                             progress = progress,
-                            onBack = dropUnlessResumed { navController.popBackStack() },
                         )
                     }
                 }

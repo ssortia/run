@@ -199,10 +199,10 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/Components.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] убрать параметр `onBack` у `HistoryContent`, `ProgressContent` и `AppSettingsContent` и его передачу в `WorkoutScreen.kt`
-- [ ] удалить у `AppTopBar` параметр `onBack`, `navigationIcon` со стрелкой, импорты `IconButton`, `Icon` и `ArrowBack`, фразу про `onBack` в KDoc и строку `button_back`
-- [ ] тесты: изменения только в Compose-коде; прогнать `./gradlew test` и `lintDebug`
-- [ ] run tests - must pass before next task
+- [x] убрать параметр `onBack` у `HistoryContent`, `ProgressContent` и `AppSettingsContent` и его передачу в `WorkoutScreen.kt`
+- [x] удалить у `AppTopBar` параметр `onBack`, `navigationIcon` со стрелкой, импорты `IconButton`, `Icon` и `ArrowBack`, фразу про `onBack` в KDoc и строку `button_back`
+- [x] тесты: изменения только в Compose-коде; прогнать `./gradlew test` и `lintDebug`
+- [x] run tests - must pass before next task
 
 ### Task 7: Verify acceptance criteria
 - [ ] verify all requirements from Overview are implemented:
