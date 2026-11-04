@@ -149,7 +149,7 @@
 - [x] `USER_STORIES.md`: сценарии итога и старта с любой вкладки
 - [x] `CLAUDE.md`, «Архитектура»: состояние формы в ветке `Idle` вместо `remember { loadSettings() }` в маршруте, «Старт» в панели не вкладка и без `dropUnlessResumed`, центральный слот панели
 - [x] `CLAUDE.md`, «Неочевидное»: почему `StartFab` в общем `Box`, а не внутри `NavigationBar` (`Surface` обрезает и отрисовку, и нажатия); заместитель в центральном слоте ради порядка TalkBack (`Surface` — группа обхода); `StartFabOverlap` на всех вкладках; `BottomBarHeight` повторяет внутреннее значение M3; раздача места через `SubcomposeLayout` и `summaryPlacement`, правило смены размера времени
-- [x] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/` (задача перенесена; план переносится после ревью)
+- [x] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/`
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
