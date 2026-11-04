@@ -226,18 +226,25 @@ class WorkoutService : Service() {
     }
 
     private suspend fun runCountdown(startedAt: Long, soundFailed: Boolean) {
+        var previousRemainingMs: Long? = null
         while (true) {
-            val now = SystemClock.elapsedRealtime()
             val tick = countdownTickAt(
                 startedAt,
-                now,
+                SystemClock.elapsedRealtime(),
+                previousRemainingMs,
                 soundFailed = soundFailed,
                 soundMuted = soundMutedWarning(soundOn, audioManager.isMediaMuted()),
             ) ?: break
             _state.value = tick.state
-            // Отсчёт кончается сигналом START
-            if (shouldDuck(startedAt - now, duckMusic = duckMusic)) beeper?.duck()
+            tick.signal?.let {
+                beeper?.play(it)
+                buzzer?.play(it)
+            }
+            // Сигналы идут за 2 и 1 с до старта и на старте: duck() после play() снимает таймер
+            // возврата фокуса, и музыка остаётся тихой до сигнала START
+            if (shouldDuck(msToNextCountdownSignal(tick.remainingMs), duckMusic = duckMusic)) beeper?.duck()
             showNotification(countdownText(tick.state))
+            previousRemainingMs = tick.remainingMs
             delay(tick.waitMs)
         }
     }

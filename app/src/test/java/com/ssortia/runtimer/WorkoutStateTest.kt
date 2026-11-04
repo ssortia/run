@@ -122,14 +122,73 @@ class WorkoutStateTest {
     // Отсчёт с произвольным началом: значения elapsedRealtime не обязаны начинаться с нуля
     private fun countdownTick(
         remainingMs: Long,
+        previousRemainingMs: Long? = null,
         soundFailed: Boolean = false,
         soundMuted: Boolean = false,
     ) = countdownTickAt(
         startedAt = 100_000 + remainingMs,
         now = 100_000,
+        previousRemainingMs = previousRemainingMs,
         soundFailed = soundFailed,
         soundMuted = soundMuted,
     )
+
+    @Test
+    fun `сигнал отсчёта звучит, когда остаток пересёк 2 и 1 секунду`() {
+        assertEquals(Signal.COUNTDOWN, countdownTick(remainingMs = 2_000, previousRemainingMs = 2_250)?.signal)
+        assertEquals(Signal.COUNTDOWN, countdownTick(remainingMs = 1_990, previousRemainingMs = 2_240)?.signal)
+        assertEquals(Signal.COUNTDOWN, countdownTick(remainingMs = 1_000, previousRemainingMs = 1_250)?.signal)
+        assertEquals(Signal.COUNTDOWN, countdownTick(remainingMs = 995, previousRemainingMs = 1_001)?.signal)
+    }
+
+    @Test
+    fun `между границами сигнала отсчёта нет`() {
+        assertNull(countdownTick(remainingMs = 2_250, previousRemainingMs = 2_500)?.signal)
+        assertNull(countdownTick(remainingMs = 1_750, previousRemainingMs = 2_000)?.signal)
+        assertNull(countdownTick(remainingMs = 250, previousRemainingMs = 500)?.signal)
+        assertNull(countdownTick(remainingMs = 5_000, previousRemainingMs = 5_250)?.signal)
+    }
+
+    @Test
+    fun `граница даёт сигнал один раз`() {
+        // Шаг ровно на границе подал сигнал, следующий шаг ниже неё сигнала не даёт
+        assertNull(countdownTick(remainingMs = 1_750, previousRemainingMs = 2_000)?.signal)
+        assertNull(countdownTick(remainingMs = 750, previousRemainingMs = 1_000)?.signal)
+    }
+
+    @Test
+    fun `запоздавший шаг через обе границы даёт один сигнал`() {
+        assertEquals(Signal.COUNTDOWN, countdownTick(remainingMs = 500, previousRemainingMs = 3_000)?.signal)
+    }
+
+    @Test
+    fun `на первом шаге сигнала отсчёта задним числом нет`() {
+        assertNull(countdownTick(remainingMs = 2_000)?.signal)
+        assertNull(countdownTick(remainingMs = 900)?.signal)
+    }
+
+    @Test
+    fun `шаг отсчёта передаёт свой остаток следующему`() {
+        assertEquals(2_345L, countdownTick(remainingMs = 2_345)?.remainingMs)
+    }
+
+    @Test
+    fun `ожидание не перескакивает границу сигнала отсчёта`() {
+        assertEquals(100L, countdownTick(remainingMs = 2_100)?.waitMs)
+        assertEquals(1L, countdownTick(remainingMs = 1_001)?.waitMs)
+        assertEquals(TICK_MS, countdownTick(remainingMs = 2_000)?.waitMs)
+        assertEquals(TICK_MS, countdownTick(remainingMs = 3_000)?.waitMs)
+    }
+
+    @Test
+    fun `время до ближайшего сигнала отсчёта`() {
+        assertEquals(3_000L, msToNextCountdownSignal(5_000))
+        assertEquals(500L, msToNextCountdownSignal(2_500))
+        assertEquals(0L, msToNextCountdownSignal(2_000))
+        assertEquals(999L, msToNextCountdownSignal(1_999))
+        assertEquals(0L, msToNextCountdownSignal(1_000))
+        assertEquals(400L, msToNextCountdownSignal(400))
+    }
 
     @Test
     fun `отсчёт заканчивается, когда остаток дошёл до нуля`() {
@@ -140,7 +199,7 @@ class WorkoutStateTest {
     fun `при задержке 0 отсчёта нет`() {
         val now = 100_000L
 
-        assertNull(countdownTickAt(startedAt = now + 0, now = now))
+        assertNull(countdownTickAt(startedAt = now + 0, now = now, previousRemainingMs = null))
     }
 
     @Test

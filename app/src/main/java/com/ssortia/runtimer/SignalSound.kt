@@ -13,6 +13,8 @@ const val DEFAULT_DUCK_MUSIC = true
 
 // Длительности звуков из res/raw: по ним держится фокус и ждёт финал, а сами файлы читаются
 // только с Android API. SignalFilesTest сверяет константы с файлами
+const val COUNTDOWN_SOUND_MS = 950L
+const val START_SOUND_MS = 1220L
 const val INTERVAL_SOUND_MS = 370L
 const val FINISH_SOUND_MS = 1240L
 
@@ -32,9 +34,11 @@ fun shouldDuck(msToSignal: Long, duckMusic: Boolean, paused: Boolean = false): B
 fun shouldDuckAfterResume(workout: Workout, elapsedMs: Long, duckMusic: Boolean): Boolean =
     workout.at(elapsedMs)?.let { shouldDuck(it.remainingMs, duckMusic = duckMusic) } ?: false
 
-/** Длительность звука сигнала. Старт звучит как смена отрезка. */
+/** Длительность звука сигнала. У каждого сигнала свой звук. */
 fun soundDurationMs(signal: Signal): Long = when (signal) {
-    Signal.START, Signal.INTERVAL -> INTERVAL_SOUND_MS
+    Signal.COUNTDOWN -> COUNTDOWN_SOUND_MS
+    Signal.START -> START_SOUND_MS
+    Signal.INTERVAL -> INTERVAL_SOUND_MS
     Signal.FINISH -> FINISH_SOUND_MS
 }
 

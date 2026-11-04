@@ -6,8 +6,11 @@ const val DEFAULT_VIBRATION = true
  * Паттерн вибрации для `VibrationEffect.createWaveform(timings, -1)`: чётные элементы это ожидание,
  * нечётные это вибрация. Импульсы длиннее звука сигнала: короткие плохо чувствуются в кармане на бегу.
  * Стартовый сигнал это один длинный импульс, обычный один короткий, финальный два коротких и длинный.
+ * Отсчёт «2» и «1» самый короткий импульс: он должен закончиться до следующего сигнала через 1 с
+ * и отличаться от старта.
  */
 fun vibrationFor(signal: Signal): LongArray = when (signal) {
+    Signal.COUNTDOWN -> longArrayOf(0, 150)
     Signal.START -> longArrayOf(0, 600)
     Signal.INTERVAL -> longArrayOf(0, 400)
     Signal.FINISH -> longArrayOf(0, 300, 100, 300, 100, 800)
