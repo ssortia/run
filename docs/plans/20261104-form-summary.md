@@ -138,10 +138,10 @@
 - [x] run tests and lint (`./gradlew test assembleDebug lintDebug`) - must pass before next task
 
 ### Task 6: Verify acceptance criteria
-- [ ] verify all requirements from `docs/tasks/20261104-form-summary.md` are implemented (пункты 1–8)
-- [ ] verify edge cases: неверные настройки, один повтор, час и больше, раскрытая карточка
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify all requirements from `docs/tasks/20261104-form-summary.md` are implemented (пункты 1–8; пункт 9 — документация, Task 7; TalkBack и раскладка на телефоне — Post-Completion)
+- [x] verify edge cases: неверные настройки, один повтор, час и больше, раскрытая карточка (логика покрыта `WorkoutSummaryTest` и `SummaryPlacementTest`, вид на экране — Post-Completion)
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug` (ошибок нет, предупреждения прежние: GradleDependency, InlinedApi, ObsoleteSdkInt)
 
 ### Task 7: [Final] Update documentation
 - [ ] `README.md`: описание формы (итог над карточками) и нижней панели («Старт» в центре)
