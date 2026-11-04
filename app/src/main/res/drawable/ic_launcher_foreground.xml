@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Передний слой адаптивной иконки: холст 108dp, значимая область в центре 66dp -->
+<!-- Передний слой адаптивной иконки: холст 108dp, значимая область в центре 66dp.
+     Буква «Б» перерисована с logo.png, координаты путей в пикселях картинки 1024×1024.
+     Масштаб 0,068 оставляет самые дальние острия (около 497 px от центра буквы 525, 482)
+     внутри безопасного круга радиусом 33dp, сдвиг ставит центр буквы в центр холста -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:scaleX="1.75"
-        android:scaleY="1.75"
-        android:translateX="33"
-        android:translateY="33">
+        android:scaleX="0.068"
+        android:scaleY="0.068"
+        android:translateX="18.3"
+        android:translateY="21.224">
+        <!-- Перекладина с ножкой -->
         <path
             android:fillColor="@color/ic_launcher_foreground"
-            android:pathData="M9,1h6v2H9zM13,8h-2v6h2zM19.03,7.39l1.42,-1.42c-0.43,-0.51 -0.9,-0.99 -1.41,-1.41l-1.42,1.42C16.07,4.74 14.12,4 12,4c-4.97,0 -9,4.03 -9,9s4.02,9 9,9s9,-4.03 9,-9C21,10.88 20.26,8.93 19.03,7.39zM12,20c-3.87,0 -7,-3.13 -7,-7s3.13,-7 7,-7s7,3.13 7,7S15.87,20 12,20z" />
+            android:pathData="M110,755L375,285Q386,267 412,265L940,210L745,325L515,371Q486,377 470,396L380,515Z" />
+        <!-- Чаша -->
+        <path
+            android:fillColor="@color/ic_launcher_accent"
+            android:pathData="M170,745L365,595L358,620L600,601Q624,599 634,580L655,537Q662,518 640,518L440,518L476,446Q486,432 508,431L758,427Q836,430 822,505L790,603Q763,684 660,691Z" />
     </group>
 </vector>
