@@ -37,17 +37,6 @@ class SettingsInputTest {
     }
 
     @Test
-    fun `в поле остаются только цифры`() {
-        assertEquals("12", digitsOnly("-1 a2."))
-        assertEquals("", digitsOnly("abc"))
-    }
-
-    @Test
-    fun `цифры других алфавитов отбрасываются`() {
-        assertEquals("", digitsOnly("٣"))
-    }
-
-    @Test
     fun `пустые минуты и 30 секунд дают верные настройки`() {
         val settings = input(runMin = "", runSec = "30").toSettings()
 

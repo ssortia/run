@@ -6,21 +6,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -38,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -56,14 +51,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,11 +104,9 @@ data class SettingsInput(
     }
 }
 
-/** Оставляет только цифры ASCII: так вставка из буфера не занесёт в поле минус или пробел. */
-fun digitsOnly(text: String): String = text.filter { it in '0'..'9' }
-
 /**
- * Текст приходит из поля, уже прошедшего [digitsOnly]. Пустое поле считается нулём. Число,
+ * Текст приходит из полей [SettingsInput], куда пишут барабаны, степпер и загрузка сохранённых
+ * настроек. Пустое поле считается нулём. Число,
  * не вмещающееся в Int, заменяется на [Int.MAX_VALUE]: пользователь получит ошибку диапазона
  * из [WorkoutSettings.validate], а не ноль.
  */
@@ -169,15 +161,14 @@ private enum class Segment { RUN, WALK }
 
 // «Старт» ниже кнопок экрана тренировки (64.dp): на форме он не главный элемент экрана
 private val StartButtonHeight = 56.dp
-// Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы»: по строке повторов с полем 56.dp и
-// отступами 8.dp, чтобы карточки формы были одной высоты
+// Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы», чтобы карточки формы были одной высоты
 private val CardRowHeight = 72.dp
 private val RoundsCardVerticalPadding = 8.dp
 private val PresetCheckSize = 24.dp
 private val RoundsFieldWidth = 80.dp
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
     initial: WorkoutSettings,
@@ -273,16 +264,14 @@ fun SettingsContent(
             )
         }
 
-        // Нижний блок закреплён: поля прокручиваются, а «Старт» всегда виден и поднимается
-        // над клавиатурой вместе с отступом safeDrawing у NavHost
+        // Нижний блок закреплён: карточки прокручиваются, а «Старт» всегда виден
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // При открытой клавиатуре баннер отнял бы у полей почти всё место
-            if (showBackgroundWarning && !WindowInsets.isImeVisible) {
+            if (showBackgroundWarning) {
                 BackgroundWarning(onOpenAppDetails = onOpenAppDetails)
             }
             if (error != null) {
@@ -517,7 +506,11 @@ private fun SegmentCard(
     }
 }
 
-/** Степпер повторов. Поле остаётся редактируемым, чтобы 20 повторов не набирать нажатиями. */
+/**
+ * Степпер повторов. Число меняется только кнопками: в программе не больше 7 повторов, и поле
+ * ввода с клавиатурой не нужно. Значение показывается как есть, неверное сохранённое видно, а
+ * ошибку покажет проверка формы.
+ */
 @Composable
 private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
     val label = stringResource(R.string.field_rounds)
@@ -542,11 +535,19 @@ private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
                 enabled = canDecreaseRounds(value),
                 onClick = { onValueChange(stepRounds(value, -1)) },
             )
-            NumberField(
-                label = label,
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.width(RoundsFieldWidth),
+            val valueDescription = stringResource(R.string.rounds_value, parseField(value))
+            Text(
+                text = value,
+                modifier = Modifier
+                    .width(RoundsFieldWidth)
+                    // liveRegion объявляет новое значение после «+» и «−»
+                    .semantics {
+                        contentDescription = valueDescription
+                        liveRegion = LiveRegionMode.Polite
+                    },
+                style = MaterialTheme.typography.titleLarge.merge(TabularNumbers),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
             )
             StepButton(
                 glyph = "+",
@@ -606,27 +607,4 @@ private fun BackgroundWarning(onOpenAppDetails: () -> Unit) {
             }
         }
     }
-}
-
-/** Поле повторов: только цифры, число по центру. Подпись стоит слева в строке и задана для TalkBack. */
-@Composable
-private fun NumberField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { onValueChange(digitsOnly(it)) },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.titleLarge
-            .merge(TabularNumbers)
-            .merge(TextStyle(textAlign = TextAlign.Center)),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done,
-        ),
-        modifier = modifier.semantics { contentDescription = label },
-    )
 }

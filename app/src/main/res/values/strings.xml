@@ -9,6 +9,7 @@
     <string name="field_rounds">Повторы</string>
     <string name="rounds_decrease">Меньше повторов</string>
     <string name="rounds_increase">Больше повторов</string>
+    <string name="rounds_value">Повторы: %1$d</string>
     <string name="button_start">Старт</string>
     <string name="button_stop">Стоп</string>
     <string name="button_pause">Пауза</string>

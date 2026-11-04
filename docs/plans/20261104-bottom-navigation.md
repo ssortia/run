@@ -130,11 +130,11 @@
 - Modify: `app/src/main/res/values/strings.xml`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/SettingsInputTest.kt`
 
-- [ ] заменить `NumberField` в `RoundsCard` на `Text` с числом повторов той же ширины, с описанием `rounds_value` и `liveRegion`. Высота карточки остаётся `CardRowHeight`
-- [ ] удалить `NumberField`, `digitsOnly` и ставшие ненужными импорты, убрать проверку `isImeVisible` у баннера о фоне и `ExperimentalLayoutApi`
-- [ ] обновить устаревшие комментарии: KDoc `RoundsCard` (поле больше не редактируется), комментарий `CardRowHeight` (больше нет «строки повторов с полем 56.dp»), KDoc `parseField` (упоминает `digitsOnly`), комментарий у блока «Старт» про подъём над клавиатурой
-- [ ] удалить тесты `digitsOnly` из `SettingsInputTest`, проверить, что тесты `stepRounds`, `canDecreaseRounds` и `canIncreaseRounds` покрывают границы 1 и `MAX_ROUNDS`, при нехватке дописать
-- [ ] run tests - must pass before next task
+- [x] заменить `NumberField` в `RoundsCard` на `Text` с числом повторов той же ширины, с описанием `rounds_value` и `liveRegion`. Высота карточки остаётся `CardRowHeight`
+- [x] удалить `NumberField`, `digitsOnly` и ставшие ненужными импорты, убрать проверку `isImeVisible` у баннера о фоне и `ExperimentalLayoutApi`
+- [x] обновить устаревшие комментарии: KDoc `RoundsCard` (поле больше не редактируется), комментарий `CardRowHeight` (больше нет «строки повторов с полем 56.dp»), KDoc `parseField` (упоминает `digitsOnly`), комментарий у блока «Старт» про подъём над клавиатурой
+- [x] удалить тесты `digitsOnly` из `SettingsInputTest`, проверить, что тесты `stepRounds`, `canDecreaseRounds` и `canIncreaseRounds` покрывают границы 1 и `MAX_ROUNDS`, при нехватке дописать
+- [x] run tests - must pass before next task
 
 ### Task 2: Описание вкладок
 
