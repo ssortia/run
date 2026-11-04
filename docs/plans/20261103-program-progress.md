@@ -107,9 +107,9 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - Create: `app/src/main/java/com/ssortia/runtimer/ProgressRowText.kt`
 - Create: `app/src/test/java/com/ssortia/runtimer/ProgressRowTextTest.kt`
 
-- [ ] создать `progressDateFormatter(zone, locale)` с шаблоном `d MMMM` и `progressDateText(startedAtMs, formatter)`
-- [ ] написать тесты: «20 октября» и «3 ноября» в `ru` для фиксированной зоны; граница суток зависит от переданной зоны
-- [ ] run tests - must pass before next task
+- [x] создать `progressDateFormatter(zone, locale)` с шаблоном `d MMMM` и `progressDateText(startedAtMs, formatter)`
+- [x] написать тесты: «20 октября» и «3 ноября» в `ru` для фиксированной зоны; граница суток зависит от переданной зоны
+- [x] run tests - must pass before next task
 
 ### Task 3: Экран «Прогресс»
 
