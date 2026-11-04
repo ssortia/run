@@ -6,30 +6,20 @@ import org.junit.Test
 
 class BottomTabTest {
     @Test
-    fun `первая вкладка стоит на стартовом маршруте формы`() {
-        assertEquals(BottomTab.WORKOUT, BottomTab.entries.first())
-        assertEquals("settings", BottomTab.entries.first().route)
-        assertEquals(ROUTE_SETTINGS, BottomTab.WORKOUT.route)
-    }
-
-    @Test
-    fun `вкладки идут в порядке панели`() {
+    fun `вкладки идут в порядке панели, первая на стартовом маршруте формы`() {
         assertEquals(
             listOf(BottomTab.WORKOUT, BottomTab.HISTORY, BottomTab.PROGRESS, BottomTab.SETTINGS),
             BottomTab.entries,
         )
+        assertEquals(ROUTE_SETTINGS, BottomTab.entries.first().route)
     }
 
     @Test
-    fun `вкладка определяется по маршруту`() {
-        assertEquals(BottomTab.WORKOUT, bottomTabOf(ROUTE_SETTINGS))
-        assertEquals(BottomTab.HISTORY, bottomTabOf(ROUTE_HISTORY))
-        assertEquals(BottomTab.PROGRESS, bottomTabOf(ROUTE_PROGRESS))
-        assertEquals(BottomTab.SETTINGS, bottomTabOf(ROUTE_APP_SETTINGS))
-    }
-
-    @Test
-    fun `у каждой вкладки свой маршрут`() {
+    fun `у каждого маршрута своя вкладка`() {
+        assertEquals(
+            setOf(ROUTE_SETTINGS, ROUTE_HISTORY, ROUTE_PROGRESS, ROUTE_APP_SETTINGS),
+            BottomTab.entries.map { it.route }.toSet(),
+        )
         BottomTab.entries.forEach { assertEquals(it, bottomTabOf(it.route)) }
     }
 

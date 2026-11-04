@@ -15,8 +15,8 @@
     <string name="button_pause">Пауза</string>
     <string name="button_resume">Продолжить</string>
     <string name="tab_workout">Тренировка</string>
-    <string name="button_settings">Настройки</string>
-    <string name="button_history">История</string>
+    <string name="tab_settings">Настройки</string>
+    <string name="tab_history">История</string>
     <string name="button_delete">Удалить</string>
     <string name="button_cancel">Отмена</string>
     <string name="button_open_app_details">Настройки батареи</string>
@@ -62,7 +62,7 @@
     <string name="history_delete_title">Удалить пробежку?</string>
     <string name="history_delete_text">Запись от %1$s будет удалена без возможности восстановления</string>
     <string name="history_delete_description">Удалить пробежку %1$s</string>
-    <string name="button_progress">Прогресс</string>
+    <string name="tab_progress">Прогресс</string>
     <string name="progress_title">Прогресс</string>
     <plurals name="progress_summary">
         <item quantity="one">из %d недели пройдено</item>

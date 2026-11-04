@@ -24,6 +24,20 @@ class ThemeTest {
         return (lighter + 0.05f) / (darker + 0.05f)
     }
 
+    /**
+     * Фон окна из `colors.xml`: его подставляет RunTimerTheme, а в схеме его нет. Оба цвета
+     * должны лежать в `values/`, а не в `values-night/`, иначе тест их не найдёт. Путь задан
+     * от модуля `app`, рабочего каталога unit-тестов Gradle.
+     */
+    private fun windowBackground(darkTheme: Boolean): Color {
+        val name = if (darkTheme) "window_background_dark" else "window_background_light"
+        val file = File("src/main/res/values/colors.xml")
+        check(file.exists()) { "нет ${file.absolutePath}: тест запускается из каталога модуля app" }
+        val hex = Regex("""<color name="$name">#([0-9A-Fa-f]{6})</color>""").find(file.readText())
+            ?.groupValues?.get(1) ?: error("нет цвета $name в colors.xml")
+        return Color(0xFF000000 or hex.toLong(16))
+    }
+
     @Test
     fun `текст читается на фоне отрезка в обеих темах`() {
         for (darkTheme in listOf(false, true)) {
@@ -172,23 +186,41 @@ class ThemeTest {
         }
     }
 
-    /** Фон окна из `colors.xml`: его подставляет RunTimerTheme, а в схеме его нет. */
-    private fun windowBackground(darkTheme: Boolean): Color {
-        val name = if (darkTheme) "window_background_dark" else "window_background_light"
-        val xml = File("src/main/res/values/colors.xml").readText()
-        val hex = Regex("""<color name="$name">#([0-9A-Fa-f]{6})</color>""").find(xml)
-            ?.groupValues?.get(1) ?: error("нет цвета $name в colors.xml")
-        return Color(0xFF000000 or hex.toLong(16))
-    }
-
     // Порог 1.3:1, как у дорожки кольца: смысл несёт фон плашки, рамка лишь подсказывает, что на
-    // неё можно нажать, и не должна сливаться с фоном формы. Сейчас около 1.46 в светлой теме и 2.4 в тёмной
+    // неё можно нажать, и не должна сливаться с фоном формы
     @Test
     fun `рамка плашки недели видна на фоне в обеих темах`() {
         for (darkTheme in listOf(false, true)) {
             assertTrue(
                 "контраст рамки плашки на фоне: тёмная тема $darkTheme",
                 contrast(weekChipBorderColor(darkTheme), windowBackground(darkTheme)) >= 1.3f,
+            )
+        }
+    }
+
+    // Выбранная вкладка нижней панели: значок primary на индикаторе M3 по умолчанию
+    // (secondaryContainer), это графика, поэтому порог 3:1
+    @Test
+    fun `значок выбранной вкладки виден на индикаторе в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст primary на secondaryContainer: тёмная тема $darkTheme",
+                contrast(scheme.primary, scheme.secondaryContainer) >= 3f,
+            )
+        }
+    }
+
+    // Невыбранные вкладки берут onSurfaceVariant на фоне NavigationBar (surfaceContainer)
+    @Test
+    fun `подписи невыбранных вкладок читаются на панели в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val scheme = appColorScheme(darkTheme)
+
+            assertTrue(
+                "контраст onSurfaceVariant на surfaceContainer: тёмная тема $darkTheme",
+                contrast(scheme.onSurfaceVariant, scheme.surfaceContainer) >= 4.5f,
             )
         }
     }

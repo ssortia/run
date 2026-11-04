@@ -1,9 +1,9 @@
 package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,9 +49,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
@@ -77,58 +77,21 @@ import com.ssortia.runtimer.wheelOptions
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-/** Текст полей формы. Хранится строками, потому что поле может быть пустым. */
-data class SettingsInput(
-    val runMin: String,
-    val runSec: String,
-    val walkMin: String,
-    val walkSec: String,
-    val rounds: String,
-) {
-    fun toSettings() = WorkoutSettings(
-        runMin = parseField(runMin),
-        runSec = parseField(runSec),
-        walkMin = parseField(walkMin),
-        walkSec = parseField(walkSec),
-        rounds = parseField(rounds),
-    )
-
-    companion object {
-        fun from(settings: WorkoutSettings) = SettingsInput(
-            runMin = settings.runMin.toString(),
-            runSec = settings.runSec.toString(),
-            walkMin = settings.walkMin.toString(),
-            walkSec = settings.walkSec.toString(),
-            rounds = settings.rounds.toString(),
-        )
-    }
-}
-
-/**
- * Текст приходит из полей [SettingsInput], куда пишут барабаны, степпер и загрузка сохранённых
- * настроек. Пустое поле считается нулём. Число,
- * не вмещающееся в Int, заменяется на [Int.MAX_VALUE]: пользователь получит ошибку диапазона
- * из [WorkoutSettings.validate], а не ноль.
- */
-fun parseField(text: String): Int =
-    if (text.isEmpty()) 0 else text.toIntOrNull() ?: Int.MAX_VALUE
-
-/** Повторы из поля, прижатые к 1..[MAX_ROUNDS]: пустое поле и 0 считаются одним повтором. */
-private fun clampedRounds(text: String): Int = parseField(text).coerceIn(1, MAX_ROUNDS)
+/** Повторы, прижатые к 1..[MAX_ROUNDS]: 0 и число вне диапазона из сохранённых настроек. */
+private fun clampedRounds(value: Int): Int = value.coerceIn(1, MAX_ROUNDS)
 
 /**
  * Шаг степпера повторов. Значение прижимается до и после прибавления [delta], поэтому
  * переполнения нет, а число вне диапазона сразу возвращается в допустимые пределы.
  */
-fun stepRounds(text: String, delta: Int): String =
-    (clampedRounds(text) + delta).coerceIn(1, MAX_ROUNDS).toString()
+fun stepRounds(value: Int, delta: Int): Int = (clampedRounds(value) + delta).coerceIn(1, MAX_ROUNDS)
 
-fun canDecreaseRounds(text: String): Boolean = clampedRounds(text) > 1
+fun canDecreaseRounds(value: Int): Boolean = clampedRounds(value) > 1
 
-fun canIncreaseRounds(text: String): Boolean = clampedRounds(text) < MAX_ROUNDS
+fun canIncreaseRounds(value: Int): Boolean = clampedRounds(value) < MAX_ROUNDS
 
 /**
- * Время отрезка в строке карточки, «м:сс», из уже разобранных полей формы. Значение не
+ * Время отрезка в строке карточки, «м:сс». Значение не
  * прижимается к диапазону: неверное сохранённое видно как есть, а ошибку покажет проверка формы.
  */
 fun segmentTimeText(minutes: Int, seconds: Int): String =
@@ -151,9 +114,13 @@ fun SettingsError.messageArgs(): Array<Any> = when (this) {
     SettingsError.MINUTES_RANGE -> arrayOf(MAX_MINUTES)
 }
 
-internal val SettingsInputSaver = listSaver<SettingsInput, String>(
+/**
+ * Несохранённые правки формы. Значения хранятся как есть, без прижатия: неверное сохранённое
+ * видно на форме, а ошибку покажет [WorkoutSettings.validate].
+ */
+internal val WorkoutSettingsSaver = listSaver<WorkoutSettings, Int>(
     save = { listOf(it.runMin, it.runSec, it.walkMin, it.walkSec, it.rounds) },
-    restore = { SettingsInput(it[0], it[1], it[2], it[3], it[4]) },
+    restore = { WorkoutSettings(it[0], it[1], it[2], it[3], it[4]) },
 )
 
 /** Отрезок, карточка которого раскрыта. */
@@ -163,9 +130,8 @@ private enum class Segment { RUN, WALK }
 private val StartButtonHeight = 56.dp
 // Высота свёрнутых карточек «Бег», «Ходьба» и «Повторы», чтобы карточки формы были одной высоты
 private val CardRowHeight = 72.dp
-private val RoundsCardVerticalPadding = 8.dp
 private val PresetCheckSize = 24.dp
-private val RoundsFieldWidth = 80.dp
+private val RoundsValueWidth = 80.dp
 private val WeekChipHeight = 40.dp
 
 /** Форма настроек. [onStart] вызывается только с настройками, прошедшими проверку. */
@@ -178,14 +144,11 @@ fun SettingsContent(
     onOpenAppDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var input by rememberSaveable(stateSaver = SettingsInputSaver) {
-        mutableStateOf(SettingsInput.from(initial))
-    }
+    var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) { mutableStateOf(initial) }
     // Раскрыта не больше одной карточки отрезка, null — обе свёрнуты
     var expanded by rememberSaveable { mutableStateOf<Segment?>(null) }
     // Шторка программы не маршрут, а состояние формы
     var showProgram by rememberSaveable { mutableStateOf(false) }
-    val settings = input.toSettings()
     val error = settings.validate()
     val selectedWeek = presetWeekOf(settings)
 
@@ -215,26 +178,26 @@ fun SettingsContent(
             SegmentCard(
                 label = stringResource(R.string.segment_run),
                 isRun = true,
-                minutes = input.runMin,
-                seconds = input.runSec,
+                minutes = settings.runMin,
+                seconds = settings.runSec,
                 expanded = expanded == Segment.RUN,
                 onToggle = { expanded = if (expanded == Segment.RUN) null else Segment.RUN },
-                onMinutesChange = { input = input.copy(runMin = it.toString()) },
-                onSecondsChange = { input = input.copy(runSec = it.toString()) },
+                onMinutesChange = { settings = settings.copy(runMin = it) },
+                onSecondsChange = { settings = settings.copy(runSec = it) },
             )
             SegmentCard(
                 label = stringResource(R.string.segment_walk),
                 isRun = false,
-                minutes = input.walkMin,
-                seconds = input.walkSec,
+                minutes = settings.walkMin,
+                seconds = settings.walkSec,
                 expanded = expanded == Segment.WALK,
                 onToggle = { expanded = if (expanded == Segment.WALK) null else Segment.WALK },
-                onMinutesChange = { input = input.copy(walkMin = it.toString()) },
-                onSecondsChange = { input = input.copy(walkSec = it.toString()) },
+                onMinutesChange = { settings = settings.copy(walkMin = it) },
+                onSecondsChange = { settings = settings.copy(walkSec = it) },
             )
             RoundsCard(
-                value = input.rounds,
-                onValueChange = { input = input.copy(rounds = it) },
+                value = settings.rounds,
+                onValueChange = { settings = settings.copy(rounds = it) },
             )
         }
 
@@ -288,7 +251,7 @@ fun SettingsContent(
             ProgramSheetContent(
                 selectedWeek = selectedWeek,
                 onSelect = { preset ->
-                    input = SettingsInput.from(preset.settings)
+                    settings = preset.settings
                     // Флаг снимается только после скрытия, чтобы не разойтись с состоянием шторки
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) showProgram = false
@@ -316,7 +279,7 @@ private fun WeekChip(text: String, onClick: () -> Unit) {
         // Слот actions даёт справа только 4 dp
         modifier = Modifier
             .padding(end = 12.dp)
-            .height(WeekChipHeight)
+            .heightIn(min = WeekChipHeight)
             .semantics { contentDescription = description },
     ) {
         // Текст плашки уже вошёл в описание, иначе TalkBack прочитал бы его дважды
@@ -332,7 +295,12 @@ private fun WeekChip(text: String, onClick: () -> Unit) {
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
             )
-            Text(text = text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -431,7 +399,8 @@ private fun PresetRow(text: PresetRowText, selected: Boolean, onClick: () -> Uni
 
 /**
  * Карточка отрезка: в свёрнутом виде точка, подпись и время, нажатие раскрывает барабаны минут
- * и секунд. Барабаны пишут в те же строковые поля формы, поэтому проверка и сохранение прежние.
+ * и секунд. Барабаны пишут в те же поля [WorkoutSettings] формы, поэтому проверка и сохранение
+ * от них не зависят.
  * Значение не на шаге барабана (7 секунд из прежней версии) остаётся в списке, пока его не
  * прокрутили.
  */
@@ -439,15 +408,13 @@ private fun PresetRow(text: PresetRowText, selected: Boolean, onClick: () -> Uni
 private fun SegmentCard(
     label: String,
     isRun: Boolean,
-    minutes: String,
-    seconds: String,
+    minutes: Int,
+    seconds: Int,
     expanded: Boolean,
     onToggle: () -> Unit,
     onMinutesChange: (Int) -> Unit,
     onSecondsChange: (Int) -> Unit,
 ) {
-    val minutesValue = parseField(minutes)
-    val secondsValue = parseField(seconds)
     val stateText = stringResource(if (expanded) R.string.state_expanded else R.string.state_collapsed)
 
     SectionCard(contentPadding = PaddingValues(0.dp)) {
@@ -475,7 +442,7 @@ private fun SegmentCard(
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = segmentTimeText(minutesValue, secondsValue),
+                text = segmentTimeText(minutes, seconds),
                 style = MaterialTheme.typography.headlineSmall.merge(TabularNumbers),
                 color = if (expanded) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurface,
@@ -495,18 +462,18 @@ private fun SegmentCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TimeWheel(
-                    options = remember(minutesValue) { wheelOptions(MAX_MINUTES, 1, minutesValue) },
-                    value = minutesValue,
+                    options = remember(minutes) { wheelOptions(MAX_MINUTES, 1, minutes) },
+                    value = minutes,
                     onSelect = onMinutesChange,
                     contentDescription = stringResource(R.string.wheel_minutes, label),
                     unitLabel = stringResource(R.string.minutes_short),
                     modifier = Modifier.weight(1f),
                 )
                 TimeWheel(
-                    options = remember(secondsValue) {
-                        wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, secondsValue)
+                    options = remember(seconds) {
+                        wheelOptions(MAX_SECONDS, SECONDS_WHEEL_STEP, seconds)
                     },
-                    value = secondsValue,
+                    value = seconds,
                     onSelect = onSecondsChange,
                     contentDescription = stringResource(R.string.wheel_seconds, label),
                     unitLabel = stringResource(R.string.seconds_short),
@@ -519,20 +486,21 @@ private fun SegmentCard(
 }
 
 /**
- * Степпер повторов. Число меняется только кнопками: в программе не больше 7 повторов, и поле
- * ввода с клавиатурой не нужно. Значение показывается как есть, неверное сохранённое видно, а
- * ошибку покажет проверка формы.
+ * Степпер повторов. Число меняется только кнопками: повторов в [WORKOUT_PRESETS] немного, а
+ * предел [MAX_ROUNDS] достижим и кнопками, поэтому поле ввода с клавиатурой не нужно. Значение
+ * показывается как есть, неверное сохранённое видно, а ошибку покажет проверка формы.
+ *
+ * Объявление liveRegion срабатывает при любой смене числа, в том числе при выборе недели в
+ * шторке: тогда TalkBack прочитает «Повторы: N» вместе с закрытием шторки.
  */
 @Composable
-private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
+private fun RoundsCard(value: Int, onValueChange: (Int) -> Unit) {
     val label = stringResource(R.string.field_rounds)
-    SectionCard(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = RoundsCardVerticalPadding),
-    ) {
+    SectionCard(contentPadding = PaddingValues(horizontal = 16.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = CardRowHeight - RoundsCardVerticalPadding * 2),
+                .heightIn(min = CardRowHeight),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -547,11 +515,11 @@ private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
                 enabled = canDecreaseRounds(value),
                 onClick = { onValueChange(stepRounds(value, -1)) },
             )
-            val valueDescription = stringResource(R.string.rounds_value, parseField(value))
+            val valueDescription = stringResource(R.string.rounds_value, value)
             Text(
-                text = value,
+                text = value.toString(),
                 modifier = Modifier
-                    .width(RoundsFieldWidth)
+                    .width(RoundsValueWidth)
                     // liveRegion объявляет новое значение после «+» и «−»
                     .semantics {
                         contentDescription = valueDescription
@@ -560,6 +528,8 @@ private fun RoundsCard(value: String, onValueChange: (String) -> Unit) {
                 style = MaterialTheme.typography.titleLarge.merge(TabularNumbers),
                 textAlign = TextAlign.Center,
                 maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
             )
             StepButton(
                 glyph = "+",

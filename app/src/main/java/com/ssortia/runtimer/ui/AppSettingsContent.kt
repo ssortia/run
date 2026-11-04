@@ -67,7 +67,7 @@ fun AppSettingsContent(
     var startDelay by remember { mutableFloatStateOf(startDelayToSlider(loadStartDelay())) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        AppTopBar(title = stringResource(R.string.button_settings))
+        AppTopBar(title = stringResource(R.string.tab_settings))
 
         Column(
             modifier = Modifier
