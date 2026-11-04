@@ -205,15 +205,15 @@
 - [x] run tests - must pass before next task
 
 ### Task 7: Verify acceptance criteria
-- [ ] verify all requirements from Overview are implemented:
+- [x] verify all requirements from Overview are implemented:
   - заголовок «Тренировка» и плашка недели справа, «Своя тренировка» для несовпадающих настроек;
   - шторка открывается плашкой;
   - четыре вкладки внизу, «Назад» с вкладки ведёт на форму;
   - повторы меняются только кнопками
-- [ ] verify edge cases are handled: правки формы переживают переход на другую вкладку и обратно, повторное нажатие на вкладку ничего не делает, после тренировки открывается форма на вкладке «Тренировка»
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
-- [ ] verify test coverage meets project standard: новый чистый код и цвета покрыты тестами
+- [x] verify edge cases are handled: правки формы переживают переход на другую вкладку и обратно, повторное нажатие на вкладку ничего не делает, после тренировки открывается форма на вкладке «Тренировка»
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify test coverage meets project standard: новый чистый код и цвета покрыты тестами
 
 ### Task 8: [Final] Update documentation
 - [ ] update `README.md`:
