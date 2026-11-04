@@ -94,12 +94,12 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress>
 - Modify: `app/src/main/java/com/ssortia/runtimer/WorkoutPreset.kt`
 - Create: `app/src/test/java/com/ssortia/runtimer/ProgramProgressTest.kt`
 
-- [ ] добавить `presetWeekOf(record: RunRecord)` в `WorkoutPreset.kt`, сравнение через `toWorkout()`, ходьба при одном повторе приводится к 0
-- [ ] создать `ProgramProgress.kt`: `RUNS_TO_PASS_WEEK`, `WeekProgress` с `passed` и `filledQuarters`, `programProgress(runs)`; число пройденных недель экран считает сам (`count { it.passed }`)
-- [ ] написать тесты: пустая история даёт 10 недель с нулями и `null`; только остановленные пробежки не считаются; несколько завершённых пробежек одной недели дают число и наибольший `startedAtMs` независимо от порядка списка; пробежка с параметрами не из программы не учитывается
-- [ ] написать тесты порога и четвертей: 3 пробежки — не пройдена, `filledQuarters` 3; 4 — пройдена; 6 — пройдена, `filledQuarters` 4, `completedRuns` 6; пройденные недели не по порядку (1 и 3) дают `passed` именно у них
-- [ ] написать тесты определения недели: ходьба 90 сек совпадает с неделями 5–6; неделя 10 без ходьбы; «30:00, ходьба 2:00, ×1» находит неделю 10; у каждой недели `WORKOUT_PRESETS` запись с её параметрами находит именно её
-- [ ] run tests - must pass before next task
+- [x] добавить `presetWeekOf(record: RunRecord)` в `WorkoutPreset.kt`, сравнение через `toWorkout()`, ходьба при одном повторе приводится к 0
+- [x] создать `ProgramProgress.kt`: `RUNS_TO_PASS_WEEK`, `WeekProgress` с `passed` и `filledQuarters`, `programProgress(runs)`; число пройденных недель экран считает сам (`count { it.passed }`)
+- [x] написать тесты: пустая история даёт 10 недель с нулями и `null`; только остановленные пробежки не считаются; несколько завершённых пробежек одной недели дают число и наибольший `startedAtMs` независимо от порядка списка; пробежка с параметрами не из программы не учитывается
+- [x] написать тесты порога и четвертей: 3 пробежки — не пройдена, `filledQuarters` 3; 4 — пройдена; 6 — пройдена, `filledQuarters` 4, `completedRuns` 6; пройденные недели не по порядку (1 и 3) дают `passed` именно у них
+- [x] написать тесты определения недели: ходьба 90 сек совпадает с неделями 5–6; неделя 10 без ходьбы; «30:00, ходьба 2:00, ×1» находит неделю 10; у каждой недели `WORKOUT_PRESETS` запись с её параметрами находит именно её
+- [x] run tests - must pass before next task
 
 ### Task 2: Дата последней пробежки
 

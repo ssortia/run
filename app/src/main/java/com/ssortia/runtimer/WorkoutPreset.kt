@@ -24,3 +24,12 @@ val WORKOUT_PRESETS: List<WorkoutPreset> = listOf(
 /** Неделя, настройки которой точно совпадают с [settings], или null. */
 fun presetWeekOf(settings: WorkoutSettings): Int? =
     WORKOUT_PRESETS.firstOrNull { it.settings == settings }?.week
+
+/**
+ * Неделя с теми же бегом, ходьбой и повторами, что у [record], или null. Ходьба при одном
+ * повторе не выполняется, а форма разрешает её задать, поэтому она приводится к 0.
+ */
+fun presetWeekOf(record: RunRecord): Int? {
+    val workout = Workout(record.runSec, if (record.rounds == 1) 0 else record.walkSec, record.rounds)
+    return WORKOUT_PRESETS.firstOrNull { it.settings.toWorkout() == workout }?.week
+}
