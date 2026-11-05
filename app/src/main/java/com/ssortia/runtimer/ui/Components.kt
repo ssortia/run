@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.toUpperCase
@@ -31,7 +32,8 @@ val SectionGroupGap = 16.dp
 /**
  * Верхняя панель экрана. Отступы от системных панелей сверху и по бокам уже даёт обёртка NavHost
  * (`windowInsetsPadding`), поэтому собственные отступы панели обнулены, иначе сверху был бы
- * двойной зазор. Фон совпадает с фоном экрана.
+ * двойной зазор. Фон совпадает с фоном экрана. Заголовок жирный поверх `titleLarge`, который даёт
+ * `TopAppBar`: в `Typography` темы его не меняем, `titleLarge` берут и карточки, и барабаны.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +43,14 @@ fun AppTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
-        title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        title = {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         modifier = modifier,
         actions = actions,
         windowInsets = WindowInsets(0),
