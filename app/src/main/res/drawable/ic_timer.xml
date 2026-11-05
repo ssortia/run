@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок вкладки «Тренировка» из Material Symbols (timer, Outlined, 24 dp, Apache 2.0): в
-     material-icons-core его нет. Цвет задаёт Icon через tint -->
+<!-- Значок вкладки «Таймер»: секундомер, свой.
+     Линейный набор вкладок: контур 1,8 dp, скруглённые концы и углы. Цвет задаёт Icon через tint -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="960"
-    android:viewportHeight="960">
-    <group android:translateY="960">
-        <path
-            android:fillColor="#FF000000"
-            android:pathData="M360-840v-80h240v80H360Zm80 440h80v-240h-80v240Zm40 320q-74 0-139.5-28.5T226-186q-49-49-77.5-114.5T120-440q0-74 28.5-139.5T226-694q49-49 114.5-77.5T480-800q62 0 119 20t107 58l56-56 56 56-56 56q38 50 58 107t20 119q0 74-28.5 139.5T734-186q-49 49-114.5 77.5T480-80Zm0-80q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Zm0-280Z" />
-    </group>
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M4.5,13.5a7.5,7.5 0,1 0,15 0a7.5,7.5 0,1 0,-15 0M9.5,2.75h5M12,2.75V6M12,13.5V9.75M18,7.5l1.5,-1.5"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -40,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -342,7 +340,7 @@ private fun tabIcon(tab: BottomTab): Painter = when (tab) {
     BottomTab.WORKOUT -> painterResource(R.drawable.ic_timer)
     BottomTab.HISTORY -> painterResource(R.drawable.ic_history)
     BottomTab.PROGRESS -> painterResource(R.drawable.ic_flag)
-    BottomTab.SETTINGS -> rememberVectorPainter(Icons.Outlined.Settings)
+    BottomTab.SETTINGS -> painterResource(R.drawable.ic_settings)
 }
 
 /**
