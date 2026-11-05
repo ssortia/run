@@ -168,10 +168,10 @@
 - [x] тестов нет (Compose и Activity), запустить тесты и `lintDebug` — должны пройти
 
 ### Task 5: Verify acceptance criteria
-- [ ] verify all requirements from Overview are implemented
-- [ ] verify edge cases: поворот экрана во время тренировки не меняет вкладку; финал на чужой вкладке оставляет её, в центре снова «Старт»; «Стоп» на «Таймере» показывает форму; повторный старт с «Истории» открывает «Таймер»
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify all requirements from Overview are implemented (проверено чтением кода: оболочка, «Свернуть», полоска, центральная кнопка, подпись в настройках, запрет пробного сигнала; на телефоне не проверялось — эмулятора нет)
+- [x] verify edge cases: поворот экрана во время тренировки не меняет вкладку; финал на чужой вкладке оставляет её, в центре снова «Старт»; «Стоп» на «Таймере» показывает форму; повторный старт с «Истории» открывает «Таймер» (проверено чтением кода: `wasIdle` и `lastRoute` в `rememberSaveable`, контроллер в `MainActivity`, переход только при `wasIdle && !idle`; поведение на устройстве не подтверждено)
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 6: [Final] Update documentation
 - [ ] `USER_STORIES.md`: новая история «Свернуть тренировку» (вкладки, полоска, «Свернуть», пауза в центре, настройки к следующей тренировке); в US-11 пауза доступна и из центральной кнопки
