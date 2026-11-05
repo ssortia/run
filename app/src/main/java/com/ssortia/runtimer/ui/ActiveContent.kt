@@ -15,13 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -42,6 +46,7 @@ fun ActiveContent(
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
+    onCollapse: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val position = state.position
@@ -49,6 +54,7 @@ fun ActiveContent(
 
     TimerLayout(
         colors = colors,
+        onCollapse = onCollapse,
         modifier = modifier,
         center = {
             val segment = stringResource(
@@ -109,12 +115,14 @@ fun ActiveContent(
 fun CountdownContent(
     state: WorkoutState.Countdown,
     onStop: () -> Unit,
+    onCollapse: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = countdownColors(LocalDarkTheme.current)
 
     TimerLayout(
         colors = colors,
+        onCollapse = onCollapse,
         modifier = modifier,
         center = {
             Text(
@@ -137,10 +145,14 @@ fun CountdownContent(
     )
 }
 
-/** Фон уходит под системные панели, отступы применяются к содержимому. */
+/**
+ * Фон уходит под системные панели, отступы применяются к содержимому. «Свернуть» слева сверху
+ * возвращает на прошлую вкладку, тренировка при этом идёт дальше.
+ */
 @Composable
 private fun TimerLayout(
     colors: SegmentColors,
+    onCollapse: () -> Unit,
     modifier: Modifier = Modifier,
     center: @Composable () -> Unit,
     bottom: @Composable () -> Unit,
@@ -154,6 +166,16 @@ private fun TimerLayout(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
+            TextButton(
+                onClick = onCollapse,
+                colors = ButtonDefaults.textButtonColors(contentColor = colors.content),
+            ) {
+                Icon(imageVector = Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.button_collapse),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
             // Прокручивается только текст: в альбомной ориентации «Стоп» всегда остаётся на экране
             Box(
                 modifier = Modifier

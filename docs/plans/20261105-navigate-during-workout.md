@@ -126,17 +126,17 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/MainActivity.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] поднять `rememberNavController()` в `MainActivity`, передать в `WorkoutScreen` параметром
-- [ ] `MainActivity` считает `fullscreen = isWorkoutFullscreen(state, route)` по `navController.currentBackStackEntryAsState()`; ключ `LaunchedEffect` системных панелей `fullscreen` вместо `idle`: `navigationBarStyle` прозрачный `light`/`dark` вне полноэкранного режима, `auto` с подложкой в нём; `darkStatusIcons(state, darkTheme, fullscreen)`. В этой же задаче, иначе на вкладках во время тренировки под `NavigationBar` была бы подложка и двухцветная полоса
-- [ ] убрать `when (state)` верхнего уровня: оболочка (`Box`, `Column` с `NavHost` и `BottomBar`, `StartFab`) составляется всегда; `settings` (`WorkoutSettingsSaver`) остаётся в оболочке и после тренировки не перечитывается
-- [ ] маршрут `settings` выбирает содержимое по `state`: `SettingsContent`, `CountdownContent`, `ActiveContent`
-- [ ] при `isWorkoutFullscreen` не показывать `BottomBar` и `StartFab`, а у `Box` не применять `windowInsetsPadding(safeDrawing...)`
-- [ ] кнопка «Свернуть» (`TextButton` цветом `colors.content`, стрелка вниз) слева сверху в `TimerLayout` через новый параметр `onCollapse` у `ActiveContent` и `CountdownContent`; колбэк в `dropUnlessResumed`
-- [ ] последняя вкладка в `rememberSaveable`, «Свернуть» переходит на неё по схеме панели
-- [ ] переход на «Таймер» только на переходе из `Idle` (прошлое значение в `rememberSaveable`), не при повороте экрана
-- [ ] строка `button_collapse`
-- [ ] обновить устаревшие комментарии: в `WorkoutScreen.kt` («Контроллер создаётся в ветке Idle…», «Ветка покидает композицию при старте…», про отступы общего `Box`), в `MainActivity` («На отсчёте и тренировке фон цветной…», отпускание пробного сигнала по уходу из `Idle`)
-- [ ] тестов нет (Compose-код), запустить тесты и `lintDebug` — должны пройти
+- [x] поднять `rememberNavController()` в `MainActivity`, передать в `WorkoutScreen` параметром
+- [x] `MainActivity` считает `fullscreen = isWorkoutFullscreen(state, route)` по `navController.currentBackStackEntryAsState()`; ключ `LaunchedEffect` системных панелей `fullscreen` вместо `idle`: `navigationBarStyle` прозрачный `light`/`dark` вне полноэкранного режима, `auto` с подложкой в нём; `darkStatusIcons(state, darkTheme, fullscreen)`. В этой же задаче, иначе на вкладках во время тренировки под `NavigationBar` была бы подложка и двухцветная полоса
+- [x] убрать `when (state)` верхнего уровня: оболочка (`Box`, `Column` с `NavHost` и `BottomBar`, `StartFab`) составляется всегда; `settings` (`WorkoutSettingsSaver`) остаётся в оболочке и после тренировки не перечитывается
+- [x] маршрут `settings` выбирает содержимое по `state`: `SettingsContent`, `CountdownContent`, `ActiveContent`
+- [x] при `isWorkoutFullscreen` не показывать `BottomBar` и `StartFab`, а у `Box` не применять `windowInsetsPadding(safeDrawing...)`
+- [x] кнопка «Свернуть» (`TextButton` цветом `colors.content`, стрелка вниз) слева сверху в `TimerLayout` через новый параметр `onCollapse` у `ActiveContent` и `CountdownContent`; колбэк в `dropUnlessResumed`
+- [x] последняя вкладка в `rememberSaveable`, «Свернуть» переходит на неё по схеме панели
+- [x] переход на «Таймер» только на переходе из `Idle` (прошлое значение в `rememberSaveable`), не при повороте экрана
+- [x] строка `button_collapse`
+- [x] обновить устаревшие комментарии: в `WorkoutScreen.kt` («Контроллер создаётся в ветке Idle…», «Ветка покидает композицию при старте…», про отступы общего `Box`), в `MainActivity` («На отсчёте и тренировке фон цветной…», отпускание пробного сигнала по уходу из `Idle`)
+- [x] тестов нет (Compose-код), запустить тесты и `lintDebug` — должны пройти
 
 ### Task 3: Центральная кнопка-пауза и полоска тренировки
 

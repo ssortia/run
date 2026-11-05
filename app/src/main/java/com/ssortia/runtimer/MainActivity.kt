@@ -31,9 +31,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.ssortia.runtimer.ui.RunTimerTheme
 import com.ssortia.runtimer.ui.WorkoutScreen
 import com.ssortia.runtimer.ui.darkStatusIcons
+import com.ssortia.runtimer.ui.isWorkoutFullscreen
 
 private const val TAG = "MainActivity"
 
@@ -69,12 +72,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val state by WorkoutService.state.collectAsStateWithLifecycle()
-            // Пробная дорожка не должна жить всю тренировку. Отпускается по уходу из Idle, а не по
-            // «Старт»: форма видна, пока сервис не опубликовал отсчёт, и ползунок ещё можно отпустить
+            // Пробная дорожка не должна жить всю тренировку, хотя вкладки и ползунок громкости
+            // остаются доступны. Отпускается по уходу из Idle, а не по «Старт»: пока сервис не
+            // опубликовал отсчёт, ползунок ещё можно отпустить
             val idle = state is WorkoutState.Idle
             LaunchedEffect(idle) {
                 if (!idle) releasePreview()
             }
+            // Контроллер здесь, а не в WorkoutScreen: по текущему маршруту выбираются системные
+            // панели. Оболочка с NavHost составляется во всех состояниях, поэтому стек переживает
+            // старт и финал тренировки
+            val navController = rememberNavController()
+            val entry by navController.currentBackStackEntryAsState()
+            val fullscreen = isWorkoutFullscreen(state, entry?.destination?.route)
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
@@ -121,8 +131,8 @@ class MainActivity : ComponentActivity() {
             }
 
             // Значки следуют за цветом экрана: тёмный фон шага бывает и в светлой теме
-            val darkIcons = darkStatusIcons(state, darkTheme, fullscreen = !idle)
-            LaunchedEffect(darkIcons, darkTheme, idle) {
+            val darkIcons = darkStatusIcons(state, darkTheme, fullscreen)
+            LaunchedEffect(darkIcons, darkTheme, fullscreen) {
                 enableEdgeToEdge(
                     statusBarStyle = if (darkIcons) {
                         SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -130,14 +140,15 @@ class MainActivity : ComponentActivity() {
                         SystemBarStyle.dark(Color.TRANSPARENT)
                     },
                     navigationBarStyle = when {
-                        // На форме под системной панелью лежит фон NavigationBar, подложка кнопок
-                        // сделала бы полосу двухцветной. Стиль light/dark, а не auto, ещё и выключает
-                        // принудительный контраст API 29+, который рисует ту же подложку сам
-                        idle && darkTheme -> SystemBarStyle.dark(Color.TRANSPARENT)
-                        idle -> SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-                        // На отсчёте и тренировке фон цветной, а значки панели следуют за темой,
-                        // поэтому подложка остаётся: как по умолчанию в enableEdgeToEdge, но по
-                        // выбранной теме, а не по системной
+                        // На вкладках, в том числе во время тренировки, под системной панелью лежит
+                        // фон NavigationBar, подложка кнопок сделала бы полосу двухцветной. Стиль
+                        // light/dark, а не auto, ещё и выключает принудительный контраст API 29+,
+                        // который рисует ту же подложку сам
+                        !fullscreen && darkTheme -> SystemBarStyle.dark(Color.TRANSPARENT)
+                        !fullscreen -> SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                        // На экране отсчёта и тренировки во весь экран фон цветной, а значки панели
+                        // следуют за темой, поэтому подложка остаётся: как по умолчанию в
+                        // enableEdgeToEdge, но по выбранной теме, а не по системной
                         else -> SystemBarStyle.auto(NAV_BAR_LIGHT_SCRIM, NAV_BAR_DARK_SCRIM) { darkTheme }
                     },
                 )
@@ -146,6 +157,7 @@ class MainActivity : ComponentActivity() {
             RunTimerTheme(darkTheme = darkTheme) {
                 WorkoutScreen(
                     state = state,
+                    navController = navController,
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,

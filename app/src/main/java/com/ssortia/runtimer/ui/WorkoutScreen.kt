@@ -30,6 +30,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +56,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.ThemeMode
@@ -64,9 +64,16 @@ import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Оболочка приложения: NavHost с вкладками, нижняя панель и «Старт». Составляется во всех
+ * состояниях, поэтому стек и состояния вкладок переживают старт и финал тренировки. Отдельного
+ * маршрута для тренировки нет: «Таймер» показывает форму, отсчёт или тренировку по [state], а
+ * во время тренировки он открыт во весь экран без панели ([isWorkoutFullscreen]).
+ */
 @Composable
 fun WorkoutScreen(
     state: WorkoutState,
+    navController: NavHostController,
     loadSettings: () -> WorkoutSettings,
     loadVolume: () -> Int,
     loadVibration: () -> Boolean,
@@ -87,113 +94,158 @@ fun WorkoutScreen(
     onPause: () -> Unit,
     onResume: () -> Unit,
 ) {
-    when (state) {
-        WorkoutState.Idle -> {
-            // Контроллер создаётся в ветке Idle: при старте тренировки ветка покидает композицию,
-            // стек сбрасывается, и после тренировки открывается форма. Хранилища записей старого
-            // контроллера остаются в activity до её уничтожения, но ViewModel в них нет, и это
-            // несколько пустых объектов за тренировку
-            val navController = rememberNavController()
-            // Настройки формы живут здесь, а не в записи маршрута, чтобы «Старт» вне NavHost
-            // запускал и несохранённые правки. Ветка покидает композицию при старте, поэтому после
-            // тренировки они читаются заново из SettingsStore
-            var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) {
-                mutableStateOf(loadSettings())
-            }
-            // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
-            // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
-            // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
-            // жестовую полосу. Клавиатуры вне тренировки нет, отдельный учёт ime не нужен
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(
+    // Настройки формы живут здесь, а не в записи маршрута, чтобы «Старт» вне NavHost запускал и
+    // несохранённые правки. Оболочка не покидает композицию при старте, поэтому после тренировки
+    // они не перечитываются: onStart сохранил их до старта, а форма во время тренировки скрыта
+    var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) {
+        mutableStateOf(loadSettings())
+    }
+    val entry by navController.currentBackStackEntryAsState()
+    val route = entry?.destination?.route
+    val fullscreen = isWorkoutFullscreen(state, route)
+
+    // Вкладка, на которую ведёт «Свернуть». Хранится в оболочке и переживает поворот
+    var lastRoute by rememberSaveable { mutableStateOf(ROUTE_HISTORY) }
+    LaunchedEffect(route) {
+        if (route != null && route != ROUTE_SETTINGS) lastRoute = route
+    }
+
+    // При старте открывается «Таймер», но только на переходе из Idle: прошлое значение сохраняется
+    // при повороте, иначе поворот во время тренировки возвращал бы с другой вкладки на «Таймер».
+    // Без перехода (activity открыта уже во время тренировки) вкладка остаётся стартовой
+    val idle = state is WorkoutState.Idle
+    var wasIdle by rememberSaveable { mutableStateOf(idle) }
+    LaunchedEffect(idle) {
+        if (wasIdle && !idle) navController.navigateToTab(ROUTE_SETTINGS)
+        wasIdle = idle
+    }
+
+    // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
+    // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
+    // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
+    // жестовую полосу. Клавиатуры вне тренировки нет, отдельный учёт ime не нужен. Во весь экран
+    // отступы не применяются: их поглощает экран тренировки, и его фон уходит под системные панели
+    Box(
+        Modifier
+            .fillMaxSize()
+            .then(
+                if (fullscreen) {
+                    Modifier
+                } else {
+                    Modifier.windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ),
+                    )
+                },
+            ),
+    ) {
+        val error = settings.validate()
+        // Во время тренировки «Старт» недоступен: сервис всё равно отклонил бы второй запрос
+        val startEnabled = idle && error == null
+        val start = { onStart(settings) }
+        Column(Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = ROUTE_SETTINGS,
+                // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
+                // глотал бы нажатия
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                modifier = Modifier.weight(1f),
             ) {
-                val error = settings.validate()
-                val startEnabled = error == null
-                val start = { onStart(settings) }
-                Column(Modifier.fillMaxSize()) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = ROUTE_SETTINGS,
-                        // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
-                        // глотал бы нажатия
-                        enterTransition = { EnterTransition.None },
-                        exitTransition = { ExitTransition.None },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        screen(ROUTE_SETTINGS) {
-                            // Настройки приходят из ветки Idle и переживают переход на другую вкладку.
-                            // Раскрытая карточка и шторка программы хранятся в записи стека
-                            SettingsContent(
-                                settings = settings,
-                                error = error,
-                                onSettingsChange = { settings = it },
-                                showBackgroundWarning = showBackgroundWarning,
-                                onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
-                            )
-                        }
-                        screen(ROUTE_APP_SETTINGS) {
-                            AppSettingsContent(
-                                loadVolume = loadVolume,
-                                onVolumeChange = onVolumeChange,
-                                loadVibration = loadVibration,
-                                onVibrationChange = onVibrationChange,
-                                loadDuckMusic = loadDuckMusic,
-                                onDuckMusicChange = onDuckMusicChange,
-                                loadStartDelay = loadStartDelay,
-                                onStartDelayChange = onStartDelayChange,
-                                themeMode = themeMode,
-                                onThemeModeChange = onThemeModeChange,
-                            )
-                        }
-                        screen(ROUTE_HISTORY) {
-                            // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
-                            val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                            HistoryContent(
-                                records = records,
-                                onDelete = onDeleteRun,
-                            )
-                        }
-                        screen(ROUTE_PROGRESS) {
-                            // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
-                            val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                            val progress = remember(records) { records?.let(::programProgress) }
-                            ProgressContent(
-                                progress = progress,
-                            )
-                        }
+                screen(ROUTE_SETTINGS) {
+                    // Форма и экран тренировки делят одну запись стека, поэтому раскрытая карточка
+                    // и шторка формы (rememberSaveable записи) после тренировки сбрасываются
+                    val collapse = dropUnlessResumed { navController.navigateToTab(lastRoute) }
+                    when (state) {
+                        // Настройки приходят из оболочки и переживают переход на другую вкладку
+                        WorkoutState.Idle -> SettingsContent(
+                            settings = settings,
+                            error = error,
+                            onSettingsChange = { settings = it },
+                            showBackgroundWarning = showBackgroundWarning,
+                            onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
+                        )
+
+                        is WorkoutState.Countdown -> CountdownContent(
+                            state = state,
+                            onStop = onStop,
+                            onCollapse = collapse,
+                        )
+
+                        is WorkoutState.Active -> ActiveContent(
+                            state = state,
+                            onStop = onStop,
+                            onPause = onPause,
+                            onResume = onResume,
+                            onCollapse = collapse,
+                        )
                     }
-                    BottomBar(
-                        navController = navController,
-                        startEnabled = startEnabled,
-                        onStart = start,
+                }
+                screen(ROUTE_APP_SETTINGS) {
+                    AppSettingsContent(
+                        loadVolume = loadVolume,
+                        onVolumeChange = onVolumeChange,
+                        loadVibration = loadVibration,
+                        onVibrationChange = onVibrationChange,
+                        loadDuckMusic = loadDuckMusic,
+                        onDuckMusicChange = onDuckMusicChange,
+                        loadStartDelay = loadStartDelay,
+                        onStartDelayChange = onStartDelayChange,
+                        themeMode = themeMode,
+                        onThemeModeChange = onThemeModeChange,
                     )
                 }
-                // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
-                // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
-                // кнопку заменяет заместитель в центральном слоте панели
-                StartFab(
-                    enabled = startEnabled,
-                    onClick = start,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .windowInsetsPadding(NavigationBarDefaults.windowInsets.only(WindowInsetsSides.Bottom))
-                        .padding(bottom = BottomBarHeight - (StartFabSize - StartFabOverlap)),
+                screen(ROUTE_HISTORY) {
+                    // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
+                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                    HistoryContent(
+                        records = records,
+                        onDelete = onDeleteRun,
+                    )
+                }
+                screen(ROUTE_PROGRESS) {
+                    // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
+                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                    val progress = remember(records) { records?.let(::programProgress) }
+                    ProgressContent(
+                        progress = progress,
+                    )
+                }
+            }
+            if (!fullscreen) {
+                BottomBar(
+                    navController = navController,
+                    startEnabled = startEnabled,
+                    onStart = start,
                 )
             }
         }
+        if (!fullscreen) {
+            // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
+            // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
+            // кнопку заменяет заместитель в центральном слоте панели
+            StartFab(
+                enabled = startEnabled,
+                onClick = start,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(NavigationBarDefaults.windowInsets.only(WindowInsetsSides.Bottom))
+                    .padding(bottom = BottomBarHeight - (StartFabSize - StartFabOverlap)),
+            )
+        }
+    }
+}
 
-        is WorkoutState.Countdown -> CountdownContent(state = state, onStop = onStop)
-
-        is WorkoutState.Active -> ActiveContent(
-            state = state,
-            onStop = onStop,
-            onPause = onPause,
-            onResume = onResume,
-        )
+/**
+ * Переход на вкладку по схеме панели: стек сбрасывается до формы с сохранением состояния вкладок,
+ * поэтому в нём не больше двух записей. Переход на текущую вкладку ничего не делает.
+ */
+private fun NavHostController.navigateToTab(route: String) {
+    if (currentBackStackEntry?.destination?.route == route) return
+    navigate(route) {
+        popUpTo(ROUTE_SETTINGS) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }
 
@@ -278,13 +330,7 @@ private fun BottomBar(
             val selected = tab == current
             NavigationBarItem(
                 selected = selected,
-                onClick = {
-                    if (!selected) navController.navigate(tab.route) {
-                        popUpTo(ROUTE_SETTINGS) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                onClick = { if (!selected) navController.navigateToTab(tab.route) },
                 icon = { Icon(painter = tabIcon(tab), contentDescription = null) },
                 // В одну строку: перенос сделал бы панель выше BottomBarHeight, и «Старт» закрыл бы подписи
                 label = { Text(stringResource(tab.labelRes), maxLines = 1, overflow = TextOverflow.Ellipsis) },
