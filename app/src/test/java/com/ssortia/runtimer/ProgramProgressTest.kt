@@ -183,4 +183,76 @@ class ProgramProgressTest {
             assertEquals("неделя ${preset.week}", 1_000L, week.lastCompletedAtMs)
         }
     }
+
+    @Test
+    fun `пустая история — текущая неделя 1`() {
+        assertEquals(1, currentProgramWeek(emptyList()))
+    }
+
+    @Test
+    fun `последняя пробежка не из программы не меняет текущую`() {
+        val runs = listOf(
+            weekRecord(3, startedAtMs = 100L),
+            record(runSec = 50, walkSec = 70, rounds = 3, startedAtMs = 900L),
+        )
+        assertEquals(3, currentProgramWeek(runs))
+    }
+
+    @Test
+    fun `остановленная пробежка позже не меняет текущую`() {
+        val runs = listOf(
+            weekRecord(2, startedAtMs = 100L),
+            weekRecord(5, startedAtMs = 900L, completed = false),
+        )
+        assertEquals(2, currentProgramWeek(runs))
+    }
+
+    @Test
+    fun `при равном времени старта текущая — большая неделя`() {
+        val runs = listOf(weekRecord(4, startedAtMs = 500L), weekRecord(2, startedAtMs = 500L))
+        assertEquals(4, currentProgramWeek(runs))
+        assertEquals(4, currentProgramWeek(runs.reversed()))
+    }
+
+    @Test
+    fun `пустая история — неделя 1 текущая, остальные впереди, линия не закрашена`() {
+        val progress = programProgress(emptyList())
+        assertEquals(WeekMark.CURRENT, progress.week(1).mark)
+        assertEquals(List(9) { WeekMark.AHEAD }, progress.drop(1).map { it.mark })
+        assertTrue(progress.none { it.lineToNextFilled })
+    }
+
+    @Test
+    fun `незакрытые недели выше текущей пропущены, линия до текущей закрашена`() {
+        val progress = programProgress(listOf(weekRecord(4, startedAtMs = 100L)))
+        assertEquals(List(3) { WeekMark.SKIPPED }, progress.take(3).map { it.mark })
+        assertEquals(listOf(true, true, true), progress.take(3).map { it.lineToNextFilled })
+        assertEquals(WeekMark.CURRENT, progress.week(4).mark)
+        assertFalse(progress.week(4).lineToNextFilled)
+        assertEquals(WeekMark.AHEAD, progress.week(5).mark)
+    }
+
+    @Test
+    fun `пройденная неделя ниже текущей`() {
+        val runs = List(4) { weekRecord(5, startedAtMs = 100L + it) } + weekRecord(3, startedAtMs = 900L)
+        assertEquals(3, currentProgramWeek(runs))
+        val progress = programProgress(runs)
+        val current = progress.week(3)
+        assertEquals(WeekMark.CURRENT, current.mark)
+        assertFalse(current.lineToNextFilled)
+        val passed = progress.week(5)
+        assertEquals(WeekMark.PASSED, passed.mark)
+        assertTrue(passed.lineToNextFilled)
+        assertEquals(WeekMark.AHEAD, progress.week(4).mark)
+        assertFalse(progress.week(4).lineToNextFilled)
+        assertEquals(listOf(WeekMark.SKIPPED, WeekMark.SKIPPED), progress.take(2).map { it.mark })
+    }
+
+    @Test
+    fun `текущая пройденная неделя`() {
+        val week = programProgress(List(6) { weekRecord(2, startedAtMs = it.toLong()) }).week(2)
+        assertEquals(WeekMark.CURRENT, week.mark)
+        assertTrue(week.passed)
+        assertTrue(week.lineToNextFilled)
+    }
 }

@@ -25,7 +25,13 @@ class ProgressRowTextTest {
     )
 
     private fun row(week: Int, completedRuns: Int, lastCompletedAtMs: Long?) = progressRowText(
-        week = WeekProgress(WORKOUT_PRESETS.first { it.week == week }, completedRuns, lastCompletedAtMs),
+        week = WeekProgress(
+            preset = WORKOUT_PRESETS.first { it.week == week },
+            completedRuns = completedRuns,
+            lastCompletedAtMs = lastCompletedAtMs,
+            current = false,
+            beforeCurrent = false,
+        ),
         weekTitle = "Неделя $week",
         runsText = "$completedRuns раз",
         labels = labels,
