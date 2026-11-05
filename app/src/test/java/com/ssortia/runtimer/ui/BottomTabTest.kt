@@ -74,4 +74,35 @@ class BottomTabTest {
         // Финал тренировки
         assertFalse(shouldExpandWorkout(wasIdle = false, idle = true))
     }
+
+    private val fling = 300f
+
+    @Test
+    fun `без флинга экран сворачивается по смещению от четверти высоты`() {
+        assertFalse(shouldCollapseSheet(offsetPx = 100f, heightPx = 1000f, velocityPx = 0f, flingVelocityPx = fling))
+        assertTrue(shouldCollapseSheet(offsetPx = 400f, heightPx = 1000f, velocityPx = 0f, flingVelocityPx = fling))
+        // Ровно на пороге
+        assertTrue(shouldCollapseSheet(offsetPx = 250f, heightPx = 1000f, velocityPx = 0f, flingVelocityPx = fling))
+        assertFalse(shouldCollapseSheet(offsetPx = 249f, heightPx = 1000f, velocityPx = 0f, flingVelocityPx = fling))
+    }
+
+    @Test
+    fun `флинг важнее смещения`() {
+        // Взмах вниз при малом смещении сворачивает
+        assertTrue(shouldCollapseSheet(offsetPx = 10f, heightPx = 1000f, velocityPx = fling, flingVelocityPx = fling))
+        // Взмах вверх при большом смещении возвращает
+        assertFalse(shouldCollapseSheet(offsetPx = 900f, heightPx = 1000f, velocityPx = -fling, flingVelocityPx = fling))
+    }
+
+    @Test
+    fun `скорость чуть ниже порога решает по смещению`() {
+        assertFalse(shouldCollapseSheet(offsetPx = 10f, heightPx = 1000f, velocityPx = fling - 1f, flingVelocityPx = fling))
+        assertTrue(shouldCollapseSheet(offsetPx = 900f, heightPx = 1000f, velocityPx = -(fling - 1f), flingVelocityPx = fling))
+    }
+
+    @Test
+    fun `без высоты области экран не сворачивается`() {
+        assertFalse(shouldCollapseSheet(offsetPx = 0f, heightPx = 0f, velocityPx = 0f, flingVelocityPx = fling))
+        assertFalse(shouldCollapseSheet(offsetPx = 0f, heightPx = 0f, velocityPx = fling * 10, flingVelocityPx = fling))
+    }
 }

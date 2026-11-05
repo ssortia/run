@@ -78,6 +78,16 @@ import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
+import kotlinx.coroutines.CoroutineStart
 import kotlin.math.roundToInt
 
 /**
@@ -153,10 +163,63 @@ fun WorkoutScreen(
     // expanded = false только после доезда: системные панели меняются, пока слой закрывает экран.
     // Если сворачивание прервал expand(), animateTo бросит CancellationException, и false не
     // выставится. Повторный вызов идемпотентен: цель та же
-    val collapse: () -> Unit = {
+    suspend fun animateCollapse() {
+        offset.animateTo(heightPx, sheetSpec)
+        currentOnExpandedChange(false)
+    }
+    val collapse: () -> Unit = { scope.launch { animateCollapse() } }
+
+    // Свайп вниз: слой идёт за пальцем, а при отпускании доезжает вниз или возвращается наверх
+    val flingVelocityPx = with(LocalDensity.current) { SheetFlingVelocity.toPx() }
+    val settle: (Float) -> Unit = { velocity ->
         scope.launch {
-            offset.animateTo(heightPx, sheetSpec)
-            currentOnExpandedChange(false)
+            if (shouldCollapseSheet(offset.value, heightPx, velocity, flingVelocityPx)) {
+                animateCollapse()
+            } else {
+                offset.animateTo(0f, sheetSpec)
+            }
+        }
+    }
+    // Сдвигает слой на delta в пределах области и возвращает поглощённую часть. Без диспетчеризации:
+    // смещение меняется сразу, и следующее событие того же кадра считается уже от него
+    val dragBy: (Float) -> Float = { delta ->
+        val old = offset.value
+        val new = (old + delta).coerceIn(0f, heightPx)
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { offset.snapTo(new) }
+        new - old
+    }
+    val dragState = rememberDraggableState { delta -> dragBy(delta) }
+    // Прокручиваемая колонка TimerLayout перехватывает вертикальный жест и в портретной ориентации:
+    // в foundation 1.7 verticalScroll начинает перетаскивание, даже когда прокручивать некуда, и
+    // непрокрученный остаток уходит только по nested scroll, мимо draggable. Без этого соединения
+    // свайп по цифрам времени не сворачивал бы экран. По образцу шторок M3
+    val sheetScrollConnection = remember {
+        object : NestedScrollConnection {
+            // Вверх: сначала поднять опущенный слой, потом прокручивать колонку
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
+                if (available.y < 0f && offset.value > 0f) Offset(0f, dragBy(available.y)) else Offset.Zero
+
+            // Вниз: колонка прокручена до верха, остаток опускает слой. Только палец, не инерция
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+                if (available.y > 0f && source == NestedScrollSource.UserInput) {
+                    Offset(0f, dragBy(available.y))
+                } else {
+                    Offset.Zero
+                }
+
+            // Опущенный слой решает судьбу жеста сам, колонка инерцию не получает
+            override suspend fun onPreFling(available: Velocity): Velocity =
+                if (offset.value > 0f) {
+                    settle(available.y)
+                    available
+                } else {
+                    Velocity.Zero
+                }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                if (offset.value > 0f) settle(available.y)
+                return available
+            }
         }
     }
 
@@ -308,7 +371,16 @@ fun WorkoutScreen(
                 onResume = onResume,
                 // Первым модификатором: область касаний едет вместе со слоем. Смещение читается
                 // при размещении, поэтому анимация не перекомпоновывает слой
-                modifier = Modifier.offset { IntOffset(0, offset.value.roundToInt()) },
+                modifier = Modifier
+                    .offset { IntOffset(0, offset.value.roundToInt()) }
+                    // Свайп поверх прокручиваемой колонки
+                    .nestedScroll(sheetScrollConnection)
+                    // Свайп вне колонки
+                    .draggable(
+                        state = dragState,
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity -> settle(velocity) },
+                    ),
             )
         }
     }
@@ -377,6 +449,9 @@ private fun NavHostController.navigateToTab(route: String) {
 
 // Длительность разворачивания и сворачивания экрана тренировки
 private const val SheetAnimationMs = 280
+
+// Скорость отпускания, с которой свайп считается флингом (в секунду), как у шторок M3
+private val SheetFlingVelocity = 125.dp
 
 // Высота NavigationBar без системной панели. Повторяет внутреннее значение M3 (NavigationBarHeight),
 // которое наружу не открыто: по нему центральная кнопка выступает над панелью на CenterFabOverlap

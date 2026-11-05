@@ -120,11 +120,11 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/BottomTabTest.kt`
 
-- [ ] `BottomTab.kt`: `SHEET_COLLAPSE_FRACTION = 0.25f` и `shouldCollapseSheet(offsetPx, heightPx, velocityPx, flingVelocityPx)` с KDoc (флинг важнее смещения)
-- [ ] `WorkoutScreen.kt`: `Modifier.draggable(rememberDraggableState { delta -> scope.launch { offset.snapTo((offset.value + delta).coerceIn(0f, heightPx)) } }, Orientation.Vertical, onDragStopped = { v -> settle(v) })` на слое после `offset`; `SheetFlingVelocity = 125.dp` в пиксели через `LocalDensity`
-- [ ] `WorkoutScreen.kt`: `NestedScrollConnection` слоя по Technical Details и `Modifier.nestedScroll(connection)` между `offset` и `draggable`, комментарий: зачем (прокручиваемая колонка `TimerLayout` перехватывает жест и в портретной ориентации)
-- [ ] тесты `shouldCollapseSheet`: смещение ниже и выше порога без скорости, ровно на пороге, флинг вниз при малом смещении, флинг вверх при большом смещении, скорость чуть ниже порога, `heightPx = 0`
-- [ ] `JAVA_HOME=~/.local/jdk-17 ./gradlew test` — должны пройти
+- [x] `BottomTab.kt`: `SHEET_COLLAPSE_FRACTION = 0.25f` и `shouldCollapseSheet(offsetPx, heightPx, velocityPx, flingVelocityPx)` с KDoc (флинг важнее смещения)
+- [x] `WorkoutScreen.kt`: `Modifier.draggable(rememberDraggableState { delta -> scope.launch { offset.snapTo((offset.value + delta).coerceIn(0f, heightPx)) } }, Orientation.Vertical, onDragStopped = { v -> settle(v) })` на слое после `offset`; `SheetFlingVelocity = 125.dp` в пиксели через `LocalDensity`
+- [x] `WorkoutScreen.kt`: `NestedScrollConnection` слоя по Technical Details и `Modifier.nestedScroll(connection)` между `offset` и `draggable`, комментарий: зачем (прокручиваемая колонка `TimerLayout` перехватывает жест и в портретной ориентации)
+- [x] тесты `shouldCollapseSheet`: смещение ниже и выше порога без скорости, ровно на пороге, флинг вниз при малом смещении, флинг вверх при большом смещении, скорость чуть ниже порога, `heightPx = 0`
+- [x] `JAVA_HOME=~/.local/jdk-17 ./gradlew test` — должны пройти
 
 ### Task 4: Verify acceptance criteria
 - [ ] «Таймер» во время тренировки показывает форму с полоской и панелью; форма правится, правки не влияют на полоску на отсчёте (`startedWorkout` из `SettingsStore`)

@@ -48,6 +48,28 @@ fun initialWorkoutExpanded(state: WorkoutState): Boolean = state !is WorkoutStat
  */
 fun shouldExpandWorkout(wasIdle: Boolean, idle: Boolean): Boolean = wasIdle && !idle
 
+/** Доля высоты области, на которую надо опустить экран тренировки, чтобы при отпускании он свернулся. */
+const val SHEET_COLLAPSE_FRACTION = 0.25f
+
+/**
+ * Свернуть ли экран тренировки, когда палец отпустил его на смещении [offsetPx] вниз из [heightPx].
+ * Флинг важнее смещения: быстрый взмах вниз (скорость не меньше [flingVelocityPx]) сворачивает и
+ * от самого верха, быстрый взмах вверх возвращает и почти свёрнутый экран. Без флинга экран
+ * сворачивается, если опущен не меньше чем на [SHEET_COLLAPSE_FRACTION] высоты. Пока высота
+ * области неизвестна ([heightPx] не больше 0), экран не сворачивается.
+ */
+fun shouldCollapseSheet(
+    offsetPx: Float,
+    heightPx: Float,
+    velocityPx: Float,
+    flingVelocityPx: Float,
+): Boolean = when {
+    heightPx <= 0f -> false
+    velocityPx >= flingVelocityPx -> true
+    velocityPx <= -flingVelocityPx -> false
+    else -> offsetPx >= heightPx * SHEET_COLLAPSE_FRACTION
+}
+
 /** Режим центральной кнопки нижней панели: «Старт» вне тренировки, пауза во время неё. */
 enum class CenterButtonMode { START, PAUSE, RESUME, PAUSE_DISABLED }
 
