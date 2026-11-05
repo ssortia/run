@@ -127,11 +127,11 @@
 - [x] `JAVA_HOME=~/.local/jdk-17 ./gradlew test` — должны пройти
 
 ### Task 4: Verify acceptance criteria
-- [ ] «Таймер» во время тренировки показывает форму с полоской и панелью; форма правится, правки не влияют на полоску на отсчёте (`startedWorkout` из `SettingsStore`)
-- [ ] разворачивание: полоска и старт; сворачивание: «Свернуть», «Назад», свайп — одной анимацией, на вкладку под слоем
-- [ ] системные панели и значки по `isWorkoutFullscreen(state, expanded)`; финал и «Стоп» убирают слой
-- [ ] в коде не осталось `collapseRoute`, `shouldOpenTimer`, `isWorkoutFullscreen(state, route)`, `navController` в `MainActivity`; формула `!idle && expanded` есть только в `isWorkoutFullscreen`
-- [ ] `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` и `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug` — проходят
+- [x] «Таймер» во время тренировки показывает форму с полоской и панелью; форма правится, правки не влияют на полоску на отсчёте (`startedWorkout` из `SettingsStore`) (по коду; на телефоне — вручную)
+- [x] разворачивание: полоска и старт; сворачивание: «Свернуть», «Назад», свайп — одной анимацией, на вкладку под слоем (по коду; анимация и свайп — вручную на телефоне)
+- [x] системные панели и значки по `isWorkoutFullscreen(state, expanded)`; финал и «Стоп» убирают слой (по коду; системные панели — вручную на телефоне)
+- [x] в коде не осталось `collapseRoute`, `shouldOpenTimer`, `isWorkoutFullscreen(state, route)`, `navController` в `MainActivity`; формула `!idle && expanded` есть только в `isWorkoutFullscreen`
+- [x] `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug` и `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug` — проходят
 
 ### Task 5: [Final] Update documentation
 - [ ] `USER_STORIES.md`: US-17 (строки ~234–241, в том числе цитаты «Открыть таймер») — форма доступна во время тренировки на «Таймере», экран тренировки открывается из полоски, сворачивается кнопкой, свайпом вниз и «Назад»
