@@ -208,6 +208,27 @@ fun pauseButtonRes(paused: Boolean): Int =
  */
 fun pauseEnabled(state: WorkoutState.Active): Boolean = state.position.remainingMs > 0
 
+/** Режим центральной кнопки нижней панели: «Старт» вне тренировки, пауза во время неё. */
+enum class CenterButtonMode { START, PAUSE, RESUME, PAUSE_DISABLED }
+
+/** Пауза недоступна на отсчёте (часов ещё нет) и после финального сигнала, как у [pauseEnabled]. */
+fun centerButtonMode(state: WorkoutState): CenterButtonMode = when (state) {
+    WorkoutState.Idle -> CenterButtonMode.START
+    is WorkoutState.Countdown -> CenterButtonMode.PAUSE_DISABLED
+    is WorkoutState.Active -> when {
+        !pauseEnabled(state) -> CenterButtonMode.PAUSE_DISABLED
+        state.paused -> CenterButtonMode.RESUME
+        else -> CenterButtonMode.PAUSE
+    }
+}
+
+@StringRes
+fun centerButtonLabelRes(mode: CenterButtonMode): Int = when (mode) {
+    CenterButtonMode.START -> R.string.button_start
+    CenterButtonMode.PAUSE, CenterButtonMode.PAUSE_DISABLED -> R.string.button_pause
+    CenterButtonMode.RESUME -> R.string.button_resume
+}
+
 @Composable
 internal fun WarningText(@StringRes textRes: Int, modifier: Modifier = Modifier) {
     Text(

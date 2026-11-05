@@ -1,6 +1,9 @@
 package com.ssortia.runtimer.ui
 
+import com.ssortia.runtimer.Position
+import com.ssortia.runtimer.WorkoutState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -34,5 +37,22 @@ class BottomTabTest {
         assertNull(bottomTabOf(null))
         assertNull(bottomTabOf("countdown"))
         assertNull(bottomTabOf(""))
+    }
+
+    @Test
+    fun `во весь экран только тренировка на «Таймере»`() {
+        val active = WorkoutState.Active(
+            position = Position(index = 0, isRun = true, round = 1, remainingMs = 1_000),
+            rounds = 1,
+            progress = 0f,
+        )
+        val routes = listOf(ROUTE_SETTINGS, ROUTE_HISTORY, ROUTE_PROGRESS, ROUTE_APP_SETTINGS, null)
+        for (state in listOf(WorkoutState.Idle, WorkoutState.Countdown(seconds = 3), active)) {
+            for (route in routes) {
+                val expected = state !is WorkoutState.Idle && (route == ROUTE_SETTINGS || route == null)
+                assertEquals("$state на $route", expected, isWorkoutFullscreen(state, route))
+            }
+        }
+        assertFalse(isWorkoutFullscreen(WorkoutState.Idle, null))
     }
 }

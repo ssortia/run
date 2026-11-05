@@ -245,8 +245,21 @@ class ThemeTest {
 
     @Test
     fun `значки на форме следуют за темой`() {
-        assertTrue(darkStatusIcons(WorkoutState.Idle, darkTheme = false))
-        assertFalse(darkStatusIcons(WorkoutState.Idle, darkTheme = true))
+        assertTrue(darkStatusIcons(WorkoutState.Idle, darkTheme = false, fullscreen = false))
+        assertFalse(darkStatusIcons(WorkoutState.Idle, darkTheme = true, fullscreen = false))
+    }
+
+    @Test
+    fun `на вкладках во время тренировки значки следуют за темой`() {
+        for (darkTheme in listOf(false, true)) {
+            for (state in listOf(WorkoutState.Countdown(seconds = 5), active(isRun = true), active(isRun = false))) {
+                assertEquals(
+                    "значки на вкладке: тёмная тема $darkTheme, $state",
+                    !darkTheme,
+                    darkStatusIcons(state, darkTheme, fullscreen = false),
+                )
+            }
+        }
     }
 
     @Test
@@ -255,7 +268,7 @@ class ThemeTest {
             for (isRun in listOf(false, true)) {
                 assertFalse(
                     "значки: тёмная тема $darkTheme, бег $isRun",
-                    darkStatusIcons(active(isRun), darkTheme),
+                    darkStatusIcons(active(isRun), darkTheme, fullscreen = true),
                 )
             }
         }
@@ -266,8 +279,8 @@ class ThemeTest {
         for (darkTheme in listOf(false, true)) {
             assertEquals(
                 "значки отсчёта: тёмная тема $darkTheme",
-                darkStatusIcons(active(isRun = true), darkTheme),
-                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme),
+                darkStatusIcons(active(isRun = true), darkTheme, fullscreen = true),
+                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme, fullscreen = true),
             )
         }
     }
@@ -281,7 +294,7 @@ class ThemeTest {
             assertEquals(
                 "значки отсчёта: тёмная тема $darkTheme",
                 darkIsBetter,
-                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme),
+                darkStatusIcons(WorkoutState.Countdown(seconds = 5), darkTheme, fullscreen = true),
             )
         }
     }
@@ -296,7 +309,7 @@ class ThemeTest {
                 assertEquals(
                     "значки: тёмная тема $darkTheme, бег $isRun",
                     darkIsBetter,
-                    darkStatusIcons(active(isRun), darkTheme),
+                    darkStatusIcons(active(isRun), darkTheme, fullscreen = true),
                 )
             }
         }

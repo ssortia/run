@@ -157,12 +157,20 @@ fun weekChipBorderColor(darkTheme: Boolean): Color = if (darkTheme) WeekChipBord
 /** Отсчёт идёт в цветах бега: бегун сразу видит цвет первого отрезка. */
 fun countdownColors(darkTheme: Boolean): SegmentColors = segmentColors(isRun = true, darkTheme)
 
-/** Нужны ли тёмные значки в строке состояния: на экране тренировки они совпадают с цветом текста. */
-fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean): Boolean = when (state) {
-    WorkoutState.Idle -> !darkTheme
-    is WorkoutState.Countdown -> countdownColors(darkTheme).needsDarkIcons()
-    is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).needsDarkIcons()
-}
+/**
+ * Нужны ли тёмные значки в строке состояния: на экране тренировки во весь экран ([fullscreen])
+ * они совпадают с цветом текста, а на вкладках следуют за темой, как на форме.
+ */
+fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean, fullscreen: Boolean): Boolean =
+    if (!fullscreen) {
+        !darkTheme
+    } else {
+        when (state) {
+            WorkoutState.Idle -> !darkTheme
+            is WorkoutState.Countdown -> countdownColors(darkTheme).needsDarkIcons()
+            is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).needsDarkIcons()
+        }
+    }
 
 private fun SegmentColors.needsDarkIcons(): Boolean = content.luminance() < 0.5f
 

@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
             }
 
             // Значки следуют за цветом экрана: тёмный фон шага бывает и в светлой теме
-            val darkIcons = darkStatusIcons(state, darkTheme)
+            val darkIcons = darkStatusIcons(state, darkTheme, fullscreen = !idle)
             LaunchedEffect(darkIcons, darkTheme, idle) {
                 enableEdgeToEdge(
                     statusBarStyle = if (darkIcons) {

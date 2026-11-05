@@ -2,6 +2,7 @@ package com.ssortia.runtimer.ui
 
 import androidx.annotation.StringRes
 import com.ssortia.runtimer.R
+import com.ssortia.runtimer.WorkoutState
 
 // Маршрут `settings` — форма тренировки (вкладка «Тренировка»), а `app_settings` — настройки
 // приложения (вкладка «Настройки»). Каждому маршруту NavHost соответствует вкладка
@@ -25,3 +26,10 @@ enum class BottomTab(val route: String, @StringRes val labelRes: Int) {
 fun startSlotIndex(): Int = BottomTab.entries.size / 2
 
 fun bottomTabOf(route: String?): BottomTab? = BottomTab.entries.firstOrNull { it.route == route }
+
+/**
+ * Экран тренировки во весь экран: идёт отсчёт или тренировка и открыт «Таймер». Без маршрута
+ * (стек ещё не готов) открыт стартовый маршрут, то есть «Таймер».
+ */
+fun isWorkoutFullscreen(state: WorkoutState, route: String?): Boolean =
+    state !is WorkoutState.Idle && (route == null || route == ROUTE_SETTINGS)

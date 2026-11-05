@@ -61,4 +61,14 @@ class PresetRowTextTest {
     fun `отрицательное время прижимается к нулю`() {
         assertEquals("0 мин", formatPresetTotal(-5_000, "мин", "с"))
     }
+
+    @Test
+    fun `параметры тренировки с шагом`() {
+        assertEquals("Бег 2:00 · Шаг 1:30 · ×6", workoutDetailsText(Workout(120, 90, 6), "Бег", "Шаг"))
+    }
+
+    @Test
+    fun `параметры тренировки из одного повтора без шага`() {
+        assertEquals("Бег 30:00 · ×1", workoutDetailsText(Workout(1800, 0, 1), "Бег", "Шаг"))
+    }
 }

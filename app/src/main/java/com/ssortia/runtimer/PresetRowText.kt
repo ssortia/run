@@ -16,13 +16,19 @@ fun presetRowText(
     secLabel: String,
 ): PresetRowText {
     val workout = preset.settings.toWorkout()
-    val details = buildList {
-        add("$runLabel ${formatTotal(workout.runSec * 1000L)}")
-        if (workout.walkSec > 0) add("$walkLabel ${formatTotal(workout.walkSec * 1000L)}")
-        add("×${workout.rounds}")
-    }.joinToString(" · ")
+    val details = workoutDetailsText(workout, runLabel, walkLabel)
     return PresetRowText(weekTitle, details, formatPresetTotal(workout.totalMs, minLabel, secLabel))
 }
+
+/**
+ * Параметры тренировки одной строкой: «Бег 2:00 · Шаг 2:00 · ×6». Шаг без времени не показывается
+ * (один повтор). Общая для шторки программы и полоски тренировки на отсчёте.
+ */
+fun workoutDetailsText(workout: Workout, runLabel: String, walkLabel: String): String = buildList {
+    add("$runLabel ${formatTotal(workout.runSec * 1000L)}")
+    if (workout.walkSec > 0) add("$walkLabel ${formatTotal(workout.walkSec * 1000L)}")
+    add("×${workout.rounds}")
+}.joinToString(" · ")
 
 /**
  * Общее время недели в шторке программы словами: «23 мин», «19 мин 30 с». Часы не выделяются,

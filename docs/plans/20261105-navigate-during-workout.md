@@ -107,16 +107,16 @@
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/BottomTabTest.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt` (если там проверяется `darkStatusIcons`)
 
-- [ ] `workoutDetailsText(workout, runLabel, walkLabel)` в `PresetRowText.kt`, `presetRowText` вызывает её
-- [ ] `WorkoutStripLabels`, `WorkoutStripText` и `workoutStripText` в `ui/WorkoutStrip.kt` по Technical Details
-- [ ] `CenterButtonMode`, `centerButtonMode(state)` с учётом `pauseEnabled` и `centerButtonLabelRes(mode)` в `ActiveContent.kt`
-- [ ] `isWorkoutFullscreen(state, route)` в `BottomTab.kt`
-- [ ] третий параметр `fullscreen` у `darkStatusIcons`, вызов в `MainActivity` пока передаёт `state !is Idle` (поведение не меняется до Task 2)
-- [ ] тесты `workoutDetailsText`: с шагом, один повтор без шага; `presetRowText` не изменился
-- [ ] тесты `workoutStripText`: `Idle` → `null`; бег и шаг (заголовок, «Повтор N из M», время, прогресс); пауза («Бег · пауза», точная фраза «Тренировка на паузе: бег, осталось …, повтор 3 из 6. Открыть таймер»); отсчёт («Старт через», параметры, «0:03», без прогресса); точная фраза описания со строчными «бег» и «повтор»; «1 минута 24 секунды», ровно «2 минуты» без секунд, «45 секунд» без минут, остаток меньше секунды округляется вверх как у `formatTime`
-- [ ] тесты `centerButtonMode` и `centerButtonLabelRes`: `Idle` → `START`, `Active` → `PAUSE`/`RESUME`, отсчёт и нулевой остаток → `PAUSE_DISABLED`
-- [ ] тесты `isWorkoutFullscreen` (все состояния × маршруты, `null`) и `darkStatusIcons` с новым параметром
-- [ ] run tests - must pass before next task
+- [x] `workoutDetailsText(workout, runLabel, walkLabel)` в `PresetRowText.kt`, `presetRowText` вызывает её
+- [x] `WorkoutStripLabels`, `WorkoutStripText` и `workoutStripText` в `ui/WorkoutStrip.kt` по Technical Details
+- [x] `CenterButtonMode`, `centerButtonMode(state)` с учётом `pauseEnabled` и `centerButtonLabelRes(mode)` в `ActiveContent.kt`
+- [x] `isWorkoutFullscreen(state, route)` в `BottomTab.kt`
+- [x] третий параметр `fullscreen` у `darkStatusIcons`, вызов в `MainActivity` пока передаёт `state !is Idle` (поведение не меняется до Task 2)
+- [x] тесты `workoutDetailsText`: с шагом, один повтор без шага; `presetRowText` не изменился
+- [x] тесты `workoutStripText`: `Idle` → `null`; бег и шаг (заголовок, «Повтор N из M», время, прогресс); пауза («Бег · пауза», точная фраза «Тренировка на паузе: бег, осталось …, повтор 3 из 6. Открыть таймер»); отсчёт («Старт через», параметры, «0:03», без прогресса); точная фраза описания со строчными «бег» и «повтор»; «1 минута 24 секунды», ровно «2 минуты» без секунд, «45 секунд» без минут, остаток меньше секунды округляется вверх как у `formatTime`
+- [x] тесты `centerButtonMode` и `centerButtonLabelRes`: `Idle` → `START`, `Active` → `PAUSE`/`RESUME`, отсчёт и нулевой остаток → `PAUSE_DISABLED`
+- [x] тесты `isWorkoutFullscreen` (все состояния × маршруты, `null`) и `darkStatusIcons` с новым параметром
+- [x] run tests - must pass before next task
 
 ### Task 2: Общая оболочка с навигацией для всех состояний
 
