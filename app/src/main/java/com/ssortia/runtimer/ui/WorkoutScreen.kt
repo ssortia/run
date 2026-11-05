@@ -206,6 +206,7 @@ fun WorkoutScreen(
                         onStartDelayChange = onStartDelayChange,
                         themeMode = themeMode,
                         onThemeModeChange = onThemeModeChange,
+                        workoutRunning = !idle,
                     )
                 }
                 screen(ROUTE_HISTORY) {

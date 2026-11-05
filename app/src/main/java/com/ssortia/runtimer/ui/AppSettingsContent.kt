@@ -7,12 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
@@ -50,6 +54,9 @@ import com.ssortia.runtimer.volumeHint
  * поворотом сдвиг показывал бы несохранённое значение, а после пересоздания экран читает
  * хранилище заново. При отпускании ползунка громкости звучит пробный сигнал. Тему, наоборот,
  * держит activity: она применяется ко всему интерфейсу сразу, поэтому экран получает значение.
+ * Во время тренировки ([workoutRunning]) сервис уже прочитал сигналы и задержку старта, поэтому
+ * под этими группами подписано, что изменения применятся к следующей тренировке; пробного сигнала
+ * тогда нет. Тема применяется сразу, и подписи под ней нет.
  */
 @Composable
 fun AppSettingsContent(
@@ -63,6 +70,7 @@ fun AppSettingsContent(
     onStartDelayChange: (Int) -> Unit,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
+    workoutRunning: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var volume by remember { mutableFloatStateOf(loadVolume().toFloat()) }
@@ -117,6 +125,7 @@ fun AppSettingsContent(
                     },
                 )
             }
+            if (workoutRunning) NextWorkoutHint()
 
             SectionTitle(
                 text = stringResource(R.string.group_workout),
@@ -134,6 +143,7 @@ fun AppSettingsContent(
                     onValueChangeFinished = { onStartDelayChange(sliderToStartDelay(startDelay)) },
                 )
             }
+            if (workoutRunning) NextWorkoutHint()
 
             SectionTitle(
                 text = stringResource(R.string.group_appearance),
@@ -206,6 +216,28 @@ private fun SliderSettingRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/** Подпись под группой: изменение не затронет идущую тренировку. Значок декоративный. */
+@Composable
+private fun NextWorkoutHint() {
+    Row(
+        modifier = Modifier.padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.hint_next_workout),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

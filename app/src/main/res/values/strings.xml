@@ -31,6 +31,7 @@
     <string name="group_signals">Сигналы</string>
     <string name="group_workout">Тренировка</string>
     <string name="group_appearance">Оформление</string>
+    <string name="hint_next_workout">Применится к следующей тренировке</string>
     <string name="setting_theme">Тема</string>
     <string name="volume_hint_vibration_only">Сигналы без звука, останется вибрация</string>
     <string name="volume_hint_no_signals">Сигналов не будет: звук и вибрация выключены</string>

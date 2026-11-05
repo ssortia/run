@@ -205,6 +205,9 @@ class MainActivity : ComponentActivity() {
     private fun saveVolumeAndPreview(percent: Int) {
         store.saveSignalVolume(percent)
         releasePreview()
+        // Во время тренировки пробный сигнал звучал бы поверх сигналов сервиса и спорил бы с его
+        // аудиофокусом, а громкость всё равно применится только к следующей тренировке
+        if (WorkoutService.state.value !is WorkoutState.Idle) return
         // На нуле звука нет намеренно: ни пробного сигнала, ни напоминания о громкости медиа
         if (!isSoundOn(percent)) return
         // Иначе пробный сигнал молча не слышен, и ползунок выглядит сломанным

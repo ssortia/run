@@ -162,10 +162,10 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] пробный сигнал: `saveVolumeAndPreview` сохраняет громкость, но при `WorkoutService.state.value !is WorkoutState.Idle` не играет `Beeper` и не показывает `Toast` `warning_muted` (одно сравнение, без отдельной функции); отпускание по уходу из `Idle` остаётся
-- [ ] `AppSettingsContent` получает `workoutRunning: Boolean`, под группами «Сигналы» и «Тренировка» подпись `hint_next_workout` (`bodySmall`, `onSurfaceVariant`, значок `Icons.Outlined.Info` скрыт от TalkBack)
-- [ ] строка `hint_next_workout`
-- [ ] тестов нет (Compose и Activity), запустить тесты и `lintDebug` — должны пройти
+- [x] пробный сигнал: `saveVolumeAndPreview` сохраняет громкость, но при `WorkoutService.state.value !is WorkoutState.Idle` не играет `Beeper` и не показывает `Toast` `warning_muted` (одно сравнение, без отдельной функции); отпускание по уходу из `Idle` остаётся
+- [x] `AppSettingsContent` получает `workoutRunning: Boolean`, под группами «Сигналы» и «Тренировка» подпись `hint_next_workout` (`bodySmall`, `onSurfaceVariant`, значок `Icons.Outlined.Info` скрыт от TalkBack)
+- [x] строка `hint_next_workout`
+- [x] тестов нет (Compose и Activity), запустить тесты и `lintDebug` — должны пройти
 
 ### Task 5: Verify acceptance criteria
 - [ ] verify all requirements from Overview are implemented
