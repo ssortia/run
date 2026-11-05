@@ -1,8 +1,7 @@
 package com.ssortia.runtimer
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.Instant
 import java.time.ZoneId
@@ -20,12 +19,40 @@ class ProgressRowTextTest {
         walk = "Шаг",
         min = "мин",
         sec = "с",
-        ringPassed = "Неделя пройдена",
-        ringCount = "Пробежек %1${'$'}d из %2${'$'}d",
+        statusCount = "Пробежек %1${'$'}d из %2${'$'}d",
+        statusPassed = "Неделя пройдена · %s",
+        none = "—",
+        now = "сейчас",
+        passed = "пройдена",
+        last = "последняя %s",
+        noRuns = "пробежек нет",
+        count = "пробежек %1${'$'}d из %2${'$'}d",
     )
 
-    private fun row(week: Int, completedRuns: Int, lastCompletedAtMs: Long?) = progressRowText(
-        week = WeekProgress(WORKOUT_PRESETS.first { it.week == week }, completedRuns, lastCompletedAtMs),
+    private fun ms(iso: String) = Instant.parse(iso).toEpochMilli()
+
+    private fun week(
+        week: Int,
+        completedRuns: Int,
+        lastCompletedAtMs: Long?,
+        current: Boolean = false,
+        beforeCurrent: Boolean = false,
+    ) = WeekProgress(
+        preset = WORKOUT_PRESETS.first { it.week == week },
+        completedRuns = completedRuns,
+        lastCompletedAtMs = lastCompletedAtMs,
+        current = current,
+        beforeCurrent = beforeCurrent,
+    )
+
+    private fun row(
+        week: Int,
+        completedRuns: Int,
+        lastCompletedAtMs: Long?,
+        current: Boolean = false,
+        beforeCurrent: Boolean = false,
+    ) = progressRowText(
+        week = week(week, completedRuns, lastCompletedAtMs, current, beforeCurrent),
         weekTitle = "Неделя $week",
         runsText = "$completedRuns раз",
         labels = labels,
@@ -56,55 +83,134 @@ class ProgressRowTextTest {
     }
 
     @Test
-    fun `неделя без пробежек без даты, число читает кольцо`() {
+    fun `неделя без пробежек с прочерком без даты и строки состояния`() {
         val row = row(week = 3, completedRuns = 0, lastCompletedAtMs = null)
 
         assertEquals(
             ProgressRowText(
                 title = "Неделя 3",
                 details = "Бег 3:00 · Шаг 2:00 · ×5",
-                runs = "0 раз",
-                runsSpoken = false,
+                runs = "—",
                 date = null,
-                ringDescription = "Пробежек 0 из 4",
+                status = null,
+                description = "Неделя 3, Бег 3:00 · Шаг 2:00 · ×5, пробежек нет",
             ),
             row,
         )
     }
 
     @Test
-    fun `непройденная неделя с датой последней пробежки, число читает кольцо`() {
-        val row = row(week = 5, completedRuns = 3, lastCompletedAtMs = Instant.parse("2026-10-20T07:30:00Z").toEpochMilli())
+    fun `параметры и дата прежние`() {
+        val row = row(week = 5, completedRuns = 3, lastCompletedAtMs = ms("2026-10-20T07:30:00Z"))
 
         assertEquals("Бег 7:00 · Шаг 1:30 · ×3", row.details)
         assertEquals("3 раз", row.runs)
         assertEquals("20 октября", row.date)
-        assertEquals("Пробежек 3 из 4", row.ringDescription)
-        assertFalse(row.runsSpoken)
+        assertEquals("Бег 30:00 · ×1", row(week = 10, completedRuns = 4, lastCompletedAtMs = 0L).details)
     }
 
     @Test
-    fun `кольцо называет каждое число до порога`() {
-        for (runs in 0 until RUNS_TO_PASS_WEEK) {
-            assertEquals("Пробежек $runs из 4", row(week = 1, completedRuns = runs, lastCompletedAtMs = 0L).ringDescription)
+    fun `строка состояния текущей недели до порога называет число из 4`() {
+        assertEquals("Пробежек 0 из 4", row(week = 1, completedRuns = 0, lastCompletedAtMs = null, current = true).status)
+        assertEquals("Пробежек 3 из 4", row(week = 3, completedRuns = 3, lastCompletedAtMs = 0L, current = true).status)
+    }
+
+    @Test
+    fun `строка состояния с порога называет настоящее число без из 4`() {
+        assertEquals("Неделя пройдена · 4 раз", row(week = 3, completedRuns = 4, lastCompletedAtMs = 0L, current = true).status)
+        assertEquals("Неделя пройдена · 6 раз", row(week = 3, completedRuns = 6, lastCompletedAtMs = 0L, current = true).status)
+    }
+
+    @Test
+    fun `строки состояния нет у остальных недель`() {
+        assertNull(row(week = 1, completedRuns = 5, lastCompletedAtMs = 0L).status)
+        assertNull(row(week = 2, completedRuns = 2, lastCompletedAtMs = 0L, beforeCurrent = true).status)
+        assertNull(row(week = 4, completedRuns = 0, lastCompletedAtMs = null).status)
+    }
+
+    @Test
+    fun `описание текущей недели`() {
+        val row = row(week = 3, completedRuns = 3, lastCompletedAtMs = ms("2026-11-03T18:00:00Z"), current = true)
+
+        assertEquals("Неделя 3, Бег 3:00 · Шаг 2:00 · ×5, сейчас, пробежек 3 из 4, последняя 3 ноября", row.description)
+    }
+
+    @Test
+    fun `описание текущей пройденной недели`() {
+        val row = row(week = 3, completedRuns = 6, lastCompletedAtMs = ms("2026-11-03T18:00:00Z"), current = true)
+
+        assertEquals("Неделя 3, Бег 3:00 · Шаг 2:00 · ×5, сейчас, пройдена, 6 раз, последняя 3 ноября", row.description)
+    }
+
+    @Test
+    fun `описание текущей недели без пробежек`() {
+        val row = row(week = 1, completedRuns = 0, lastCompletedAtMs = null, current = true)
+
+        assertEquals("Неделя 1, Бег 1:00 · Шаг 2:00 · ×7, сейчас, пробежек нет", row.description)
+    }
+
+    @Test
+    fun `описание пройденной недели`() {
+        val row = row(week = 1, completedRuns = 5, lastCompletedAtMs = ms("2026-10-20T07:30:00Z"), beforeCurrent = true)
+
+        assertEquals("Неделя 1, Бег 1:00 · Шаг 2:00 · ×7, пройдена, 5 раз, последняя 20 октября", row.description)
+    }
+
+    @Test
+    fun `описание пропущенной недели с пробежками`() {
+        val row = row(week = 2, completedRuns = 2, lastCompletedAtMs = ms("2026-10-29T07:30:00Z"), beforeCurrent = true)
+
+        assertEquals("Неделя 2, Бег 2:00 · Шаг 2:00 · ×6, пробежек 2 из 4, последняя 29 октября", row.description)
+    }
+
+    @Test
+    fun `описание недели впереди без пробежек`() {
+        val row = row(week = 4, completedRuns = 0, lastCompletedAtMs = null)
+
+        assertEquals("Неделя 4, Бег 4:30 · Шаг 2:00 · ×4, пробежек нет", row.description)
+    }
+
+    @Test
+    fun `описание недели впереди с пробежками`() {
+        val row = row(week = 6, completedRuns = 2, lastCompletedAtMs = ms("2026-10-29T07:30:00Z"))
+
+        assertEquals("Неделя 6, Бег 8:00 · Шаг 1:30 · ×3, пробежек 2 из 4, последняя 29 октября", row.description)
+        assertEquals("2 раз", row.runs)
+    }
+
+    @Test
+    fun `описание пройденной не текущей недели ровно с четырьмя пробежками`() {
+        val row = row(week = 5, completedRuns = 4, lastCompletedAtMs = ms("2026-10-20T07:30:00Z"))
+
+        assertEquals("Неделя 5, Бег 7:00 · Шаг 1:30 · ×3, пройдена, 4 раз, последняя 20 октября", row.description)
+        assertNull(row.status)
+    }
+
+    @Test
+    fun `строки по настоящему прогрессу из истории`() {
+        val week2 = WORKOUT_PRESETS.first { it.week == 2 }.settings.toWorkout()
+        val week3 = WORKOUT_PRESETS.first { it.week == 3 }.settings.toWorkout()
+        fun record(workout: Workout, iso: String) = requireNotNull(runRecordOrNull(workout, ms(iso), workout.totalMs))
+        val records = List(4) { record(week2, "2026-10-2${it}T07:30:00Z") } +
+            List(2) { record(week3, "2026-11-0${it + 1}T07:30:00Z") }
+
+        val rows = programProgress(records).map {
+            progressRowText(
+                week = it,
+                weekTitle = "Неделя ${it.week}",
+                runsText = "${it.completedRuns} раз",
+                labels = labels,
+                formatter = formatter(),
+            )
         }
-    }
 
-    @Test
-    fun `пройденная неделя описывает круг и читает число`() {
-        val row = row(week = 10, completedRuns = RUNS_TO_PASS_WEEK, lastCompletedAtMs = 0L)
-
-        assertEquals("Бег 30:00 · ×1", row.details)
-        assertEquals("Неделя пройдена", row.ringDescription)
-        assertTrue(row.runsSpoken)
-    }
-
-    @Test
-    fun `больше порога тоже круг, число пробежек читается`() {
-        val row = row(week = 2, completedRuns = 6, lastCompletedAtMs = 0L)
-
-        assertEquals("Неделя пройдена", row.ringDescription)
-        assertEquals("6 раз", row.runs)
-        assertTrue(row.runsSpoken)
+        assertEquals(
+            listOf(null, null, "Пробежек 2 из 4", null, null, null, null, null, null, null),
+            rows.map { it.status },
+        )
+        assertEquals("Неделя 1, Бег 1:00 · Шаг 2:00 · ×7, пробежек нет", rows[0].description)
+        assertEquals("Неделя 2, Бег 2:00 · Шаг 2:00 · ×6, пройдена, 4 раз, последняя 23 октября", rows[1].description)
+        assertEquals("Неделя 3, Бег 3:00 · Шаг 2:00 · ×5, сейчас, пробежек 2 из 4, последняя 2 ноября", rows[2].description)
+        assertEquals(listOf("—", "4 раз", "2 раз", "—"), rows.take(4).map { it.runs })
     }
 }

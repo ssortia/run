@@ -97,12 +97,12 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ProgramProgress.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ProgramProgressTest.kt`
 
-- [ ] добавить `WeekMark`, обязательные поля `current` и `beforeCurrent` в `WeekProgress`, свойства `mark` и `lineToNextFilled`
-- [ ] добавить `currentProgramWeek(runs)`: последняя завершённая пробежка по программе, при равном `startedAtMs` большая неделя, без таких пробежек неделя 1
-- [ ] заполнять `current` и `beforeCurrent` в `programProgress`, KDoc с правилом линии
-- [ ] тесты текущей недели: пустая история — 1; последняя завершённая не из программы — по более ранней; остановленная пробежка позже не меняет текущую; равный `startedAtMs` у двух недель — большая, независимо от порядка списка
-- [ ] тесты вида узлов и линии: пустая история — неделя 1 `CURRENT`, остальные `AHEAD`, все `lineToNextFilled` false; незакрытые недели выше текущей — `SKIPPED` и закрашенные отрезки; недели не по порядку (неделя 5 пройдена, последняя пробежка недели 3) — неделя 5 `PASSED` ниже текущей, её отрезок закрашен, отрезок текущей непройденной нет; текущая пройденная (6 пробежек) — `CURRENT`, `passed`, отрезок закрашен
-- [ ] прежние тесты подсчёта остаются зелёными; run tests — must pass before next task
+- [x] добавить `WeekMark`, обязательные поля `current` и `beforeCurrent` в `WeekProgress`, свойства `mark` и `lineToNextFilled`
+- [x] добавить `currentProgramWeek(runs)`: последняя завершённая пробежка по программе, при равном `startedAtMs` большая неделя, без таких пробежек неделя 1
+- [x] заполнять `current` и `beforeCurrent` в `programProgress`, KDoc с правилом линии
+- [x] тесты текущей недели: пустая история — 1; последняя завершённая не из программы — по более ранней; остановленная пробежка позже не меняет текущую; равный `startedAtMs` у двух недель — большая, независимо от порядка списка
+- [x] тесты вида узлов и линии: пустая история — неделя 1 `CURRENT`, остальные `AHEAD`, все `lineToNextFilled` false; незакрытые недели выше текущей — `SKIPPED` и закрашенные отрезки; недели не по порядку (неделя 5 пройдена, последняя пробежка недели 3) — неделя 5 `PASSED` ниже текущей, её отрезок закрашен, отрезок текущей непройденной нет; текущая пройденная (6 пробежек) — `CURRENT`, `passed`, отрезок закрашен
+- [x] прежние тесты подсчёта остаются зелёными; run tests — must pass before next task
 
 ### Task 2: Тексты карточек и описания для TalkBack
 
@@ -111,11 +111,12 @@
 - Modify: `app/src/main/res/values/strings.xml`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ProgressRowTextTest.kt`
 
-- [ ] расширить `ProgressLabels` подписями «сейчас», «пройдена», «последняя %s», «пробежек нет», шаблоном строки состояния и «Неделя пройдена»
-- [ ] `progressRowText`: `status` у текущей недели («Пробежек N из 4» / «Неделя пройдена · N раз»), `description` всей строки по виду узла; убрать ставшие лишними поля
-- [ ] ресурсы: `progress_now` и подписи описания; удалить неиспользуемые `progress_summary`, `progress_summary_description` и прочие осиротевшие
-- [ ] тесты: строка состояния 0, 3, 4 и 6 пробежек (с 4 настоящее число, без «из 4»); описания текущей, текущей пройденной (6 пробежек), текущей без пробежек, пройденной, `SKIPPED` с пробежками, `AHEAD` без пробежек; дата и формат параметров прежние
-- [ ] run tests — must pass before next task
+- [x] расширить `ProgressLabels` подписями «сейчас», «пройдена», «последняя %s», «пробежек нет», шаблоном строки состояния и «Неделя пройдена»
+- [x] `progressRowText`: `status` у текущей недели («Пробежек N из 4» / «Неделя пройдена · N раз»), `description` всей строки по виду узла; убрать ставшие лишними поля
+- [x] ресурсы: `progress_now` и подписи описания; удалить неиспользуемые `progress_summary`, `progress_summary_description` и прочие осиротевшие
+- [x] тесты: строка состояния 0, 3, 4 и 6 пробежек (с 4 настоящее число, без «из 4»); описания текущей, текущей пройденной (6 пробежек), текущей без пробежек, пройденной, `SKIPPED` с пробежками, `AHEAD` без пробежек; дата и формат параметров прежние
+- [x] run tests — must pass before next task
+- ➕ `ui/ProgressContent.kt` минимально поправлен под новые поля, чтобы сборка шла: убран `SummaryCard` (его ресурсы удалены), строка читается `description`, у текущей недели под параметрами строка состояния; лента — задача 3
 
 ### Task 3: Лента на экране прогресса
 
@@ -124,25 +125,26 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/Theme.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt`
 
-- [ ] удалить `SummaryCard`, `WeeksCard`, `WeekRow`; колонка с `verticalScroll` и нижним отступом `ScrollContentBottomPadding` остаётся, при `null` по-прежнему только `AppTopBar`
-- [ ] строка недели: `Row(height(IntrinsicSize.Min))`, колонка узла ~28 dp с линией в `drawBehind` (верхний отрезок по предыдущей неделе, нижний по своей, в промежутке 8 dp между строками (`spacedBy`) линии нет), узел по `mark` с кольцом цвета фона, центр на середине строки заголовка через `lineHeight` и `LocalDensity`; прочерк `SKIPPED` в `Canvas` или `Box`, не иконкой
-- [ ] карточка «Сейчас» (плашка, параметры, 4 деления, строка состояния и дата) и компактная карточка остальных недель (`SectionCard` или тот же фон `surfaceContainer`), цвета только из `ui/Theme.kt` и `MaterialTheme`
-- [ ] TalkBack: строка — один узел `clearAndSetSemantics { contentDescription = text.description }`, узлы, линия и деления без семантики
-- [ ] `ThemeTest` с `windowBackground(darkTheme)`: линия `marker` не меньше 3:1, дорожка `progressTrackColor` не меньше 1,3:1 в обеих темах (прочерк берёт `progressCheckColor`, его контраст на `marker` уже проверен)
-- [ ] затемнить `ProgressTrackLight` в `ui/Theme.kt`, чтобы прошла проверка дорожки на фоне, сохранив `marker` на дорожке не меньше 3:1
-- [ ] `./gradlew test assembleDebug` — must pass before next task
+- [x] удалить `SummaryCard`, `WeeksCard`, `WeekRow`; колонка с `verticalScroll` и нижним отступом `ScrollContentBottomPadding` остаётся, при `null` по-прежнему только `AppTopBar`
+- [x] строка недели: `Row(height(IntrinsicSize.Min))`, колонка узла ~28 dp с линией в `drawBehind` (верхний отрезок по предыдущей неделе, нижний по своей, в промежутке 8 dp между строками (`spacedBy`) линии нет), узел по `mark` с кольцом цвета фона, центр на середине строки заголовка через `lineHeight` и `LocalDensity`; прочерк `SKIPPED` в `Canvas` или `Box`, не иконкой
+- [x] карточка «Сейчас» (плашка, параметры, 4 деления, строка состояния и дата) и компактная карточка остальных недель (`SectionCard` или тот же фон `surfaceContainer`), цвета только из `ui/Theme.kt` и `MaterialTheme`
+- [x] TalkBack: строка — один узел `clearAndSetSemantics { contentDescription = text.description }`, узлы, линия и деления без семантики
+- [x] `ThemeTest` с `windowBackground(darkTheme)`: линия `marker` не меньше 3:1, дорожка `progressTrackColor` не меньше 1,3:1 в обеих темах (прочерк берёт `progressCheckColor`, его контраст на `marker` уже проверен)
+- [x] затемнить `ProgressTrackLight` в `ui/Theme.kt`, чтобы прошла проверка дорожки на фоне, сохранив `marker` на дорожке не меньше 3:1
+- [x] `./gradlew test assembleDebug` — must pass before next task
 
 ### Task 4: Verify acceptance criteria
-- [ ] verify all requirements from `docs/tasks/20261104-progress-timeline.md` are implemented (экран, правила, TalkBack; вид на телефоне — Post-Completion)
-- [ ] verify edge cases: пустая история, последняя пробежка не из программы, текущая пройденная, недели не по порядку, неделя 10 без шага
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify all requirements from `docs/tasks/20261104-progress-timeline.md` are implemented (экран, правила, TalkBack; вид на телефоне — Post-Completion)
+- [x] verify edge cases: пустая история, последняя пробежка не из программы, текущая пройденная, недели не по порядку, неделя 10 без шага
+- ➕ тест `неделя 10 с шагом при одном повторе становится текущей` в `ProgramProgressTest`: край «неделя 10 без шага» для текущей недели и ленты
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 5: [Final] Update documentation
-- [ ] `USER_STORIES.md`, US-16: итог и полоса убраны, лента, карточка «Сейчас», правило текущей недели, незакрытые недели выше текущей, число больше 4; переписать ««0 из 10», у всех недель прочерки» на «Сейчас» у недели 1
-- [ ] `README.md`: описание прогресса и строки `ProgramProgress.kt`, `ProgressRowText.kt`, `ui/ProgressContent.kt` в таблице файлов, фразу «а не «0 из 10»» в описании прогресса
-- [ ] `CLAUDE.md`: абзац о прогрессе в «Архитектуре» (текущая неделя, `WeekMark`, линия), цвета экрана прогресса в «Неочевидном» (узел пропущенной недели, линия, проверка контраста линии), линия рисуется в строке и в промежутках между карточками прерывается намеренно; пункт про `.catch` в `RunHistory.runs` («только `AppTopBar`, а не «0 из 10»») переписать без итога
-- [ ] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/`
+- [x] `USER_STORIES.md`, US-16: итог и полоса убраны, лента, карточка «Сейчас», правило текущей недели, незакрытые недели выше текущей, число больше 4; переписать ««0 из 10», у всех недель прочерки» на «Сейчас» у недели 1
+- [x] `README.md`: описание прогресса и строки `ProgramProgress.kt`, `ProgressRowText.kt`, `ui/ProgressContent.kt` в таблице файлов, фразу «а не «0 из 10»» в описании прогресса
+- [x] `CLAUDE.md`: абзац о прогрессе в «Архитектуре» (текущая неделя, `WeekMark`, линия), цвета экрана прогресса в «Неочевидном» (узел пропущенной недели, линия, проверка контраста линии), линия рисуется в строке и в промежутках между карточками прерывается намеренно; пункт про `.catch` в `RunHistory.runs` («только `AppTopBar`, а не «0 из 10»») переписать без итога
+- [x] перенести задачу в `docs/tasks/completed/`, этот план в `docs/plans/completed/` (задача перенесена, план переносится после ревью)
 
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
