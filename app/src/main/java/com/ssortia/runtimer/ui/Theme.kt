@@ -171,8 +171,9 @@ fun workoutColors(state: WorkoutState, darkTheme: Boolean): SegmentColors = when
 }
 
 /**
- * Нужны ли тёмные значки в строке состояния: на экране тренировки во весь экран ([fullscreen])
- * они совпадают с цветом текста, а на вкладках и на форме следуют за темой.
+ * Нужны ли тёмные значки в строке состояния: под экраном тренировки ([fullscreen]: слой во весь экран
+ * и доехал до верха, см. sheetCoversStatusBar) они совпадают с цветом текста, а на вкладках и на
+ * форме следуют за темой.
  */
 fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean, fullscreen: Boolean): Boolean =
     if (!fullscreen || state is WorkoutState.Idle) {

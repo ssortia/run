@@ -28,48 +28,6 @@ fun startSlotIndex(): Int = BottomTab.entries.size / 2
 
 fun bottomTabOf(route: String?): BottomTab? = BottomTab.entries.firstOrNull { it.route == route }
 
-/**
- * Экран тренировки во весь экран: идёт отсчёт или тренировка и слой тренировки развёрнут. Единственное
- * место, где сочетаются состояние и развёрнутость: по нему выбираются системные панели и составляется слой.
- */
-fun isWorkoutFullscreen(state: WorkoutState, expanded: Boolean): Boolean =
-    state !is WorkoutState.Idle && expanded
-
-/**
- * Начальная развёрнутость слоя тренировки у нового экземпляра activity: во время тренировки
- * (например, после гибели activity или из уведомления) экран тренировки открыт сразу.
- */
-fun initialWorkoutExpanded(state: WorkoutState): Boolean = state !is WorkoutState.Idle
-
-/**
- * Развернуть экран тренировки при старте: только на переходе из Idle. Прошлое значение переживает
- * поворот, иначе поворот во время тренировки снова разворачивал бы свёрнутый экран. Без перехода
- * (activity открыта уже во время тренировки) развёрнутость берётся из [initialWorkoutExpanded].
- */
-fun shouldExpandWorkout(wasIdle: Boolean, idle: Boolean): Boolean = wasIdle && !idle
-
-/** Доля высоты области, на которую надо опустить экран тренировки, чтобы при отпускании он свернулся. */
-const val SHEET_COLLAPSE_FRACTION = 0.25f
-
-/**
- * Свернуть ли экран тренировки, когда палец отпустил его на смещении [offsetPx] вниз из [heightPx].
- * Флинг важнее смещения: быстрый взмах вниз (скорость не меньше [flingVelocityPx]) сворачивает и
- * от самого верха, быстрый взмах вверх возвращает и почти свёрнутый экран. Без флинга экран
- * сворачивается, если опущен не меньше чем на [SHEET_COLLAPSE_FRACTION] высоты. Пока высота
- * области неизвестна ([heightPx] не больше 0), экран не сворачивается.
- */
-fun shouldCollapseSheet(
-    offsetPx: Float,
-    heightPx: Float,
-    velocityPx: Float,
-    flingVelocityPx: Float,
-): Boolean = when {
-    heightPx <= 0f -> false
-    velocityPx >= flingVelocityPx -> true
-    velocityPx <= -flingVelocityPx -> false
-    else -> offsetPx >= heightPx * SHEET_COLLAPSE_FRACTION
-}
-
 /** Режим центральной кнопки нижней панели: «Старт» вне тренировки, пауза во время неё. */
 enum class CenterButtonMode { START, PAUSE, RESUME, PAUSE_DISABLED }
 

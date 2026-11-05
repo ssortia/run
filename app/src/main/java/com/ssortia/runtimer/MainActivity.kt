@@ -21,12 +21,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -34,8 +38,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ssortia.runtimer.ui.RunTimerTheme
 import com.ssortia.runtimer.ui.WorkoutScreen
 import com.ssortia.runtimer.ui.darkStatusIcons
-import com.ssortia.runtimer.ui.initialWorkoutExpanded
 import com.ssortia.runtimer.ui.isWorkoutFullscreen
+import com.ssortia.runtimer.ui.rememberWorkoutSheetState
+import com.ssortia.runtimer.ui.sheetCoversStatusBar
 
 private const val TAG = "MainActivity"
 
@@ -78,12 +83,19 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(idle) {
                 if (!idle) releasePreview()
             }
-            // Развёрнут ли экран тренировки поверх вкладок. Хранится здесь, а не в WorkoutScreen: по
-            // нему выбираются системные панели, и источник должен быть один. Новый экземпляр activity
-            // во время тренировки открывается с развёрнутым экраном. Полноэкранный режим считается
-            // только здесь и передаётся в WorkoutScreen, чтобы панели и оболочка не разошлись
-            var workoutExpanded by rememberSaveable { mutableStateOf(initialWorkoutExpanded(state)) }
-            val fullscreen = isWorkoutFullscreen(state, workoutExpanded)
+            // Развёрнутость и смещение экрана тренировки поверх вкладок. Хранятся здесь, а не в
+            // WorkoutScreen: по ним выбираются системные панели, и источник должен быть один.
+            // Экземпляр без сохранённого состояния (например, после выхода «Назад») во время
+            // тренировки открывается с развёрнутым экраном, восстановленный — каким его оставили
+            val sheet = rememberWorkoutSheetState(initialExpanded = state !is WorkoutState.Idle)
+            // Панель навигации внизу закрыта слоем, пока он развёрнут, а строка состояния сверху
+            // только когда слой доехал до верха: пока он выезжает, сворачивается или его тянут
+            // пальцем, сверху видна вкладка. derivedStateOf: смещение меняется каждый кадр
+            val fullscreen = isWorkoutFullscreen(state, sheet.expanded)
+            val statusBarPx = WindowInsets.statusBars.getTop(LocalDensity.current).toFloat()
+            val layerUnderStatusBar by remember(sheet, statusBarPx) {
+                derivedStateOf { sheetCoversStatusBar(sheet.expanded, sheet.offsetPx, statusBarPx) }
+            }
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
@@ -130,7 +142,7 @@ class MainActivity : ComponentActivity() {
             }
 
             // Значки следуют за цветом экрана: тёмный фон шага бывает и в светлой теме
-            val darkIcons = darkStatusIcons(state, darkTheme, fullscreen)
+            val darkIcons = darkStatusIcons(state, darkTheme, isWorkoutFullscreen(state, layerUnderStatusBar))
             LaunchedEffect(darkIcons, darkTheme, fullscreen) {
                 enableEdgeToEdge(
                     statusBarStyle = if (darkIcons) {
@@ -156,9 +168,7 @@ class MainActivity : ComponentActivity() {
             RunTimerTheme(darkTheme = darkTheme) {
                 WorkoutScreen(
                     state = state,
-                    fullscreen = fullscreen,
-                    expanded = workoutExpanded,
-                    onExpandedChange = { workoutExpanded = it },
+                    sheet = sheet,
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,
