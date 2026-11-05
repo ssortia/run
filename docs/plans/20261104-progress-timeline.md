@@ -134,10 +134,11 @@
 - [x] `./gradlew test assembleDebug` — must pass before next task
 
 ### Task 4: Verify acceptance criteria
-- [ ] verify all requirements from `docs/tasks/20261104-progress-timeline.md` are implemented (экран, правила, TalkBack; вид на телефоне — Post-Completion)
-- [ ] verify edge cases: пустая история, последняя пробежка не из программы, текущая пройденная, недели не по порядку, неделя 10 без шага
-- [ ] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
-- [ ] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
+- [x] verify all requirements from `docs/tasks/20261104-progress-timeline.md` are implemented (экран, правила, TalkBack; вид на телефоне — Post-Completion)
+- [x] verify edge cases: пустая история, последняя пробежка не из программы, текущая пройденная, недели не по порядку, неделя 10 без шага
+- ➕ тест `неделя 10 с шагом при одном повторе становится текущей` в `ProgramProgressTest`: край «неделя 10 без шага» для текущей недели и ленты
+- [x] run full test suite: `JAVA_HOME=~/.local/jdk-17 ./gradlew test assembleDebug`
+- [x] run lint: `JAVA_HOME=~/.local/jdk-17 ./gradlew lintDebug`
 
 ### Task 5: [Final] Update documentation
 - [ ] `USER_STORIES.md`, US-16: итог и полоса убраны, лента, карточка «Сейчас», правило текущей недели, незакрытые недели выше текущей, число больше 4; переписать ««0 из 10», у всех недель прочерки» на «Сейчас» у недели 1

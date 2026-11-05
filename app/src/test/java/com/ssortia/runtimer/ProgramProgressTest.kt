@@ -255,4 +255,18 @@ class ProgramProgressTest {
         assertTrue(week.passed)
         assertTrue(week.lineToNextFilled)
     }
+
+    @Test
+    fun `неделя 10 с шагом при одном повторе становится текущей`() {
+        val runs = listOf(
+            weekRecord(9, startedAtMs = 100L),
+            record(runSec = 1800, walkSec = 120, rounds = 1, startedAtMs = 900L),
+        )
+        assertEquals(10, currentProgramWeek(runs))
+        val progress = programProgress(runs)
+        assertEquals(WeekMark.CURRENT, progress.week(10).mark)
+        assertEquals(1, progress.week(10).completedRuns)
+        assertEquals(List(9) { WeekMark.SKIPPED }, progress.take(9).map { it.mark })
+        assertTrue(progress.take(9).all { it.lineToNextFilled })
+    }
 }
