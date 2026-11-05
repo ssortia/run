@@ -59,4 +59,15 @@ class PauseButtonTest {
         assertEquals(R.string.button_resume, centerButtonLabelRes(CenterButtonMode.RESUME))
         assertEquals(R.string.button_pause, centerButtonLabelRes(CenterButtonMode.PAUSE_DISABLED))
     }
+
+    @Test
+    fun `«Старт» доступен только при верных настройках, пауза и продолжение всегда`() {
+        assertTrue(centerButtonEnabled(CenterButtonMode.START, settingsValid = true))
+        assertFalse(centerButtonEnabled(CenterButtonMode.START, settingsValid = false))
+        for (valid in listOf(true, false)) {
+            assertTrue(centerButtonEnabled(CenterButtonMode.PAUSE, valid))
+            assertTrue(centerButtonEnabled(CenterButtonMode.RESUME, valid))
+            assertFalse(centerButtonEnabled(CenterButtonMode.PAUSE_DISABLED, valid))
+        }
+    }
 }

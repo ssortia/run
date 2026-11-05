@@ -19,10 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,7 +77,7 @@ fun ActiveContent(
                 progress = { state.progress },
                 modifier = Modifier.fillMaxWidth(),
                 color = colors.content,
-                trackColor = colors.content.copy(alpha = 0.3f),
+                trackColor = colors.content.copy(alpha = ProgressTrackAlpha),
                 // Без точки на конце дорожки и зазора: иначе пустая полоса выглядит заполненной
                 gapSize = 0.dp,
                 drawStopIndicator = {},
@@ -147,7 +147,9 @@ fun CountdownContent(
 
 /**
  * Фон уходит под системные панели, отступы применяются к содержимому. «Свернуть» слева сверху
- * возвращает на прошлую вкладку, тренировка при этом идёт дальше.
+ * возвращает на прошлую вкладку, тренировка при этом идёт дальше. Кнопка стоит в уменьшенном
+ * верхнем отступе и без промежутка после неё (у неё свой внутренний отступ): в альбомной
+ * ориентации она не должна отнимать у времени лишнее место и уводить его в прокрутку.
  */
 @Composable
 private fun TimerLayout(
@@ -163,8 +165,7 @@ private fun TimerLayout(
                 .fillMaxSize()
                 .background(colors.background)
                 .safeDrawingPadding()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
         ) {
             TextButton(
                 onClick = onCollapse,
@@ -190,8 +191,14 @@ private fun TimerLayout(
                     center()
                 }
             }
-
-            bottom()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                bottom()
+            }
         }
     }
 }
@@ -229,27 +236,6 @@ fun pauseButtonRes(paused: Boolean): Int =
  * Нажатие после остановки сервиса создало бы новый экземпляр ради отклонённой команды.
  */
 fun pauseEnabled(state: WorkoutState.Active): Boolean = state.position.remainingMs > 0
-
-/** Режим центральной кнопки нижней панели: «Старт» вне тренировки, пауза во время неё. */
-enum class CenterButtonMode { START, PAUSE, RESUME, PAUSE_DISABLED }
-
-/** Пауза недоступна на отсчёте (часов ещё нет) и после финального сигнала, как у [pauseEnabled]. */
-fun centerButtonMode(state: WorkoutState): CenterButtonMode = when (state) {
-    WorkoutState.Idle -> CenterButtonMode.START
-    is WorkoutState.Countdown -> CenterButtonMode.PAUSE_DISABLED
-    is WorkoutState.Active -> when {
-        !pauseEnabled(state) -> CenterButtonMode.PAUSE_DISABLED
-        state.paused -> CenterButtonMode.RESUME
-        else -> CenterButtonMode.PAUSE
-    }
-}
-
-@StringRes
-fun centerButtonLabelRes(mode: CenterButtonMode): Int = when (mode) {
-    CenterButtonMode.START -> R.string.button_start
-    CenterButtonMode.PAUSE, CenterButtonMode.PAUSE_DISABLED -> R.string.button_pause
-    CenterButtonMode.RESUME -> R.string.button_resume
-}
 
 @Composable
 internal fun WarningText(@StringRes textRes: Int, modifier: Modifier = Modifier) {

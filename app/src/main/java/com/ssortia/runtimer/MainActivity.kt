@@ -81,10 +81,12 @@ class MainActivity : ComponentActivity() {
             }
             // Контроллер здесь, а не в WorkoutScreen: по текущему маршруту выбираются системные
             // панели. Оболочка с NavHost составляется во всех состояниях, поэтому стек переживает
-            // старт и финал тренировки
+            // старт и финал тренировки. Маршрут и полноэкранный режим считаются только здесь и
+            // передаются в WorkoutScreen, чтобы панели и оболочка не разошлись
             val navController = rememberNavController()
             val entry by navController.currentBackStackEntryAsState()
-            val fullscreen = isWorkoutFullscreen(state, entry?.destination?.route)
+            val route = entry?.destination?.route
+            val fullscreen = isWorkoutFullscreen(state, route)
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
@@ -158,6 +160,8 @@ class MainActivity : ComponentActivity() {
                 WorkoutScreen(
                     state = state,
                     navController = navController,
+                    route = route,
+                    fullscreen = fullscreen,
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,

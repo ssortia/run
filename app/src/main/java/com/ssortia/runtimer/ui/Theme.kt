@@ -124,6 +124,9 @@ internal const val DisabledContentAlpha = 0.38f
 /** Прозрачность заливки недоступной кнопки, как у M3. */
 internal const val DisabledContainerAlpha = 0.12f
 
+/** Прозрачность дорожки линии «пройдено» цвета текста на фоне отрезка: экран тренировки и полоска. */
+internal const val ProgressTrackAlpha = 0.3f
+
 fun segmentColors(isRun: Boolean, darkTheme: Boolean): SegmentColors = when {
     darkTheme -> if (isRun) RunDark else WalkDark
     else -> if (isRun) RunLight else WalkLight
@@ -158,18 +161,24 @@ fun weekChipBorderColor(darkTheme: Boolean): Color = if (darkTheme) WeekChipBord
 fun countdownColors(darkTheme: Boolean): SegmentColors = segmentColors(isRun = true, darkTheme)
 
 /**
+ * Цвета по состоянию тренировки: текущий отрезок во время неё, бег на отсчёте и вне тренировки.
+ * Общие для экрана тренировки во весь экран, полоски, центральной кнопки и значков строки состояния.
+ */
+fun workoutColors(state: WorkoutState, darkTheme: Boolean): SegmentColors = when (state) {
+    is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme)
+    is WorkoutState.Countdown -> countdownColors(darkTheme)
+    WorkoutState.Idle -> segmentColors(isRun = true, darkTheme)
+}
+
+/**
  * Нужны ли тёмные значки в строке состояния: на экране тренировки во весь экран ([fullscreen])
- * они совпадают с цветом текста, а на вкладках следуют за темой, как на форме.
+ * они совпадают с цветом текста, а на вкладках и на форме следуют за темой.
  */
 fun darkStatusIcons(state: WorkoutState, darkTheme: Boolean, fullscreen: Boolean): Boolean =
-    if (!fullscreen) {
+    if (!fullscreen || state is WorkoutState.Idle) {
         !darkTheme
     } else {
-        when (state) {
-            WorkoutState.Idle -> !darkTheme
-            is WorkoutState.Countdown -> countdownColors(darkTheme).needsDarkIcons()
-            is WorkoutState.Active -> segmentColors(state.position.isRun, darkTheme).needsDarkIcons()
-        }
+        workoutColors(state, darkTheme).needsDarkIcons()
     }
 
 private fun SegmentColors.needsDarkIcons(): Boolean = content.luminance() < 0.5f

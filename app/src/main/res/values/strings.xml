@@ -110,4 +110,17 @@
         <item quantity="many">%d секунд</item>
         <item quantity="other">%d секунды</item>
     </plurals>
+    <!-- Винительный падеж для отсчёта: «старт через 1 минуту» -->
+    <plurals name="strip_minutes_accusative">
+        <item quantity="one">%d минуту</item>
+        <item quantity="few">%d минуты</item>
+        <item quantity="many">%d минут</item>
+        <item quantity="other">%d минуты</item>
+    </plurals>
+    <plurals name="strip_seconds_accusative">
+        <item quantity="one">%d секунду</item>
+        <item quantity="few">%d секунды</item>
+        <item quantity="many">%d секунд</item>
+        <item quantity="other">%d секунды</item>
+    </plurals>
 </resources>

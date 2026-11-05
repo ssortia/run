@@ -250,6 +250,17 @@ class ThemeTest {
     }
 
     @Test
+    fun `цвета по состоянию — отрезок во время тренировки, бег на отсчёте и вне тренировки`() {
+        for (darkTheme in listOf(false, true)) {
+            assertEquals(segmentColors(isRun = true, darkTheme), workoutColors(WorkoutState.Idle, darkTheme))
+            assertEquals(countdownColors(darkTheme), workoutColors(WorkoutState.Countdown(seconds = 5), darkTheme))
+            for (isRun in listOf(false, true)) {
+                assertEquals(segmentColors(isRun, darkTheme), workoutColors(active(isRun), darkTheme))
+            }
+        }
+    }
+
+    @Test
     fun `на вкладках во время тренировки значки следуют за темой`() {
         for (darkTheme in listOf(false, true)) {
             for (state in listOf(WorkoutState.Countdown(seconds = 5), active(isRun = true), active(isRun = false))) {

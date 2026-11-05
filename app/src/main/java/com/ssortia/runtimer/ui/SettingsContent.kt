@@ -144,10 +144,10 @@ private val WeekChipHeight = 40.dp
 private val FormTopPadding = 16.dp
 
 /**
- * Форма настроек. Состояние [settings] хранит ветка Idle у WorkoutScreen, форма меняет его только
+ * Форма настроек. Состояние [settings] хранит оболочка WorkoutScreen, форма меняет его только
  * через [onSettingsChange]. «Старт» не на форме, а в центре нижней панели: он запускает эти же
  * настройки с любой вкладки. Предупреждение о фоне и ошибка проверки стоят под карточками.
- * [error] — результат `settings.validate()`, его считает ветка Idle один раз и для «Старта».
+ * [error] — результат `settings.validate()`, оболочка считает его один раз и для «Старта».
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

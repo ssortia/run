@@ -5,6 +5,7 @@ import com.ssortia.runtimer.WorkoutState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BottomTabTest {
@@ -27,7 +28,7 @@ class BottomTabTest {
     }
 
     @Test
-    fun `«Старт» стоит между «Историей» и «Прогрессом»`() {
+    fun `центральная кнопка стоит между «Историей» и «Прогрессом»`() {
         assertEquals(BottomTab.HISTORY, BottomTab.entries[startSlotIndex() - 1])
         assertEquals(BottomTab.PROGRESS, BottomTab.entries[startSlotIndex()])
     }
@@ -39,20 +40,56 @@ class BottomTabTest {
         assertNull(bottomTabOf(""))
     }
 
+    private val active = WorkoutState.Active(
+        position = Position(index = 0, isRun = true, round = 1, remainingMs = 1_000),
+        rounds = 1,
+        progress = 0f,
+    )
+    private val countdown = WorkoutState.Countdown(seconds = 3)
+    private val tabRoutes = listOf(ROUTE_SETTINGS, ROUTE_HISTORY, ROUTE_PROGRESS, ROUTE_APP_SETTINGS)
+
     @Test
     fun `во весь экран только тренировка на «Таймере»`() {
-        val active = WorkoutState.Active(
-            position = Position(index = 0, isRun = true, round = 1, remainingMs = 1_000),
-            rounds = 1,
-            progress = 0f,
+        // Ожидания перечислены явно: true только у отсчёта и тренировки на «Таймере» или без маршрута
+        val fullscreen = setOf(
+            countdown to ROUTE_SETTINGS,
+            countdown to null,
+            active to ROUTE_SETTINGS,
+            active to null,
         )
-        val routes = listOf(ROUTE_SETTINGS, ROUTE_HISTORY, ROUTE_PROGRESS, ROUTE_APP_SETTINGS, null)
-        for (state in listOf(WorkoutState.Idle, WorkoutState.Countdown(seconds = 3), active)) {
-            for (route in routes) {
-                val expected = state !is WorkoutState.Idle && (route == ROUTE_SETTINGS || route == null)
-                assertEquals("$state на $route", expected, isWorkoutFullscreen(state, route))
+        for (state in listOf(WorkoutState.Idle, countdown, active)) {
+            for (route in tabRoutes + null) {
+                assertEquals("$state на $route", (state to route) in fullscreen, isWorkoutFullscreen(state, route))
             }
         }
-        assertFalse(isWorkoutFullscreen(WorkoutState.Idle, null))
+    }
+
+    @Test
+    fun `«Таймер» открывается только на переходе из Idle`() {
+        assertTrue(shouldOpenTimer(wasIdle = true, idle = false))
+        assertFalse(shouldOpenTimer(wasIdle = true, idle = true))
+        // Поворот во время тренировки и activity, открытая уже во время тренировки
+        assertFalse(shouldOpenTimer(wasIdle = false, idle = false))
+        // Финал тренировки
+        assertFalse(shouldOpenTimer(wasIdle = false, idle = true))
+    }
+
+    @Test
+    fun `«Свернуть» сразу после старта ведёт на вкладку старта, с «Таймера» на «Историю»`() {
+        assertEquals(ROUTE_PROGRESS, collapseRouteOnStart(ROUTE_PROGRESS))
+        assertEquals(ROUTE_APP_SETTINGS, collapseRouteOnStart(ROUTE_APP_SETTINGS))
+        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(ROUTE_HISTORY))
+        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(ROUTE_SETTINGS))
+        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(null))
+        assertEquals(ROUTE_HISTORY, collapseRouteOnStart("countdown"))
+    }
+
+    @Test
+    fun `«Свернуть» запоминает последнюю вкладку, кроме «Таймера»`() {
+        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_HISTORY, ROUTE_PROGRESS))
+        assertEquals(ROUTE_APP_SETTINGS, nextCollapseRoute(ROUTE_PROGRESS, ROUTE_APP_SETTINGS))
+        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, ROUTE_SETTINGS))
+        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, null))
+        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, "countdown"))
     }
 }

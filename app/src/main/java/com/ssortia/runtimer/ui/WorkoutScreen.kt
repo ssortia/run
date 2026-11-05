@@ -31,9 +31,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,26 +57,28 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RunRecord
 import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
-import com.ssortia.runtimer.workoutDetailsText
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Оболочка приложения: NavHost с вкладками, нижняя панель, полоска тренировки и центральная
- * кнопка. Составляется во всех состояниях, поэтому стек и состояния вкладок переживают старт и финал тренировки. Отдельного
- * маршрута для тренировки нет: «Таймер» показывает форму, отсчёт или тренировку по [state], а
- * во время тренировки он открыт во весь экран без панели ([isWorkoutFullscreen]).
+ * кнопка. Составляется во всех состояниях, поэтому стек и состояния вкладок переживают старт и
+ * финал тренировки. Отдельного маршрута для тренировки нет: «Таймер» показывает форму, отсчёт или
+ * тренировку по [state], а во время тренировки он открыт во весь экран без панели ([fullscreen]).
+ * Текущий маршрут [route] и [fullscreen] считает MainActivity: по ним же выбираются системные
+ * панели, и второй источник мог бы с ними разойтись.
  */
 @Composable
 fun WorkoutScreen(
     state: WorkoutState,
     navController: NavHostController,
+    route: String?,
+    fullscreen: Boolean,
     loadSettings: () -> WorkoutSettings,
     loadVolume: () -> Int,
     loadVibration: () -> Boolean,
@@ -101,30 +105,40 @@ fun WorkoutScreen(
     var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) {
         mutableStateOf(loadSettings())
     }
-    val entry by navController.currentBackStackEntryAsState()
-    val route = entry?.destination?.route
-    val fullscreen = isWorkoutFullscreen(state, route)
+    // Проверка формы считается один раз и для формы, и для «Старта». Через State, а не значением:
+    // захваченное значение пересобирало бы граф NavHost на каждой правке
+    val settingsError by remember { derivedStateOf { settings.validate() } }
 
     // Вкладка, на которую ведёт «Свернуть». Хранится в оболочке и переживает поворот
-    var lastRoute by rememberSaveable { mutableStateOf(ROUTE_HISTORY) }
+    var collapseRoute by rememberSaveable { mutableStateOf(ROUTE_HISTORY) }
     LaunchedEffect(route) {
-        if (route != null && route != ROUTE_SETTINGS) lastRoute = route
+        collapseRoute = nextCollapseRoute(collapseRoute, route)
     }
 
-    // При старте открывается «Таймер», но только на переходе из Idle: прошлое значение сохраняется
-    // при повороте, иначе поворот во время тренировки возвращал бы с другой вкладки на «Таймер».
-    // Без перехода (activity открыта уже во время тренировки) вкладка остаётся стартовой
+    // При старте открывается «Таймер», а «Свернуть» ведёт на вкладку, где нажали «Старт».
+    // Прошлое значение сохраняется при повороте, поэтому поворот на «Таймер» не возвращает
     val idle = state is WorkoutState.Idle
     var wasIdle by rememberSaveable { mutableStateOf(idle) }
     LaunchedEffect(idle) {
-        if (wasIdle && !idle) navController.navigateToTab(ROUTE_SETTINGS)
+        if (shouldOpenTimer(wasIdle, idle)) {
+            collapseRoute = collapseRouteOnStart(route)
+            navController.navigateToTab(ROUTE_SETTINGS)
+        }
         wasIdle = idle
     }
+
+    // Запущенная тренировка для полоски на отсчёте. Читается из SettingsStore, откуда её взял сервис,
+    // один раз на уходе из Idle, а не из формы: форму можно успеть поправить до публикации отсчёта
+    val startedWorkout = remember(idle) { if (idle) null else loadSettings().toWorkout() }
+
+    // NavHost пересобирает граф при каждой смене лямбды-построителя, поэтому состояние сервиса,
+    // которое меняется каждую секунду, читается внутри маршрутов через State, а не захватывается
+    val currentState by rememberUpdatedState(state)
 
     // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
     // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
     // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
-    // жестовую полосу. Клавиатуры вне тренировки нет, отдельный учёт ime не нужен. Во весь экран
+    // жестовую полосу. Клавиатуры в приложении нет, отдельный учёт ime не нужен. Во весь экран
     // отступы не применяются: их поглощает экран тренировки, и его фон уходит под системные панели
     Box(
         Modifier
@@ -139,19 +153,15 @@ fun WorkoutScreen(
                 },
             ),
     ) {
-        val error = settings.validate()
         // Центральная кнопка: «Старт» вне тренировки, пауза и продолжение во время неё
         val centerMode = centerButtonMode(state)
-        val centerEnabled = when (centerMode) {
-            CenterButtonMode.START -> error == null
-            CenterButtonMode.PAUSE, CenterButtonMode.RESUME -> true
-            CenterButtonMode.PAUSE_DISABLED -> false
-        }
+        val centerEnabled = centerButtonEnabled(centerMode, settingsValid = settingsError == null)
         val onCenterClick = {
             when (centerMode) {
                 CenterButtonMode.START -> onStart(settings)
                 CenterButtonMode.PAUSE -> onPause()
                 CenterButtonMode.RESUME -> onResume()
+                // Недоступная кнопка нажатий не получает, ветка нужна только для полноты when
                 CenterButtonMode.PAUSE_DISABLED -> Unit
             }
         }
@@ -168,25 +178,25 @@ fun WorkoutScreen(
                 screen(ROUTE_SETTINGS) {
                     // Форма и экран тренировки делят одну запись стека, поэтому раскрытая карточка
                     // и шторка формы (rememberSaveable записи) после тренировки сбрасываются
-                    val collapse = dropUnlessResumed { navController.navigateToTab(lastRoute) }
-                    when (state) {
+                    val collapse = dropUnlessResumed { navController.navigateToTab(collapseRoute) }
+                    when (val workoutState = currentState) {
                         // Настройки приходят из оболочки и переживают переход на другую вкладку
                         WorkoutState.Idle -> SettingsContent(
                             settings = settings,
-                            error = error,
+                            error = settingsError,
                             onSettingsChange = { settings = it },
                             showBackgroundWarning = showBackgroundWarning,
                             onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                         )
 
                         is WorkoutState.Countdown -> CountdownContent(
-                            state = state,
+                            state = workoutState,
                             onStop = onStop,
                             onCollapse = collapse,
                         )
 
                         is WorkoutState.Active -> ActiveContent(
-                            state = state,
+                            state = workoutState,
                             onStop = onStop,
                             onPause = onPause,
                             onResume = onResume,
@@ -206,7 +216,7 @@ fun WorkoutScreen(
                         onStartDelayChange = onStartDelayChange,
                         themeMode = themeMode,
                         onThemeModeChange = onThemeModeChange,
-                        workoutRunning = !idle,
+                        workoutRunning = currentState !is WorkoutState.Idle,
                     )
                 }
                 screen(ROUTE_HISTORY) {
@@ -227,24 +237,17 @@ fun WorkoutScreen(
                 }
             }
             if (!fullscreen) {
-                if (!idle) {
-                    // Параметры на отсчёте берутся из формы: onStart сохранил их до старта, а во
-                    // время тренировки форма скрыта, поэтому они совпадают с запущенными
-                    val runLabel = stringResource(R.string.segment_run)
-                    val walkLabel = stringResource(R.string.segment_walk)
-                    val details = if (error == null) {
-                        workoutDetailsText(settings.toWorkout(), runLabel, walkLabel)
-                    } else {
-                        ""
-                    }
+                // Тренировка есть только вне Idle, поэтому вне Idle и полоска
+                startedWorkout?.let { workout ->
                     WorkoutStrip(
                         state = state,
-                        details = details,
+                        workout = workout,
                         onOpen = { navController.navigateToTab(ROUTE_SETTINGS) },
                     )
                 }
                 BottomBar(
-                    navController = navController,
+                    current = bottomTabOf(route),
+                    onTabClick = { tab -> navController.navigateToTab(tab.route) },
                     centerMode = centerMode,
                     centerEnabled = centerEnabled,
                     onCenterClick = onCenterClick,
@@ -255,7 +258,7 @@ fun WorkoutScreen(
             // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
             // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
             // кнопку заменяет заместитель в центральном слоте панели
-            StartFab(
+            CenterFab(
                 state = state,
                 mode = centerMode,
                 enabled = centerEnabled,
@@ -263,15 +266,16 @@ fun WorkoutScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(NavigationBarDefaults.windowInsets.only(WindowInsetsSides.Bottom))
-                    .padding(bottom = BottomBarHeight - (StartFabSize - StartFabOverlap)),
+                    .padding(bottom = BottomBarHeight - (CenterFabSize - CenterFabOverlap)),
             )
         }
     }
 }
 
 /**
- * Переход на вкладку по схеме панели: стек сбрасывается до формы с сохранением состояния вкладок,
- * поэтому в нём не больше двух записей. Переход на текущую вкладку ничего не делает.
+ * Переход на вкладку по схеме панели: стек сбрасывается до «Таймера» с сохранением состояния
+ * вкладок, поэтому в нём не больше двух записей. Переход на текущую вкладку ничего не делает,
+ * это единственная такая проверка и для панели, и для «Свернуть», и для полоски.
  */
 private fun NavHostController.navigateToTab(route: String) {
     if (currentBackStackEntry?.destination?.route == route) return
@@ -283,32 +287,33 @@ private fun NavHostController.navigateToTab(route: String) {
 }
 
 // Высота NavigationBar без системной панели. Повторяет внутреннее значение M3 (NavigationBarHeight),
-// которое наружу не открыто: по нему «Старт» выступает над панелью на StartFabOverlap
+// которое наружу не открыто: по нему центральная кнопка выступает над панелью на CenterFabOverlap
 private val BottomBarHeight = 80.dp
-// Отступ крайних вкладок от краёв экрана. Симметричный, поэтому центральный слот остаётся под «Стартом»
+// Отступ крайних вкладок от краёв экрана. Симметричный, поэтому центральный слот остаётся под кнопкой
 private val BottomBarEdgePadding = 16.dp
 // Заливка 64 dp и кольцо цвета фона по 4 dp с каждой стороны: BorderStroke рисуется внутри границ
-private val StartFabSize = 72.dp
-private val StartFabRing = 4.dp
-private val StartFabIconSize = 36.dp
-private val StartFabElevation = 6.dp
-// Сильно скруглённый квадрат, но не круг: круг дал бы радиус StartFabSize / 2 (36 dp)
-private val StartFabCorner = 28.dp
+private val CenterFabSize = 72.dp
+private val CenterFabRing = 4.dp
+private val CenterFabIconSize = 36.dp
+private val CenterFabElevation = 6.dp
+// Сильно скруглённый квадрат, но не круг: круг дал бы радиус CenterFabSize / 2 (36 dp)
+private val CenterFabCorner = 28.dp
 
 /**
- * На сколько «Старт» выступает над нижней панелью: на треть высоты, две трети кнопки лежат на
+ * На сколько центральная кнопка выступает над нижней панелью: на треть высоты, две трети кнопки лежат на
  * панели. Прокручиваемые колонки всех вкладок добавляют его к нижнему отступу, иначе кнопка
  * закроет последний элемент.
  */
-internal val StartFabOverlap = StartFabSize / 3
+internal val CenterFabOverlap = CenterFabSize / 3
 
-/** Нижний отступ прокручиваемой колонки вкладки: обычные 16 dp плюс выступ «Старта». */
-internal val ScrollContentBottomPadding = 16.dp + StartFabOverlap
+/** Нижний отступ прокручиваемой колонки вкладки: обычные 16 dp плюс выступ центральной кнопки. */
+internal val ScrollContentBottomPadding = 16.dp + CenterFabOverlap
 
 /**
- * Нижняя панель вкладок. Выбранная вкладка берётся из маршрута текущей записи стека. Переход
- * сбрасывает стек до формы с сохранением состояния вкладок, поэтому в стеке не больше двух
- * записей: «Назад» с любой вкладки ведёт на форму, а запись формы не пересоздаётся.
+ * Нижняя панель вкладок. Выбранная вкладка [current] берётся из маршрута текущей записи стека.
+ * Переход ([onTabClick]) сбрасывает стек до «Таймера» с сохранением состояния вкладок, поэтому в
+ * стеке не больше двух записей: «Назад» с любой вкладки ведёт на «Таймер» (форму или экран
+ * тренировки), а его запись не пересоздаётся.
  *
  * Центральный слот между «Историей» и «Прогрессом» занят не вкладкой, а заместителем центральной
  * кнопки для TalkBack: «Старт» вне тренировки, «Пауза» или «Продолжить» во время неё ([centerMode]).
@@ -328,13 +333,12 @@ internal val ScrollContentBottomPadding = 16.dp + StartFabOverlap
  */
 @Composable
 private fun BottomBar(
-    navController: NavHostController,
+    current: BottomTab?,
+    onTabClick: (BottomTab) -> Unit,
     centerMode: CenterButtonMode,
     centerEnabled: Boolean,
     onCenterClick: () -> Unit,
 ) {
-    val entry by navController.currentBackStackEntryAsState()
-    val current = bottomTabOf(entry?.destination?.route)
     // Индикатор M3 по умолчанию в светлой теме почти не виден, поэтому выбранную вкладку
     // выделяет цвет primary у иконки и подписи
     val itemColors = NavigationBarItemDefaults.colors(
@@ -363,12 +367,11 @@ private fun BottomBar(
                         .semantics { contentDescription = centerLabel },
                 )
             }
-            val selected = tab == current
             NavigationBarItem(
-                selected = selected,
-                onClick = { if (!selected) navController.navigateToTab(tab.route) },
+                selected = tab == current,
+                onClick = { onTabClick(tab) },
                 icon = { Icon(painter = tabIcon(tab), contentDescription = null) },
-                // В одну строку: перенос сделал бы панель выше BottomBarHeight, и «Старт» закрыл бы подписи
+                // В одну строку: перенос сделал бы панель выше BottomBarHeight, и кнопка закрыла бы подписи
                 label = { Text(stringResource(tab.labelRes), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 colors = itemColors,
             )
@@ -384,19 +387,14 @@ private fun BottomBar(
  * цвета фона отделяет кнопку от панели. Для TalkBack кнопка скрыта, её читает заместитель в [BottomBar].
  */
 @Composable
-private fun StartFab(
+private fun CenterFab(
     state: WorkoutState,
     mode: CenterButtonMode,
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dark = LocalDarkTheme.current
-    val colors = when (state) {
-        is WorkoutState.Active -> segmentColors(state.position.isRun, dark)
-        is WorkoutState.Countdown -> countdownColors(dark)
-        WorkoutState.Idle -> segmentColors(isRun = true, dark)
-    }
+    val colors = workoutColors(state, LocalDarkTheme.current)
     val background = MaterialTheme.colorScheme.background
     val onSurface = MaterialTheme.colorScheme.onSurface
     // Недоступная как у M3 (12 % и 38 % onSurface), но заливка смешана с фоном, иначе сквозь
@@ -410,17 +408,17 @@ private fun StartFab(
     Surface(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(StartFabCorner),
+        shape = RoundedCornerShape(CenterFabCorner),
         color = containerColor,
         contentColor = contentColor,
-        border = BorderStroke(StartFabRing, background),
-        shadowElevation = if (enabled) StartFabElevation else 0.dp,
+        border = BorderStroke(CenterFabRing, background),
+        shadowElevation = if (enabled) CenterFabElevation else 0.dp,
         modifier = modifier
-            .size(StartFabSize)
+            .size(CenterFabSize)
             .clearAndSetSemantics {},
     ) {
         Box(contentAlignment = Alignment.Center) {
-            val iconModifier = Modifier.size(StartFabIconSize)
+            val iconModifier = Modifier.size(CenterFabIconSize)
             when (mode) {
                 CenterButtonMode.START, CenterButtonMode.RESUME -> Icon(
                     imageVector = Icons.Filled.PlayArrow,
