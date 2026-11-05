@@ -31,11 +31,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.ssortia.runtimer.ui.RunTimerTheme
 import com.ssortia.runtimer.ui.WorkoutScreen
 import com.ssortia.runtimer.ui.darkStatusIcons
+import com.ssortia.runtimer.ui.initialWorkoutExpanded
 import com.ssortia.runtimer.ui.isWorkoutFullscreen
 
 private const val TAG = "MainActivity"
@@ -79,14 +78,12 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(idle) {
                 if (!idle) releasePreview()
             }
-            // Контроллер здесь, а не в WorkoutScreen: по текущему маршруту выбираются системные
-            // панели. Оболочка с NavHost составляется во всех состояниях, поэтому стек переживает
-            // старт и финал тренировки. Маршрут и полноэкранный режим считаются только здесь и
-            // передаются в WorkoutScreen, чтобы панели и оболочка не разошлись
-            val navController = rememberNavController()
-            val entry by navController.currentBackStackEntryAsState()
-            val route = entry?.destination?.route
-            val fullscreen = isWorkoutFullscreen(state, route)
+            // Развёрнут ли экран тренировки поверх вкладок. Хранится здесь, а не в WorkoutScreen: по
+            // нему выбираются системные панели, и источник должен быть один. Новый экземпляр activity
+            // во время тренировки открывается с развёрнутым экраном. Полноэкранный режим считается
+            // только здесь и передаётся в WorkoutScreen, чтобы панели и оболочка не разошлись
+            var workoutExpanded by rememberSaveable { mutableStateOf(initialWorkoutExpanded(state)) }
+            val fullscreen = isWorkoutFullscreen(state, workoutExpanded)
             // Второй запрос при открытом диалоге система отклоняет сразу, и тренировка
             // запустилась бы за диалогом. Флаг переживает поворот вместе с самим запросом
             var permissionPending by rememberSaveable { mutableStateOf(false) }
@@ -159,9 +156,9 @@ class MainActivity : ComponentActivity() {
             RunTimerTheme(darkTheme = darkTheme) {
                 WorkoutScreen(
                     state = state,
-                    navController = navController,
-                    route = route,
                     fullscreen = fullscreen,
+                    expanded = workoutExpanded,
+                    onExpandedChange = { workoutExpanded = it },
                     loadSettings = store::load,
                     loadVolume = store::loadSignalVolume,
                     loadVibration = store::loadVibration,

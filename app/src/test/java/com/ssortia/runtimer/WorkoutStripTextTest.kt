@@ -88,11 +88,11 @@ class WorkoutStripTextTest {
     @Test
     fun `описание одной фразой со строчными отрезком и повтором`() {
         assertEquals(
-            "Тренировка: бег, осталось 1 минута 24 секунды, повтор 3 из 6. Открыть таймер",
+            "Тренировка: бег, осталось 1 минута 24 секунды, повтор 3 из 6. Открыть тренировку",
             text(2 * 210_000L + 36_000).description,
         )
         assertEquals(
-            "Тренировка: шаг, осталось 1 минута, повтор 2 из 6. Открыть таймер",
+            "Тренировка: шаг, осталось 1 минута, повтор 2 из 6. Открыть тренировку",
             text(210_000L + 150_000).description,
         )
     }
@@ -105,7 +105,7 @@ class WorkoutStripTextTest {
         assertEquals("1:24", text.time)
         assertEquals(workout.progressAt(2 * 210_000L + 36_000), text.progress)
         assertEquals(
-            "Тренировка на паузе: бег, осталось 1 минута 24 секунды, повтор 3 из 6. Открыть таймер",
+            "Тренировка на паузе: бег, осталось 1 минута 24 секунды, повтор 3 из 6. Открыть тренировку",
             text.description,
         )
     }
@@ -118,7 +118,7 @@ class WorkoutStripTextTest {
         assertEquals("1:00", text.time)
         assertEquals(workout.progressAt(210_000L + 150_000), text.progress)
         assertEquals(
-            "Тренировка на паузе: шаг, осталось 1 минута, повтор 2 из 6. Открыть таймер",
+            "Тренировка на паузе: шаг, осталось 1 минута, повтор 2 из 6. Открыть тренировку",
             text.description,
         )
     }
@@ -126,7 +126,7 @@ class WorkoutStripTextTest {
     @Test
     fun `ровно 2 минуты без секунд`() {
         assertEquals(
-            "Тренировка: бег, осталось 2 минуты, повтор 1 из 6. Открыть таймер",
+            "Тренировка: бег, осталось 2 минуты, повтор 1 из 6. Открыть тренировку",
             text(0).description,
         )
     }
@@ -134,7 +134,7 @@ class WorkoutStripTextTest {
     @Test
     fun `45 секунд без минут`() {
         assertEquals(
-            "Тренировка: бег, осталось 45 секунд, повтор 1 из 6. Открыть таймер",
+            "Тренировка: бег, осталось 45 секунд, повтор 1 из 6. Открыть тренировку",
             text(75_000).description,
         )
     }
@@ -143,7 +143,7 @@ class WorkoutStripTextTest {
     fun `остаток меньше секунды округляется вверх, как на экране`() {
         val text = text(119_500)
         assertEquals("0:01", text.time)
-        assertEquals("Тренировка: бег, осталось 1 секунда, повтор 1 из 6. Открыть таймер", text.description)
+        assertEquals("Тренировка: бег, осталось 1 секунда, повтор 1 из 6. Открыть тренировку", text.description)
     }
 
     @Test
@@ -151,7 +151,7 @@ class WorkoutStripTextTest {
         val text = text(workout.totalMs)
         assertEquals("0:00", text.time)
         assertEquals(1f, text.progress)
-        assertEquals("Тренировка: бег, осталось 0 секунд, повтор 6 из 6. Открыть таймер", text.description)
+        assertEquals("Тренировка: бег, осталось 0 секунд, повтор 6 из 6. Открыть тренировку", text.description)
     }
 
     @Test
@@ -161,7 +161,7 @@ class WorkoutStripTextTest {
         assertEquals("Бег 2:00 · Шаг 1:30 · ×6", text.subtitle)
         assertEquals("0:03", text.time)
         assertNull(text.progress)
-        assertEquals("Тренировка: старт через 3 секунды. Открыть таймер", text.description)
+        assertEquals("Тренировка: старт через 3 секунды. Открыть тренировку", text.description)
     }
 
     @Test
@@ -174,10 +174,10 @@ class WorkoutStripTextTest {
     @Test
     fun `отсчёт в минуту и в 45 секунд, время в винительном падеже`() {
         assertEquals("1:00", countdown(60).time)
-        assertEquals("Тренировка: старт через 1 минуту. Открыть таймер", countdown(60).description)
+        assertEquals("Тренировка: старт через 1 минуту. Открыть тренировку", countdown(60).description)
         assertEquals("0:45", countdown(45).time)
-        assertEquals("Тренировка: старт через 45 секунд. Открыть таймер", countdown(45).description)
-        assertEquals("Тренировка: старт через 1 секунду. Открыть таймер", countdown(1).description)
-        assertEquals("Тренировка: старт через 21 секунду. Открыть таймер", countdown(21).description)
+        assertEquals("Тренировка: старт через 45 секунд. Открыть тренировку", countdown(45).description)
+        assertEquals("Тренировка: старт через 1 секунду. Открыть тренировку", countdown(1).description)
+        assertEquals("Тренировка: старт через 21 секунду. Открыть тренировку", countdown(21).description)
     }
 }

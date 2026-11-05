@@ -4,8 +4,8 @@ import androidx.annotation.StringRes
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.WorkoutState
 
-// Маршрут `settings` — вкладка «Таймер»: форма вне тренировки, экран отсчёта или тренировки во время
-// неё. `app_settings` — настройки приложения (вкладка «Настройки»). Каждому маршруту NavHost
+// Маршрут `settings` — вкладка «Таймер»: всегда форма, экран тренировки лежит слоем поверх вкладок.
+// `app_settings` — настройки приложения (вкладка «Настройки»). Каждому маршруту NavHost
 // соответствует вкладка
 internal const val ROUTE_SETTINGS = "settings"
 internal const val ROUTE_APP_SETTINGS = "app_settings"
@@ -29,29 +29,24 @@ fun startSlotIndex(): Int = BottomTab.entries.size / 2
 fun bottomTabOf(route: String?): BottomTab? = BottomTab.entries.firstOrNull { it.route == route }
 
 /**
- * Экран тренировки во весь экран: идёт отсчёт или тренировка и открыт «Таймер». Без маршрута
- * (стек ещё не готов) открыт стартовый маршрут, то есть «Таймер».
+ * Экран тренировки во весь экран: идёт отсчёт или тренировка и слой тренировки развёрнут. Единственное
+ * место, где сочетаются состояние и развёрнутость: по нему выбираются системные панели и составляется слой.
  */
-fun isWorkoutFullscreen(state: WorkoutState, route: String?): Boolean =
-    state !is WorkoutState.Idle && (route == null || route == ROUTE_SETTINGS)
+fun isWorkoutFullscreen(state: WorkoutState, expanded: Boolean): Boolean =
+    state !is WorkoutState.Idle && expanded
 
 /**
- * Открыть «Таймер» при старте тренировки: только на переходе из Idle. Прошлое значение переживает
- * поворот, иначе поворот во время тренировки возвращал бы с другой вкладки на «Таймер». Без перехода
- * (activity открыта уже во время тренировки) вкладка остаётся стартовой.
+ * Начальная развёрнутость слоя тренировки у нового экземпляра activity: во время тренировки
+ * (например, после гибели activity или из уведомления) экран тренировки открыт сразу.
  */
-fun shouldOpenTimer(wasIdle: Boolean, idle: Boolean): Boolean = wasIdle && !idle
+fun initialWorkoutExpanded(state: WorkoutState): Boolean = state !is WorkoutState.Idle
 
 /**
- * Куда «Свернуть» ведёт сразу после старта: на вкладку, где нажали «Старт», если это не «Таймер»,
- * иначе на «Историю». Вкладки, открытые до старта, не учитываются.
+ * Развернуть экран тренировки при старте: только на переходе из Idle. Прошлое значение переживает
+ * поворот, иначе поворот во время тренировки снова разворачивал бы свёрнутый экран. Без перехода
+ * (activity открыта уже во время тренировки) развёрнутость берётся из [initialWorkoutExpanded].
  */
-fun collapseRouteOnStart(startRoute: String?): String =
-    startRoute?.takeIf { bottomTabOf(it) != null && it != ROUTE_SETTINGS } ?: ROUTE_HISTORY
-
-/** Куда «Свернуть» ведёт после перехода на [route]: на последнюю открытую вкладку, кроме «Таймера». */
-fun nextCollapseRoute(collapseRoute: String, route: String?): String =
-    route?.takeIf { bottomTabOf(it) != null && it != ROUTE_SETTINGS } ?: collapseRoute
+fun shouldExpandWorkout(wasIdle: Boolean, idle: Boolean): Boolean = wasIdle && !idle
 
 /** Режим центральной кнопки нижней панели: «Старт» вне тренировки, пауза во время неё. */
 enum class CenterButtonMode { START, PAUSE, RESUME, PAUSE_DISABLED }

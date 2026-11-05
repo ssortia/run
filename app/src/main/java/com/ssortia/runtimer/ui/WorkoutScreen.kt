@@ -1,5 +1,6 @@
 package com.ssortia.runtimer.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.BorderStroke
@@ -42,11 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,8 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.ssortia.runtimer.R
@@ -68,17 +73,17 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Оболочка приложения: NavHost с вкладками, нижняя панель, полоска тренировки и центральная
  * кнопка. Составляется во всех состояниях, поэтому стек и состояния вкладок переживают старт и
- * финал тренировки. Отдельного маршрута для тренировки нет: «Таймер» показывает форму, отсчёт или
- * тренировку по [state], а во время тренировки он открыт во весь экран без панели ([fullscreen]).
- * Текущий маршрут [route] и [fullscreen] считает MainActivity: по ним же выбираются системные
- * панели, и второй источник мог бы с ними разойтись.
+ * финал тренировки. «Таймер» всегда показывает форму, а экран отсчёта и тренировки — слой поверх
+ * вкладок, полоски и панели, составляемый только во весь экран ([fullscreen]). Сворачивается он на ту
+ * вкладку, что под ним, стек при этом не трогается. [fullscreen] и развёрнутость [expanded] хранит и
+ * считает MainActivity: по ним же выбираются системные панели, и второй источник мог бы с ними разойтись.
  */
 @Composable
 fun WorkoutScreen(
     state: WorkoutState,
-    navController: NavHostController,
-    route: String?,
     fullscreen: Boolean,
+    @Suppress("UNUSED_PARAMETER") expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
     loadSettings: () -> WorkoutSettings,
     loadVolume: () -> Int,
     loadVibration: () -> Boolean,
@@ -99,9 +104,13 @@ fun WorkoutScreen(
     onPause: () -> Unit,
     onResume: () -> Unit,
 ) {
+    val navController = rememberNavController()
+    val entry by navController.currentBackStackEntryAsState()
+    val route = entry?.destination?.route
+
     // Настройки формы живут здесь, а не в записи маршрута, чтобы «Старт» вне NavHost запускал и
     // несохранённые правки. Оболочка не покидает композицию при старте, поэтому после тренировки
-    // они не перечитываются: onStart сохранил их до старта, а форма во время тренировки скрыта
+    // они не перечитываются: onStart сохранил их до старта, а во время тренировки «Старта» нет
     var settings by rememberSaveable(stateSaver = WorkoutSettingsSaver) {
         mutableStateOf(loadSettings())
     }
@@ -109,20 +118,16 @@ fun WorkoutScreen(
     // захваченное значение пересобирало бы граф NavHost на каждой правке
     val settingsError by remember { derivedStateOf { settings.validate() } }
 
-    // Вкладка, на которую ведёт «Свернуть». Хранится в оболочке и переживает поворот
-    var collapseRoute by rememberSaveable { mutableStateOf(ROUTE_HISTORY) }
-    LaunchedEffect(route) {
-        collapseRoute = nextCollapseRoute(collapseRoute, route)
-    }
-
-    // При старте открывается «Таймер», а «Свернуть» ведёт на вкладку, где нажали «Старт».
-    // Прошлое значение сохраняется при повороте, поэтому поворот на «Таймер» не возвращает
+    // При старте экран тренировки разворачивается поверх текущей вкладки, после финала или «Стоп»
+    // слой исчезает. Прошлое значение сохраняется при повороте, поэтому поворот свёрнутый экран
+    // не разворачивает
     val idle = state is WorkoutState.Idle
     var wasIdle by rememberSaveable { mutableStateOf(idle) }
     LaunchedEffect(idle) {
-        if (shouldOpenTimer(wasIdle, idle)) {
-            collapseRoute = collapseRouteOnStart(route)
-            navController.navigateToTab(ROUTE_SETTINGS)
+        if (shouldExpandWorkout(wasIdle, idle)) {
+            onExpandedChange(true)
+        } else if (idle) {
+            onExpandedChange(false)
         }
         wasIdle = idle
     }
@@ -135,114 +140,93 @@ fun WorkoutScreen(
     // которое меняется каждую секунду, читается внутри маршрутов через State, а не захватывается
     val currentState by rememberUpdatedState(state)
 
-    // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
-    // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
-    // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
-    // жестовую полосу. Клавиатуры в приложении нет, отдельный учёт ime не нужен. Во весь экран
-    // отступы не применяются: их поглощает экран тренировки, и его фон уходит под системные панели
-    Box(
-        Modifier
-            .fillMaxSize()
-            .then(
-                if (fullscreen) {
-                    Modifier
-                } else {
-                    Modifier.windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    )
-                },
-            ),
-    ) {
-        // Центральная кнопка: «Старт» вне тренировки, пауза и продолжение во время неё
-        val centerMode = centerButtonMode(state)
-        val centerEnabled = centerButtonEnabled(centerMode, settingsValid = settingsError == null)
-        val onCenterClick = {
-            when (centerMode) {
-                CenterButtonMode.START -> onStart(settings)
-                CenterButtonMode.PAUSE -> onPause()
-                CenterButtonMode.RESUME -> onResume()
-                // Недоступная кнопка нажатий не получает, ветка нужна только для полноты when
-                CenterButtonMode.PAUSE_DISABLED -> Unit
+    // Внешний Box без отступов: слой тренировки сам поглощает их в TimerLayout, и его фон уходит
+    // под системные панели
+    Box(Modifier.fillMaxSize()) {
+        // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
+        // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
+        // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
+        // жестовую полосу. Клавиатуры в приложении нет, отдельный учёт ime не нужен. Под
+        // развёрнутым слоем тренировки вкладки скрыты от TalkBack
+        Box(
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                )
+                .then(if (fullscreen) Modifier.clearAndSetSemantics {} else Modifier),
+        ) {
+            // Центральная кнопка: «Старт» вне тренировки, пауза и продолжение во время неё
+            val centerMode = centerButtonMode(state)
+            val centerEnabled = centerButtonEnabled(centerMode, settingsValid = settingsError == null)
+            val onCenterClick = {
+                when (centerMode) {
+                    CenterButtonMode.START -> onStart(settings)
+                    CenterButtonMode.PAUSE -> onPause()
+                    CenterButtonMode.RESUME -> onResume()
+                    // Недоступная кнопка нажатий не получает, ветка нужна только для полноты when
+                    CenterButtonMode.PAUSE_DISABLED -> Unit
+                }
             }
-        }
-        Column(Modifier.fillMaxSize()) {
-            NavHost(
-                navController = navController,
-                startDestination = ROUTE_SETTINGS,
-                // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
-                // глотал бы нажатия
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                modifier = Modifier.weight(1f),
-            ) {
-                screen(ROUTE_SETTINGS) {
-                    // Форма и экран тренировки делят одну запись стека, поэтому раскрытая карточка
-                    // и шторка формы (rememberSaveable записи) после тренировки сбрасываются
-                    val collapse = dropUnlessResumed { navController.navigateToTab(collapseRoute) }
-                    when (val workoutState = currentState) {
-                        // Настройки приходят из оболочки и переживают переход на другую вкладку
-                        WorkoutState.Idle -> SettingsContent(
+            Column(Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = ROUTE_SETTINGS,
+                    // Без анимаций: во время перехода экран не RESUMED, и dropUnlessResumed
+                    // глотал бы нажатия
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    screen(ROUTE_SETTINGS) {
+                        // Настройки приходят из оболочки и переживают переход на другую вкладку.
+                        // Форма доступна и во время тренировки: экран тренировки лежит слоем поверх
+                        SettingsContent(
                             settings = settings,
                             error = settingsError,
                             onSettingsChange = { settings = it },
                             showBackgroundWarning = showBackgroundWarning,
                             onOpenAppDetails = dropUnlessResumed { onOpenAppDetails() },
                         )
-
-                        is WorkoutState.Countdown -> CountdownContent(
-                            state = workoutState,
-                            onStop = onStop,
-                            onCollapse = collapse,
+                    }
+                    screen(ROUTE_APP_SETTINGS) {
+                        AppSettingsContent(
+                            loadVolume = loadVolume,
+                            onVolumeChange = onVolumeChange,
+                            loadVibration = loadVibration,
+                            onVibrationChange = onVibrationChange,
+                            loadDuckMusic = loadDuckMusic,
+                            onDuckMusicChange = onDuckMusicChange,
+                            loadStartDelay = loadStartDelay,
+                            onStartDelayChange = onStartDelayChange,
+                            themeMode = themeMode,
+                            onThemeModeChange = onThemeModeChange,
+                            workoutRunning = currentState !is WorkoutState.Idle,
                         )
-
-                        is WorkoutState.Active -> ActiveContent(
-                            state = workoutState,
-                            onStop = onStop,
-                            onPause = onPause,
-                            onResume = onResume,
-                            onCollapse = collapse,
+                    }
+                    screen(ROUTE_HISTORY) {
+                        // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
+                        val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                        HistoryContent(
+                            records = records,
+                            onDelete = onDeleteRun,
+                        )
+                    }
+                    screen(ROUTE_PROGRESS) {
+                        // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
+                        val records by runs.collectAsStateWithLifecycle(initialValue = null)
+                        val progress = remember(records) { records?.let(::programProgress) }
+                        ProgressContent(
+                            progress = progress,
                         )
                     }
                 }
-                screen(ROUTE_APP_SETTINGS) {
-                    AppSettingsContent(
-                        loadVolume = loadVolume,
-                        onVolumeChange = onVolumeChange,
-                        loadVibration = loadVibration,
-                        onVibrationChange = onVibrationChange,
-                        loadDuckMusic = loadDuckMusic,
-                        onDuckMusicChange = onDuckMusicChange,
-                        loadStartDelay = loadStartDelay,
-                        onStartDelayChange = onStartDelayChange,
-                        themeMode = themeMode,
-                        onThemeModeChange = onThemeModeChange,
-                        workoutRunning = currentState !is WorkoutState.Idle,
-                    )
-                }
-                screen(ROUTE_HISTORY) {
-                    // null до первого ответа базы, иначе при открытии мелькнёт пустое состояние
-                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                    HistoryContent(
-                        records = records,
-                        onDelete = onDeleteRun,
-                    )
-                }
-                screen(ROUTE_PROGRESS) {
-                    // Прогресс не хранится, а считается из истории: удаление записи сразу меняет его
-                    val records by runs.collectAsStateWithLifecycle(initialValue = null)
-                    val progress = remember(records) { records?.let(::programProgress) }
-                    ProgressContent(
-                        progress = progress,
-                    )
-                }
-            }
-            if (!fullscreen) {
                 // Тренировка есть только вне Idle, поэтому вне Idle и полоска
                 startedWorkout?.let { workout ->
                     WorkoutStrip(
                         state = state,
                         workout = workout,
-                        onOpen = { navController.navigateToTab(ROUTE_SETTINGS) },
+                        onOpen = { onExpandedChange(true) },
                     )
                 }
                 BottomBar(
@@ -253,8 +237,6 @@ fun WorkoutScreen(
                     onCenterClick = onCenterClick,
                 )
             }
-        }
-        if (!fullscreen) {
             // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
             // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
             // кнопку заменяет заместитель в центральном слоте панели
@@ -269,13 +251,68 @@ fun WorkoutScreen(
                     .padding(bottom = BottomBarHeight - (CenterFabSize - CenterFabOverlap)),
             )
         }
+        if (fullscreen) {
+            WorkoutLayer(
+                state = state,
+                onCollapse = { onExpandedChange(false) },
+                onStop = onStop,
+                onPause = onPause,
+                onResume = onResume,
+            )
+        }
+    }
+}
+
+/**
+ * Слой экрана отсчёта или тренировки поверх вкладок. Колбэки без dropUnlessResumed: слой вне
+ * NavHost, а повтор безопасен — сворачивание идемпотентно, команды сервиса явные.
+ */
+@Composable
+private fun WorkoutLayer(
+    state: WorkoutState,
+    onCollapse: () -> Unit,
+    onStop: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+) {
+    // Внутри слоя, то есть в композиции после NavHost: Navigation Compose регистрирует свой
+    // обработчик «Назад» при стеке больше одной записи, а диспетчер вызывает последний добавленный.
+    // Обработчик, составленный раньше NavHost, на «Истории» проиграл бы ему, и «Назад» сняла бы
+    // запись стека вместо сворачивания
+    BackHandler(onBack = onCollapse)
+    val paneTitle = stringResource(R.string.pane_workout)
+    Box(
+        Modifier
+            .fillMaxSize()
+            // Не лишний: у TimerLayout только фон, и без обработчика указателя касание пустого
+            // места слоя дошло бы до вкладки под ним
+            .pointerInput(Unit) {}
+            // TalkBack объявляет панель и переводит в неё фокус, иначе он остался бы на скрытой полоске
+            .semantics { this.paneTitle = paneTitle },
+    ) {
+        when (state) {
+            // Слой составляется только вне Idle
+            WorkoutState.Idle -> Unit
+            is WorkoutState.Countdown -> CountdownContent(
+                state = state,
+                onStop = onStop,
+                onCollapse = onCollapse,
+            )
+            is WorkoutState.Active -> ActiveContent(
+                state = state,
+                onStop = onStop,
+                onPause = onPause,
+                onResume = onResume,
+                onCollapse = onCollapse,
+            )
+        }
     }
 }
 
 /**
  * Переход на вкладку по схеме панели: стек сбрасывается до «Таймера» с сохранением состояния
  * вкладок, поэтому в нём не больше двух записей. Переход на текущую вкладку ничего не делает,
- * это единственная такая проверка и для панели, и для «Свернуть», и для полоски.
+ * это единственная такая проверка для панели.
  */
 private fun NavHostController.navigateToTab(route: String) {
     if (currentBackStackEntry?.destination?.route == route) return
@@ -312,8 +349,8 @@ internal val ScrollContentBottomPadding = 16.dp + CenterFabOverlap
 /**
  * Нижняя панель вкладок. Выбранная вкладка [current] берётся из маршрута текущей записи стека.
  * Переход ([onTabClick]) сбрасывает стек до «Таймера» с сохранением состояния вкладок, поэтому в
- * стеке не больше двух записей: «Назад» с любой вкладки ведёт на «Таймер» (форму или экран
- * тренировки), а его запись не пересоздаётся.
+ * стеке не больше двух записей: «Назад» с любой вкладки ведёт на «Таймер» (форму), а его запись
+ * не пересоздаётся. Развёрнутый экран тренировки «Назад» сначала сворачивает.
  *
  * Центральный слот между «Историей» и «Прогрессом» занят не вкладкой, а заместителем центральной
  * кнопки для TalkBack: «Старт» вне тренировки, «Пауза» или «Продолжить» во время неё ([centerMode]).

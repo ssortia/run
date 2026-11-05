@@ -46,50 +46,32 @@ class BottomTabTest {
         progress = 0f,
     )
     private val countdown = WorkoutState.Countdown(seconds = 3)
-    private val tabRoutes = listOf(ROUTE_SETTINGS, ROUTE_HISTORY, ROUTE_PROGRESS, ROUTE_APP_SETTINGS)
 
     @Test
-    fun `во весь экран только тренировка на «Таймере»`() {
-        // Ожидания перечислены явно: true только у отсчёта и тренировки на «Таймере» или без маршрута
-        val fullscreen = setOf(
-            countdown to ROUTE_SETTINGS,
-            countdown to null,
-            active to ROUTE_SETTINGS,
-            active to null,
-        )
-        for (state in listOf(WorkoutState.Idle, countdown, active)) {
-            for (route in tabRoutes + null) {
-                assertEquals("$state на $route", (state to route) in fullscreen, isWorkoutFullscreen(state, route))
-            }
+    fun `во весь экран только развёрнутый экран отсчёта или тренировки`() {
+        for (expanded in listOf(true, false)) {
+            assertFalse(isWorkoutFullscreen(WorkoutState.Idle, expanded))
         }
+        assertTrue(isWorkoutFullscreen(countdown, expanded = true))
+        assertFalse(isWorkoutFullscreen(countdown, expanded = false))
+        assertTrue(isWorkoutFullscreen(active, expanded = true))
+        assertFalse(isWorkoutFullscreen(active, expanded = false))
     }
 
     @Test
-    fun `«Таймер» открывается только на переходе из Idle`() {
-        assertTrue(shouldOpenTimer(wasIdle = true, idle = false))
-        assertFalse(shouldOpenTimer(wasIdle = true, idle = true))
+    fun `новый экземпляр activity во время тренировки открывается с развёрнутым экраном`() {
+        assertFalse(initialWorkoutExpanded(WorkoutState.Idle))
+        assertTrue(initialWorkoutExpanded(countdown))
+        assertTrue(initialWorkoutExpanded(active))
+    }
+
+    @Test
+    fun `экран тренировки разворачивается только на переходе из Idle`() {
+        assertTrue(shouldExpandWorkout(wasIdle = true, idle = false))
+        assertFalse(shouldExpandWorkout(wasIdle = true, idle = true))
         // Поворот во время тренировки и activity, открытая уже во время тренировки
-        assertFalse(shouldOpenTimer(wasIdle = false, idle = false))
+        assertFalse(shouldExpandWorkout(wasIdle = false, idle = false))
         // Финал тренировки
-        assertFalse(shouldOpenTimer(wasIdle = false, idle = true))
-    }
-
-    @Test
-    fun `«Свернуть» сразу после старта ведёт на вкладку старта, с «Таймера» на «Историю»`() {
-        assertEquals(ROUTE_PROGRESS, collapseRouteOnStart(ROUTE_PROGRESS))
-        assertEquals(ROUTE_APP_SETTINGS, collapseRouteOnStart(ROUTE_APP_SETTINGS))
-        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(ROUTE_HISTORY))
-        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(ROUTE_SETTINGS))
-        assertEquals(ROUTE_HISTORY, collapseRouteOnStart(null))
-        assertEquals(ROUTE_HISTORY, collapseRouteOnStart("countdown"))
-    }
-
-    @Test
-    fun `«Свернуть» запоминает последнюю вкладку, кроме «Таймера»`() {
-        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_HISTORY, ROUTE_PROGRESS))
-        assertEquals(ROUTE_APP_SETTINGS, nextCollapseRoute(ROUTE_PROGRESS, ROUTE_APP_SETTINGS))
-        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, ROUTE_SETTINGS))
-        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, null))
-        assertEquals(ROUTE_PROGRESS, nextCollapseRoute(ROUTE_PROGRESS, "countdown"))
+        assertFalse(shouldExpandWorkout(wasIdle = false, idle = true))
     }
 }
