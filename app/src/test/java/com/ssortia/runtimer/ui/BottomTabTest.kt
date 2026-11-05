@@ -6,12 +6,11 @@ import org.junit.Test
 
 class BottomTabTest {
     @Test
-    fun `вкладки идут в порядке панели, первая на стартовом маршруте формы`() {
+    fun `вкладки идут в порядке панели`() {
         assertEquals(
-            listOf(BottomTab.WORKOUT, BottomTab.HISTORY, BottomTab.PROGRESS, BottomTab.SETTINGS),
+            listOf(BottomTab.HISTORY, BottomTab.WORKOUT, BottomTab.PROGRESS, BottomTab.SETTINGS),
             BottomTab.entries,
         )
-        assertEquals(ROUTE_SETTINGS, BottomTab.entries.first().route)
     }
 
     @Test
@@ -24,8 +23,8 @@ class BottomTabTest {
     }
 
     @Test
-    fun `центральная кнопка стоит между «Историей» и «Прогрессом»`() {
-        assertEquals(BottomTab.HISTORY, BottomTab.entries[startSlotIndex() - 1])
+    fun `центральная кнопка стоит между «Таймером» и «Прогрессом»`() {
+        assertEquals(BottomTab.WORKOUT, BottomTab.entries[startSlotIndex() - 1])
         assertEquals(BottomTab.PROGRESS, BottomTab.entries[startSlotIndex()])
     }
 

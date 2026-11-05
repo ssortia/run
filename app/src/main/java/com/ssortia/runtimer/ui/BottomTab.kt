@@ -14,15 +14,15 @@ internal const val ROUTE_PROGRESS = "progress"
 
 /** Вкладки нижней панели в порядке показа. Иконки сопоставляются вкладкам в Compose-коде. */
 enum class BottomTab(val route: String, @StringRes val labelRes: Int) {
-    WORKOUT(ROUTE_SETTINGS, R.string.tab_workout),
     HISTORY(ROUTE_HISTORY, R.string.tab_history),
+    WORKOUT(ROUTE_SETTINGS, R.string.tab_workout),
     PROGRESS(ROUTE_PROGRESS, R.string.tab_progress),
     SETTINGS(ROUTE_APP_SETTINGS, R.string.tab_settings),
 }
 
 /**
  * Позиция центральной кнопки в нижней панели: она встаёт перед вкладкой с этим индексом, в середине
- * панели между «Историей» и «Прогрессом». Новая вкладка сдвинет её, это поймает `BottomTabTest`.
+ * панели между «Таймером» и «Прогрессом». Новая вкладка сдвинет её, это поймает `BottomTabTest`.
  */
 fun startSlotIndex(): Int = BottomTab.entries.size / 2
 
