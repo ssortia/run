@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
@@ -36,8 +34,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ssortia.runtimer.ProgressLabels
 import com.ssortia.runtimer.ProgressRowText
@@ -81,53 +77,7 @@ fun ProgressContent(
                     .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = ScrollContentBottomPadding),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                SummaryCard(progress)
                 WeeksCard(progress, dateFormatter)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryCard(progress: List<WeekProgress>) {
-    val passed = progress.count { it.passed }
-    val darkTheme = LocalDarkTheme.current
-    val filled = segmentColors(isRun = true, darkTheme).marker
-    val track = progressTrackColor(darkTheme)
-    val description = stringResource(R.string.progress_summary_description, passed, progress.size)
-
-    // Для TalkBack итог читается одной фразой, число, подпись и деления без своих описаний
-    SectionCard(
-        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
-        contentPadding = PaddingValues(16.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = passed.toString(),
-                modifier = Modifier.alignByBaseline(),
-                style = MaterialTheme.typography.displaySmall.merge(TabularNumbers),
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = pluralStringResource(R.plurals.progress_summary, progress.size, progress.size),
-                modifier = Modifier.alignByBaseline(),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Row(
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            progress.forEach { week ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(8.dp)
-                        .background(if (week.passed) filled else track, RoundedCornerShape(4.dp)),
-                )
             }
         }
     }
@@ -140,8 +90,13 @@ private fun WeeksCard(progress: List<WeekProgress>, dateFormatter: DateTimeForma
         walk = stringResource(R.string.segment_walk),
         min = stringResource(R.string.minutes_short),
         sec = stringResource(R.string.seconds_short),
-        ringPassed = stringResource(R.string.progress_ring_passed),
-        ringCount = stringResource(R.string.progress_ring_count),
+        statusCount = stringResource(R.string.progress_ring_count),
+        statusPassed = stringResource(R.string.progress_status_passed),
+        now = stringResource(R.string.progress_description_now),
+        passed = stringResource(R.string.progress_description_passed),
+        last = stringResource(R.string.progress_description_last),
+        noRuns = stringResource(R.string.progress_description_no_runs),
+        count = stringResource(R.string.progress_description_count),
     )
 
     SectionCard(contentPadding = PaddingValues(horizontal = 16.dp)) {
@@ -162,17 +117,17 @@ private fun WeeksCard(progress: List<WeekProgress>, dateFormatter: DateTimeForma
 @Composable
 private fun WeekRow(text: ProgressRowText, week: WeekProgress) {
     val numbers = MaterialTheme.typography.bodyMedium.merge(TabularNumbers)
-    // Строка читается TalkBack одной фразой вместе с описанием кольца или круга
+    // Строка читается TalkBack одной фразой, видимые элементы без своей семантики
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .semantics(mergeDescendants = true) {}
+            .clearAndSetSemantics { contentDescription = text.description }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        WeekRing(week, text.ringDescription)
+        WeekRing(week)
         Column(modifier = Modifier.weight(1f)) {
             Text(text = text.title, style = MaterialTheme.typography.titleMedium)
             Text(
@@ -180,20 +135,17 @@ private fun WeekRow(text: ProgressRowText, week: WeekProgress) {
                 style = numbers,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            text.status?.let { Text(text = it, style = numbers) }
         }
         Column(horizontalAlignment = Alignment.End) {
-            // У непройденной недели число уже названо описанием кольца
             Text(
                 text = text.runs,
-                modifier = if (text.runsSpoken) Modifier else Modifier.clearAndSetSemantics {},
                 style = MaterialTheme.typography.titleSmall.merge(TabularNumbers),
                 maxLines = 1,
                 softWrap = false,
             )
-            // Без пробежек тире видно, но не читается: «Пробежек 0 из 4» уже сказано
             Text(
                 text = text.date ?: stringResource(R.string.progress_no_runs),
-                modifier = if (text.date == null) Modifier.clearAndSetSemantics {} else Modifier,
                 style = numbers,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -205,11 +157,11 @@ private fun WeekRow(text: ProgressRowText, week: WeekProgress) {
 
 /**
  * Кольцо недели: [RUNS_TO_PASS_WEEK] частей по числу пробежек до порога, закрашиваются по часовой
- * стрелке сверху. Пройденная неделя показывается закрашенным кругом с галочкой. [description]
- * читает TalkBack: «Пробежек 2 из 4» у кольца, «Неделя пройдена» у круга.
+ * стрелке сверху. Пройденная неделя показывается закрашенным кругом с галочкой. Своей семантики
+ * нет: строку читает описание [ProgressRowText.description].
  */
 @Composable
-private fun WeekRing(week: WeekProgress, description: String) {
+private fun WeekRing(week: WeekProgress) {
     val darkTheme = LocalDarkTheme.current
     val filled = segmentColors(isRun = true, darkTheme).marker
     val track = progressTrackColor(darkTheme)
@@ -218,8 +170,7 @@ private fun WeekRing(week: WeekProgress, description: String) {
         Box(
             modifier = Modifier
                 .size(RingSize)
-                .background(filled, CircleShape)
-                .semantics { contentDescription = description },
+                .background(filled, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -230,7 +181,7 @@ private fun WeekRing(week: WeekProgress, description: String) {
             )
         }
     } else {
-        Canvas(Modifier.size(RingSize).semantics { contentDescription = description }) {
+        Canvas(Modifier.size(RingSize)) {
             val strokePx = RingStroke.toPx()
             val inset = strokePx / 2
             val arcSize = Size(size.width - strokePx, size.height - strokePx)
