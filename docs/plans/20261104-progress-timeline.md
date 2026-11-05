@@ -125,13 +125,13 @@
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/Theme.kt`
 - Modify: `app/src/test/java/com/ssortia/runtimer/ui/ThemeTest.kt`
 
-- [ ] удалить `SummaryCard`, `WeeksCard`, `WeekRow`; колонка с `verticalScroll` и нижним отступом `ScrollContentBottomPadding` остаётся, при `null` по-прежнему только `AppTopBar`
-- [ ] строка недели: `Row(height(IntrinsicSize.Min))`, колонка узла ~28 dp с линией в `drawBehind` (верхний отрезок по предыдущей неделе, нижний по своей, в промежутке 8 dp между строками (`spacedBy`) линии нет), узел по `mark` с кольцом цвета фона, центр на середине строки заголовка через `lineHeight` и `LocalDensity`; прочерк `SKIPPED` в `Canvas` или `Box`, не иконкой
-- [ ] карточка «Сейчас» (плашка, параметры, 4 деления, строка состояния и дата) и компактная карточка остальных недель (`SectionCard` или тот же фон `surfaceContainer`), цвета только из `ui/Theme.kt` и `MaterialTheme`
-- [ ] TalkBack: строка — один узел `clearAndSetSemantics { contentDescription = text.description }`, узлы, линия и деления без семантики
-- [ ] `ThemeTest` с `windowBackground(darkTheme)`: линия `marker` не меньше 3:1, дорожка `progressTrackColor` не меньше 1,3:1 в обеих темах (прочерк берёт `progressCheckColor`, его контраст на `marker` уже проверен)
-- [ ] затемнить `ProgressTrackLight` в `ui/Theme.kt`, чтобы прошла проверка дорожки на фоне, сохранив `marker` на дорожке не меньше 3:1
-- [ ] `./gradlew test assembleDebug` — must pass before next task
+- [x] удалить `SummaryCard`, `WeeksCard`, `WeekRow`; колонка с `verticalScroll` и нижним отступом `ScrollContentBottomPadding` остаётся, при `null` по-прежнему только `AppTopBar`
+- [x] строка недели: `Row(height(IntrinsicSize.Min))`, колонка узла ~28 dp с линией в `drawBehind` (верхний отрезок по предыдущей неделе, нижний по своей, в промежутке 8 dp между строками (`spacedBy`) линии нет), узел по `mark` с кольцом цвета фона, центр на середине строки заголовка через `lineHeight` и `LocalDensity`; прочерк `SKIPPED` в `Canvas` или `Box`, не иконкой
+- [x] карточка «Сейчас» (плашка, параметры, 4 деления, строка состояния и дата) и компактная карточка остальных недель (`SectionCard` или тот же фон `surfaceContainer`), цвета только из `ui/Theme.kt` и `MaterialTheme`
+- [x] TalkBack: строка — один узел `clearAndSetSemantics { contentDescription = text.description }`, узлы, линия и деления без семантики
+- [x] `ThemeTest` с `windowBackground(darkTheme)`: линия `marker` не меньше 3:1, дорожка `progressTrackColor` не меньше 1,3:1 в обеих темах (прочерк берёт `progressCheckColor`, его контраст на `marker` уже проверен)
+- [x] затемнить `ProgressTrackLight` в `ui/Theme.kt`, чтобы прошла проверка дорожки на фоне, сохранив `marker` на дорожке не меньше 3:1
+- [x] `./gradlew test assembleDebug` — must pass before next task
 
 ### Task 4: Verify acceptance criteria
 - [ ] verify all requirements from `docs/tasks/20261104-progress-timeline.md` are implemented (экран, правила, TalkBack; вид на телефоне — Post-Completion)

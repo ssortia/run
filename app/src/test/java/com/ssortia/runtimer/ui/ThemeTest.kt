@@ -151,13 +151,31 @@ class ThemeTest {
     // Порог 1.3:1 ниже 3:1 для графики из WCAG намеренно: дорожка не несёт смысла сама по себе,
     // число пробежек передают закрашенные части (marker на дорожке не меньше 3:1) и подпись
     // «N раз» рядом, а заметная дорожка спорила бы с ними. Тест лишь не даёт ей слиться с
-    // карточкой: в светлой теме сейчас около 1.37, в тёмной больше.
+    // карточкой: в светлой теме сейчас около 1.49, в тёмной больше.
     @Test
     fun `дорожка кольца видна на карточке в обеих темах`() {
         for (darkTheme in listOf(false, true)) {
             assertTrue(
                 "контраст дорожки на surfaceContainer: тёмная тема $darkTheme",
                 contrast(progressTrackColor(darkTheme), appColorScheme(darkTheme).surfaceContainer) >= 1.3f,
+            )
+        }
+    }
+
+    // Линия ленты и узлы недель впереди лежат на фоне окна, а не на карточке: закрашенный отрезок
+    // marker несёт смысл (графика, 3:1), серая дорожка фоновая, порог 1,3:1 как на карточке
+    @Test
+    fun `линия ленты прогресса видна на фоне окна в обеих темах`() {
+        for (darkTheme in listOf(false, true)) {
+            val background = windowBackground(darkTheme)
+
+            assertTrue(
+                "контраст marker на фоне: тёмная тема $darkTheme",
+                contrast(segmentColors(isRun = true, darkTheme).marker, background) >= 3f,
+            )
+            assertTrue(
+                "контраст дорожки на фоне: тёмная тема $darkTheme",
+                contrast(progressTrackColor(darkTheme), background) >= 1.3f,
             )
         }
     }
