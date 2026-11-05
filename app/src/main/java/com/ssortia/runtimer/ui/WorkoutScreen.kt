@@ -3,6 +3,9 @@ package com.ssortia.runtimer.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -34,8 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -52,6 +59,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
@@ -69,6 +77,8 @@ import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Оболочка приложения: NavHost с вкладками, нижняя панель, полоска тренировки и центральная
@@ -82,7 +92,7 @@ import kotlinx.coroutines.flow.Flow
 fun WorkoutScreen(
     state: WorkoutState,
     fullscreen: Boolean,
-    @Suppress("UNUSED_PARAMETER") expanded: Boolean,
+    expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     loadSettings: () -> WorkoutSettings,
     loadVolume: () -> Int,
@@ -118,16 +128,49 @@ fun WorkoutScreen(
     // захваченное значение пересобирало бы граф NavHost на каждой правке
     val settingsError by remember { derivedStateOf { settings.validate() } }
 
-    // При старте экран тренировки разворачивается поверх текущей вкладки, после финала или «Стоп»
-    // слой исчезает. Прошлое значение сохраняется при повороте, поэтому поворот свёрнутый экран
-    // не разворачивает
+    // Высота области и смещение слоя вниз в пикселях: 0 — развёрнут, heightPx — свёрнут. Смещение
+    // не сохраняется: после поворота развёрнутый слой стоит на месте, а сворачивавшийся в момент
+    // поворота снова развёрнут целиком (expanded ещё true)
+    var heightPx by remember { mutableFloatStateOf(0f) }
+    val offset = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    // Колбэки и эффект читают текущее значение, а не захваченное при их создании
+    val currentExpanded by rememberUpdatedState(expanded)
+    val currentOnExpandedChange by rememberUpdatedState(onExpandedChange)
+    val sheetSpec = tween<Float>(SheetAnimationMs, easing = FastOutSlowInEasing)
+
+    // Свёрнутый слой сначала встаёт под нижний край и составляется (expanded = true), затем выезжает.
+    // Из сворачивания (expanded ещё true) он разворачивается от текущего смещения, без скачка вниз
+    val expand: () -> Unit = {
+        scope.launch {
+            if (!currentExpanded) {
+                offset.snapTo(heightPx)
+                currentOnExpandedChange(true)
+            }
+            offset.animateTo(0f, sheetSpec)
+        }
+    }
+    // expanded = false только после доезда: системные панели меняются, пока слой закрывает экран.
+    // Если сворачивание прервал expand(), animateTo бросит CancellationException, и false не
+    // выставится. Повторный вызов идемпотентен: цель та же
+    val collapse: () -> Unit = {
+        scope.launch {
+            offset.animateTo(heightPx, sheetSpec)
+            currentOnExpandedChange(false)
+        }
+    }
+
+    // При старте экран тренировки выезжает поверх текущей вкладки, после финала или «Стоп» слой
+    // исчезает без анимации: он составляется только вне Idle. Прошлое значение сохраняется при
+    // повороте, поэтому поворот свёрнутый экран не разворачивает
     val idle = state is WorkoutState.Idle
     var wasIdle by rememberSaveable { mutableStateOf(idle) }
     LaunchedEffect(idle) {
         if (shouldExpandWorkout(wasIdle, idle)) {
-            onExpandedChange(true)
+            expand()
         } else if (idle) {
-            onExpandedChange(false)
+            offset.snapTo(0f)
+            currentOnExpandedChange(false)
         }
         wasIdle = idle
     }
@@ -141,8 +184,13 @@ fun WorkoutScreen(
     val currentState by rememberUpdatedState(state)
 
     // Внешний Box без отступов: слой тренировки сам поглощает их в TimerLayout, и его фон уходит
-    // под системные панели
-    Box(Modifier.fillMaxSize()) {
+    // под системные панели. Его высота — путь слоя при сворачивании. onSizeChanged, а не
+    // BoxWithConstraints: лишняя субкомпозиция над NavHost не нужна
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onSizeChanged { heightPx = it.height.toFloat() },
+    ) {
         // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
         // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
         // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
@@ -226,7 +274,7 @@ fun WorkoutScreen(
                     WorkoutStrip(
                         state = state,
                         workout = workout,
-                        onOpen = { onExpandedChange(true) },
+                        onOpen = expand,
                     )
                 }
                 BottomBar(
@@ -254,10 +302,13 @@ fun WorkoutScreen(
         if (fullscreen) {
             WorkoutLayer(
                 state = state,
-                onCollapse = { onExpandedChange(false) },
+                onCollapse = collapse,
                 onStop = onStop,
                 onPause = onPause,
                 onResume = onResume,
+                // Первым модификатором: область касаний едет вместе со слоем. Смещение читается
+                // при размещении, поэтому анимация не перекомпоновывает слой
+                modifier = Modifier.offset { IntOffset(0, offset.value.roundToInt()) },
             )
         }
     }
@@ -274,6 +325,7 @@ private fun WorkoutLayer(
     onStop: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     // Внутри слоя, то есть в композиции после NavHost: Navigation Compose регистрирует свой
     // обработчик «Назад» при стеке больше одной записи, а диспетчер вызывает последний добавленный.
@@ -282,7 +334,7 @@ private fun WorkoutLayer(
     BackHandler(onBack = onCollapse)
     val paneTitle = stringResource(R.string.pane_workout)
     Box(
-        Modifier
+        modifier
             .fillMaxSize()
             // Не лишний: у TimerLayout только фон, и без обработчика указателя касание пустого
             // места слоя дошло бы до вкладки под ним
@@ -322,6 +374,9 @@ private fun NavHostController.navigateToTab(route: String) {
         restoreState = true
     }
 }
+
+// Длительность разворачивания и сворачивания экрана тренировки
+private const val SheetAnimationMs = 280
 
 // Высота NavigationBar без системной панели. Повторяет внутреннее значение M3 (NavigationBarHeight),
 // которое наружу не открыто: по нему центральная кнопка выступает над панелью на CenterFabOverlap

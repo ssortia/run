@@ -107,11 +107,11 @@
 **Files:**
 - Modify: `app/src/main/java/com/ssortia/runtimer/ui/WorkoutScreen.kt`
 
-- [ ] высота области через `onSizeChanged` внешнего `Box`; `Animatable(0f)` смещения в `remember`, `rememberCoroutineScope`
-- [ ] `expand()` (снап вниз только при `!expanded`) и `collapse()` по Technical Details (`tween(SheetAnimationMs, FastOutSlowInEasing)`, `onExpandedChange(false)` только после доезда), слой со смещением `Modifier.offset { IntOffset(0, offset.value.roundToInt()) }` первым модификатором
-- [ ] перевести на них «Свернуть», `BackHandler`, полоску и автоматическое разворачивание при старте; при `idle` — `snapTo(0f)` и `onExpandedChange(false)` без анимации
-- [ ] логики без Compose здесь не добавляется (тесты к Task 2 не требуются: правила в Task 1 и Task 3); убедиться, что существующие тесты проходят
-- [ ] `JAVA_HOME=~/.local/jdk-17 ./gradlew test` — должны пройти
+- [x] высота области через `onSizeChanged` внешнего `Box`; `Animatable(0f)` смещения в `remember`, `rememberCoroutineScope`
+- [x] `expand()` (снап вниз только при `!expanded`) и `collapse()` по Technical Details (`tween(SheetAnimationMs, FastOutSlowInEasing)`, `onExpandedChange(false)` только после доезда), слой со смещением `Modifier.offset { IntOffset(0, offset.value.roundToInt()) }` первым модификатором
+- [x] перевести на них «Свернуть», `BackHandler`, полоску и автоматическое разворачивание при старте; при `idle` — `snapTo(0f)` и `onExpandedChange(false)` без анимации
+- [x] логики без Compose здесь не добавляется (тесты к Task 2 не требуются: правила в Task 1 и Task 3); убедиться, что существующие тесты проходят
+- [x] `JAVA_HOME=~/.local/jdk-17 ./gradlew test` — должны пройти
 
 ### Task 3: Свайп вниз
 
