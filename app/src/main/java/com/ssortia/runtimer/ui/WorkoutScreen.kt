@@ -62,11 +62,12 @@ import com.ssortia.runtimer.ThemeMode
 import com.ssortia.runtimer.WorkoutSettings
 import com.ssortia.runtimer.WorkoutState
 import com.ssortia.runtimer.programProgress
+import com.ssortia.runtimer.workoutDetailsText
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Оболочка приложения: NavHost с вкладками, нижняя панель и «Старт». Составляется во всех
- * состояниях, поэтому стек и состояния вкладок переживают старт и финал тренировки. Отдельного
+ * Оболочка приложения: NavHost с вкладками, нижняя панель, полоска тренировки и центральная
+ * кнопка. Составляется во всех состояниях, поэтому стек и состояния вкладок переживают старт и финал тренировки. Отдельного
  * маршрута для тренировки нет: «Таймер» показывает форму, отсчёт или тренировку по [state], а
  * во время тренировки он открыт во весь экран без панели ([isWorkoutFullscreen]).
  */
@@ -139,9 +140,21 @@ fun WorkoutScreen(
             ),
     ) {
         val error = settings.validate()
-        // Во время тренировки «Старт» недоступен: сервис всё равно отклонил бы второй запрос
-        val startEnabled = idle && error == null
-        val start = { onStart(settings) }
+        // Центральная кнопка: «Старт» вне тренировки, пауза и продолжение во время неё
+        val centerMode = centerButtonMode(state)
+        val centerEnabled = when (centerMode) {
+            CenterButtonMode.START -> error == null
+            CenterButtonMode.PAUSE, CenterButtonMode.RESUME -> true
+            CenterButtonMode.PAUSE_DISABLED -> false
+        }
+        val onCenterClick = {
+            when (centerMode) {
+                CenterButtonMode.START -> onStart(settings)
+                CenterButtonMode.PAUSE -> onPause()
+                CenterButtonMode.RESUME -> onResume()
+                CenterButtonMode.PAUSE_DISABLED -> Unit
+            }
+        }
         Column(Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
@@ -213,10 +226,27 @@ fun WorkoutScreen(
                 }
             }
             if (!fullscreen) {
+                if (!idle) {
+                    // Параметры на отсчёте берутся из формы: onStart сохранил их до старта, а во
+                    // время тренировки форма скрыта, поэтому они совпадают с запущенными
+                    val runLabel = stringResource(R.string.segment_run)
+                    val walkLabel = stringResource(R.string.segment_walk)
+                    val details = if (error == null) {
+                        workoutDetailsText(settings.toWorkout(), runLabel, walkLabel)
+                    } else {
+                        ""
+                    }
+                    WorkoutStrip(
+                        state = state,
+                        details = details,
+                        onOpen = { navController.navigateToTab(ROUTE_SETTINGS) },
+                    )
+                }
                 BottomBar(
                     navController = navController,
-                    startEnabled = startEnabled,
-                    onStart = start,
+                    centerMode = centerMode,
+                    centerEnabled = centerEnabled,
+                    onCenterClick = onCenterClick,
                 )
             }
         }
@@ -225,8 +255,10 @@ fun WorkoutScreen(
             // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
             // кнопку заменяет заместитель в центральном слоте панели
             StartFab(
-                enabled = startEnabled,
-                onClick = start,
+                state = state,
+                mode = centerMode,
+                enabled = centerEnabled,
+                onClick = onCenterClick,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .windowInsetsPadding(NavigationBarDefaults.windowInsets.only(WindowInsetsSides.Bottom))
@@ -277,25 +309,28 @@ internal val ScrollContentBottomPadding = 16.dp + StartFabOverlap
  * сбрасывает стек до формы с сохранением состояния вкладок, поэтому в стеке не больше двух
  * записей: «Назад» с любой вкладки ведёт на форму, а запись формы не пересоздаётся.
  *
- * Центральный слот между «Историей» и «Прогрессом» занят не вкладкой, а заместителем «Старта» для
- * TalkBack: видимая кнопка лежит поверх панели в общем Box и скрыта от него, а Surface панели —
- * группа обхода, и соседа вне неё между вкладками не поставить. Заместитель внутри группы, поэтому
- * обход по геометрии читает «История, Старт, Прогресс». Заместитель ещё и нажимается без ряби: нижняя
+ * Центральный слот между «Историей» и «Прогрессом» занят не вкладкой, а заместителем центральной
+ * кнопки для TalkBack: «Старт» вне тренировки, «Пауза» или «Продолжить» во время неё ([centerMode]).
+ * Видимая кнопка лежит поверх панели в общем Box и скрыта от него, а Surface панели — группа
+ * обхода, и соседа вне неё между вкладками не поставить. Заместитель внутри группы, поэтому обход
+ * по геометрии читает «История, Старт, Прогресс». Заместитель ещё и нажимается без ряби: нижняя
  * часть слота под видимой кнопкой выглядит её продолжением. Выступающую над панелью часть кнопки
  * заместитель не покрывает (границы узла обрезаются по Surface панели), поэтому исследование
- * касанием там находит элемент экрана под кнопкой.
+ * касанием там находит элемент экрана под кнопкой, во время тренировки — полоску.
  *
  * Без dropUnlessResumed: панель стоит вне NavHost, её LifecycleOwner — activity, а не запись
  * стека, и обёртка не следила бы за переходом между экранами. Двойное нажатие безопасно и так:
  * переход идемпотентен благодаря popUpTo и launchSingleTop, нажатие на текущую вкладку ничего не
  * делает, а popBackStack вкладки не вызывают, так что пустого NavHost не будет. Повторный «Старт»
- * отсекают permissionPending и сервис, отклоняющий второй запрос на старт.
+ * отсекают permissionPending и сервис, отклоняющий второй запрос на старт, а команды паузы явные и
+ * безопасны при повторе.
  */
 @Composable
 private fun BottomBar(
     navController: NavHostController,
-    startEnabled: Boolean,
-    onStart: () -> Unit,
+    centerMode: CenterButtonMode,
+    centerEnabled: Boolean,
+    onCenterClick: () -> Unit,
 ) {
     val entry by navController.currentBackStackEntryAsState()
     val current = bottomTabOf(entry?.destination?.route)
@@ -305,14 +340,14 @@ private fun BottomBar(
         selectedIconColor = MaterialTheme.colorScheme.primary,
         selectedTextColor = MaterialTheme.colorScheme.primary,
     )
-    val startLabel = stringResource(R.string.button_start)
+    val centerLabel = stringResource(centerButtonLabelRes(centerMode))
     val startSlot = startSlotIndex()
     NavigationBar {
         // Отступы внутри ряда, а не modifier панели: фон панели остаётся во всю ширину экрана
         Spacer(Modifier.width(BottomBarEdgePadding))
         BottomTab.entries.forEachIndexed { index, tab ->
             if (index == startSlot) {
-                // clickable сам даёт роль, onClick и disabled() при недоступном «Старте»
+                // clickable сам даёт роль, onClick и disabled() при недоступной кнопке
                 Box(
                     Modifier
                         .weight(1f)
@@ -320,11 +355,11 @@ private fun BottomBar(
                         .clickable(
                             interactionSource = null,
                             indication = null,
-                            enabled = startEnabled,
+                            enabled = centerEnabled,
                             role = Role.Button,
-                            onClick = onStart,
+                            onClick = onCenterClick,
                         )
-                        .semantics { contentDescription = startLabel },
+                        .semantics { contentDescription = centerLabel },
                 )
             }
             val selected = tab == current
@@ -342,13 +377,25 @@ private fun BottomBar(
 }
 
 /**
- * «Старт» скруглённым квадратом в цветах бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих
- * темах изумрудный с белым значком. Кольцо цвета фона отделяет кнопку от панели. Для TalkBack
- * кнопка скрыта, её читает заместитель в [BottomBar].
+ * Центральная кнопка скруглённым квадратом: «Старт» вне тренировки, пауза и продолжение во время неё
+ * ([mode]). Цвета бега, а не primary: в тёмной теме primary светлее, а «Старт» в обеих темах
+ * изумрудный с белым значком; во время тренировки цвета текущего отрезка, как у полоски. Кольцо
+ * цвета фона отделяет кнопку от панели. Для TalkBack кнопка скрыта, её читает заместитель в [BottomBar].
  */
 @Composable
-private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = segmentColors(isRun = true, LocalDarkTheme.current)
+private fun StartFab(
+    state: WorkoutState,
+    mode: CenterButtonMode,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dark = LocalDarkTheme.current
+    val colors = when (state) {
+        is WorkoutState.Active -> segmentColors(state.position.isRun, dark)
+        is WorkoutState.Countdown -> countdownColors(dark)
+        WorkoutState.Idle -> segmentColors(isRun = true, dark)
+    }
     val background = MaterialTheme.colorScheme.background
     val onSurface = MaterialTheme.colorScheme.onSurface
     // Недоступная как у M3 (12 % и 38 % onSurface), но заливка смешана с фоном, иначе сквозь
@@ -372,11 +419,19 @@ private fun StartFab(enabled: Boolean, onClick: () -> Unit, modifier: Modifier =
             .clearAndSetSemantics {},
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = null,
-                modifier = Modifier.size(StartFabIconSize),
-            )
+            val iconModifier = Modifier.size(StartFabIconSize)
+            when (mode) {
+                CenterButtonMode.START, CenterButtonMode.RESUME -> Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    modifier = iconModifier,
+                )
+                CenterButtonMode.PAUSE, CenterButtonMode.PAUSE_DISABLED -> Icon(
+                    painter = painterResource(R.drawable.ic_pause),
+                    contentDescription = null,
+                    modifier = iconModifier,
+                )
+            }
         }
     }
 }

@@ -146,13 +146,13 @@
 - Create: `app/src/main/res/drawable/ic_pause.xml`
 - Modify: `app/src/main/res/values/strings.xml`
 
-- [ ] `res/drawable/ic_pause.xml` (Material Symbols, в `material-icons-core` паузы нет)
-- [ ] `StartFab` принимает `CenterButtonMode`: значок `PlayArrow` или `ic_pause`, цвета `segmentColors` текущего отрезка во время тренировки, недоступная как недоступный «Старт» (38 %, заливка `compositeOver` фона)
-- [ ] заместитель в центральном слоте `BottomBar` берёт описание из `centerButtonLabelRes(mode)` и `enabled`; `onClick` вызывает `onStart`, `onPause` или `onResume`; KDoc `BottomBar` и `StartFab` обновить: заместитель уже не только «Старта»
-- [ ] Composable `WorkoutStrip` в `WorkoutStrip.kt` по Technical Details: `heightIn(min = 56.dp)`, фон и текст `segmentColors` (отсчёт `countdownColors`), слева значок `ic_timer` и две строки `maxLines = 1`, промежуток 88 dp между частями с `weight(1f)`, справа время `TabularNumbers` и `KeyboardArrowUp`, линия «пройдено» 3 dp снизу; семантика через `clearAndSetSemantics` с описанием, ролью и `onClick`, без `liveRegion`
-- [ ] полоска в `Column` между `NavHost` и `BottomBar`, только вне полноэкранного режима и не в `Idle`; нажатие — переход на `settings` по схеме панели
-- [ ] строки шаблонов описания, строчные подписи и `<plurals>` минут и секунд; `WorkoutStripLabels` собирается в Compose из ресурсов, `details` — `workoutDetailsText(settings.toWorkout(), …)` при `settings.validate() == null`
-- [ ] тесты на изменения чистой части, если появились; запустить тесты и `lintDebug` — должны пройти
+- [x] `res/drawable/ic_pause.xml` (Material Symbols, в `material-icons-core` паузы нет)
+- [x] `StartFab` принимает `CenterButtonMode`: значок `PlayArrow` или `ic_pause`, цвета `segmentColors` текущего отрезка во время тренировки, недоступная как недоступный «Старт» (38 %, заливка `compositeOver` фона)
+- [x] заместитель в центральном слоте `BottomBar` берёт описание из `centerButtonLabelRes(mode)` и `enabled`; `onClick` вызывает `onStart`, `onPause` или `onResume`; KDoc `BottomBar` и `StartFab` обновить: заместитель уже не только «Старта»
+- [x] Composable `WorkoutStrip` в `WorkoutStrip.kt` по Technical Details: `heightIn(min = 56.dp)`, фон и текст `segmentColors` (отсчёт `countdownColors`), слева значок `ic_timer` и две строки `maxLines = 1`, промежуток 88 dp между частями с `weight(1f)`, справа время `TabularNumbers` и `KeyboardArrowUp`, линия «пройдено» 3 dp снизу; семантика через `clearAndSetSemantics` с описанием, ролью и `onClick`, без `liveRegion`
+- [x] полоска в `Column` между `NavHost` и `BottomBar`, только вне полноэкранного режима и не в `Idle`; нажатие — переход на `settings` по схеме панели
+- [x] строки шаблонов описания, строчные подписи и `<plurals>` минут и секунд; `WorkoutStripLabels` собирается в Compose из ресурсов, `details` — `workoutDetailsText(settings.toWorkout(), …)` при `settings.validate() == null`
+- [x] тесты на изменения чистой части, если появились (чистая часть не менялась, новых тестов нет); запустить тесты и `lintDebug` — должны пройти
 
 ### Task 4: Настройки приложения и пробный сигнал во время тренировки
 
