@@ -269,4 +269,54 @@ class ProgramProgressTest {
         assertEquals(List(9) { WeekMark.SKIPPED }, progress.take(9).map { it.mark })
         assertTrue(progress.take(9).all { it.lineToNextFilled })
     }
+
+    @Test
+    fun `только остановленные и свои пробежки — текущая неделя 1`() {
+        val runs = listOf(
+            weekRecord(5, startedAtMs = 100L, completed = false),
+            record(runSec = 50, walkSec = 70, rounds = 3, startedAtMs = 900L),
+        )
+        assertEquals(1, currentProgramWeek(runs))
+        val progress = programProgress(runs)
+        assertEquals(WeekMark.CURRENT, progress.week(1).mark)
+        assertEquals(List(9) { WeekMark.AHEAD }, progress.drop(1).map { it.mark })
+    }
+
+    @Test
+    fun `пропущенная неделя с пробежками`() {
+        val runs = List(2) { weekRecord(2, startedAtMs = 100L + it) } + weekRecord(4, startedAtMs = 900L)
+        val week = programProgress(runs).week(2)
+        assertEquals(WeekMark.SKIPPED, week.mark)
+        assertEquals(2, week.completedRuns)
+        assertTrue(week.lineToNextFilled)
+    }
+
+    @Test
+    fun `пройденная неделя выше текущей отмечена пройденной`() {
+        val runs = List(5) { weekRecord(1, startedAtMs = 100L + it) } + weekRecord(2, startedAtMs = 900L)
+        assertEquals(WeekMark.PASSED, programProgress(runs).week(1).mark)
+    }
+
+    @Test
+    fun `отрезки линии`() {
+        val progress = programProgress(List(4) { weekRecord(5, startedAtMs = 100L + it) } + weekRecord(3, startedAtMs = 900L))
+        val segments = lineSegments(progress)
+        assertEquals(10, segments.size)
+        assertEquals(LineSegments(aboveFilled = null, belowFilled = true), segments.first())
+        assertEquals(LineSegments(aboveFilled = false, belowFilled = null), segments.last())
+        // Верхний отрезок берёт цвет нижнего у предыдущей недели
+        (1..9).forEach { assertEquals(progress[it - 1].lineToNextFilled, segments[it].aboveFilled) }
+        (0..8).forEach { assertEquals(progress[it].lineToNextFilled, segments[it].belowFilled) }
+        // Текущая неделя 3 не пройдена: от неё серый, пройденная неделя 5 закрашивает свой отрезок
+        assertEquals(LineSegments(aboveFilled = true, belowFilled = false), segments[2])
+        assertEquals(LineSegments(aboveFilled = false, belowFilled = true), segments[4])
+        assertEquals(LineSegments(aboveFilled = true, belowFilled = false), segments[5])
+    }
+
+    @Test
+    fun `линия из одной недели без отрезков`() {
+        val one = programProgress(emptyList()).take(1)
+        assertEquals(listOf(LineSegments(null, null)), lineSegments(one))
+        assertEquals(emptyList<LineSegments>(), lineSegments(emptyList()))
+    }
 }

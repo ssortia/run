@@ -46,11 +46,15 @@ data class WeekProgress(
  * по программе, при равном времени старта большая неделя. Пробежки со своими параметрами и
  * остановленные не учитываются, без подходящих пробежек текущая — первая неделя.
  */
-fun currentProgramWeek(runs: List<RunRecord>): Int =
-    runs.asSequence()
-        .filter { it.completed }
-        .mapNotNull { record -> presetWeekOf(record)?.let { record.startedAtMs to it } }
-        .maxWithOrNull(compareBy({ it.first }, { it.second }))
+fun currentProgramWeek(runs: List<RunRecord>): Int = currentWeekOf(programRuns(runs))
+
+/** Завершённые пробежки по программе вместе с их неделей. */
+private fun programRuns(runs: List<RunRecord>): List<Pair<RunRecord, Int>> =
+    runs.filter { it.completed }.mapNotNull { record -> presetWeekOf(record)?.let { record to it } }
+
+private fun currentWeekOf(programRuns: List<Pair<RunRecord, Int>>): Int =
+    programRuns
+        .maxWithOrNull(compareBy({ it.first.startedAtMs }, { it.second }))
         ?.second
         ?: WORKOUT_PRESETS.first().week
 
@@ -60,11 +64,12 @@ fun currentProgramWeek(runs: List<RunRecord>): Int =
  *
  * Линия ленты закрашена до текущей недели ([WeekProgress.beforeCurrent]) и после пройденных
  * недель ([WeekProgress.passed]), в том числе ниже текущей. Отрезок последней недели экран не
- * рисует.
+ * рисует (см. [lineSegments]).
  */
 fun programProgress(runs: List<RunRecord>): List<WeekProgress> {
-    val byWeek = runs.filter { it.completed }.groupBy { presetWeekOf(it) }
-    val currentWeek = currentProgramWeek(runs)
+    val programRuns = programRuns(runs)
+    val byWeek = programRuns.groupBy({ it.second }, { it.first })
+    val currentWeek = currentWeekOf(programRuns)
     return WORKOUT_PRESETS.map { preset ->
         val weekRuns = byWeek[preset.week].orEmpty()
         WeekProgress(
@@ -76,3 +81,19 @@ fun programProgress(runs: List<RunRecord>): List<WeekProgress> {
         )
     }
 }
+
+/** Отрезки линии у узла недели: закрашен ли отрезок выше и ниже узла, null — отрезка нет. */
+data class LineSegments(val aboveFilled: Boolean?, val belowFilled: Boolean?)
+
+/**
+ * Отрезки линии для каждой недели [progress]: верхний берёт цвет отрезка предыдущей недели к
+ * этой, нижний свой [WeekProgress.lineToNextFilled]. У первой недели нет верхнего, у последней
+ * нижнего.
+ */
+fun lineSegments(progress: List<WeekProgress>): List<LineSegments> =
+    progress.mapIndexed { index, week ->
+        LineSegments(
+            aboveFilled = progress.getOrNull(index - 1)?.lineToNextFilled,
+            belowFilled = if (index < progress.lastIndex) week.lineToNextFilled else null,
+        )
+    }

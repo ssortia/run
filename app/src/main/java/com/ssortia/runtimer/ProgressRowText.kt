@@ -18,7 +18,8 @@ fun progressDateText(startedAtMs: Long, formatter: DateTimeFormatter): String =
 
 /**
  * Подписи строк недель. [statusCount] шаблон строки состояния «Пробежек %1$d из %2$d»,
- * [statusPassed] шаблон «Неделя пройдена · %s» вместе с разделителем. Остальные подписи —
+ * [statusPassed] шаблон «Неделя пройдена · %s» вместе с разделителем, [none] «—» вместо числа
+ * пробежек у недели без пробежек. Остальные подписи —
  * части описания строки для TalkBack, со строчной буквы: [now] «сейчас», [passed] «пройдена»,
  * [last] «последняя %s», [noRuns] «пробежек нет», [count] «пробежек %1$d из %2$d».
  */
@@ -29,6 +30,7 @@ class ProgressLabels(
     val sec: String,
     val statusCount: String,
     val statusPassed: String,
+    val none: String,
     val now: String,
     val passed: String,
     val last: String,
@@ -37,7 +39,8 @@ class ProgressLabels(
 )
 
 /**
- * Строка недели на экране прогресса. [date] null, если пробежек не было: экран рисует «—».
+ * Строка недели на экране прогресса. [runs] число пробежек («3 раза») или [ProgressLabels.none]
+ * «—», если их не было, [date] тогда null.
  * [status] строка состояния карточки «Сейчас», у остальных недель null. [description] вся
  * строка одной фразой для TalkBack: видимые элементы карточки от него скрыты, иначе число
  * и дата читались бы дважды.
@@ -79,6 +82,7 @@ fun progressRowText(
     }
     val description = buildList {
         add(preset.title)
+        add(preset.details)
         if (week.current) add(labels.now)
         when {
             week.passed -> {
@@ -93,7 +97,7 @@ fun progressRowText(
     return ProgressRowText(
         title = preset.title,
         details = preset.details,
-        runs = runsText,
+        runs = if (week.completedRuns > 0) runsText else labels.none,
         date = date,
         status = status,
         description = description,

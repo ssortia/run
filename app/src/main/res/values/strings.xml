@@ -67,13 +67,13 @@
     <string name="tab_progress">Прогресс</string>
     <string name="progress_title">Прогресс</string>
     <string name="progress_now">Сейчас</string>
+    <string name="progress_status_count">Пробежек %1$d из %2$d</string>
     <string name="progress_status_passed">Неделя пройдена · %s</string>
     <string name="progress_description_now">сейчас</string>
     <string name="progress_description_passed">пройдена</string>
     <string name="progress_description_last">последняя %s</string>
     <string name="progress_description_no_runs">пробежек нет</string>
     <string name="progress_description_count">пробежек %1$d из %2$d</string>
-    <string name="progress_ring_count">Пробежек %1$d из %2$d</string>
     <string name="progress_no_runs">—</string>
     <plurals name="progress_runs">
         <item quantity="one">%d раз</item>

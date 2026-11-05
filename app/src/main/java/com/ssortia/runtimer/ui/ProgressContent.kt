@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,15 +46,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import com.ssortia.runtimer.LineSegments
 import com.ssortia.runtimer.ProgressLabels
 import com.ssortia.runtimer.ProgressRowText
 import com.ssortia.runtimer.R
 import com.ssortia.runtimer.RUNS_TO_PASS_WEEK
 import com.ssortia.runtimer.WeekMark
 import com.ssortia.runtimer.WeekProgress
+import com.ssortia.runtimer.lineSegments
 import com.ssortia.runtimer.progressDateFormatter
 import com.ssortia.runtimer.progressRowText
 import java.time.ZoneId
+
+// Поля ленты
+private val ListHorizontalPadding = 16.dp
+private val ListTopPadding = 8.dp
 
 // Колонка узла слева от карточек и линия по её центру
 private val NodeColumnWidth = 28.dp
@@ -73,18 +80,45 @@ private val CurrentRingStroke = 2.5.dp
 private val CurrentDotRadius = 3.dp
 private val AheadNodeSize = 12.dp
 private val AheadNodeStroke = 2.dp
+private val CheckIconSize = 14.dp
+
+// Прочерк пропущенной недели: отрезок посередине холста от четверти до трёх четвертей ширины
+private val DashCanvasSize = 12.dp
+private val DashStroke = 1.6.dp
+private const val DASH_START_FRACTION = 0.25f
+private const val DASH_END_FRACTION = 0.75f
 
 /** Зазор между частями кольца текущей недели в градусах. */
 private const val RING_GAP_DEG = 12f
 
-// Карточки: у «Сейчас» отступы и скругление крупнее, как в макете
+// Карточки: у «Сейчас» отступы и скругление крупнее, как в макете. Скругления 20 и 16 dp
+// взяты из макета ленты, поэтому карточки не `SectionCard` (`MaterialTheme.shapes.large`),
+// а фон `surfaceContainer` с цветом текста у каждого `Text`
 private val CurrentCardTopPadding = 14.dp
+private val CurrentCardBottomPadding = 16.dp
+private val CurrentCardSpacing = 10.dp
 private val CurrentCardShape = RoundedCornerShape(20.dp)
 private val PlainCardVerticalPadding = 12.dp
 private val PlainCardShape = RoundedCornerShape(16.dp)
+private val PlainCardSpacing = 12.dp
+private val PlainCardLineSpacing = 2.dp
 private val CardHorizontalPadding = 16.dp
+private val TitleChipSpacing = 8.dp
+private val StatusDateSpacing = 8.dp
 private val NowChipHeight = 24.dp
+private val NowChipHorizontalPadding = 10.dp
 private val PipHeight = 6.dp
+private val PipSpacing = 6.dp
+
+/** Цвета ленты: считаются один раз на экран по выбранной теме. */
+private data class TimelineColors(val marker: Color, val track: Color, val check: Color)
+
+/** Размер узла недели: по нему узел ставится центром на линию. */
+private fun nodeSize(mark: WeekMark): Dp = when (mark) {
+    WeekMark.PASSED, WeekMark.SKIPPED -> FilledNodeSize + NodeBackgroundRing * 2
+    WeekMark.CURRENT -> CurrentNodeSize
+    WeekMark.AHEAD -> AheadNodeSize
+}
 
 /**
  * Экран прогресса по программе: лента из 10 недель, у каждой узел на линии слева и своя
@@ -100,6 +134,14 @@ fun ProgressContent(
     val locale = LocalConfiguration.current.locales[0]
     val zone = ZoneId.systemDefault()
     val dateFormatter = remember(zone, locale) { progressDateFormatter(zone, locale) }
+    val darkTheme = LocalDarkTheme.current
+    val colors = remember(darkTheme) {
+        TimelineColors(
+            marker = segmentColors(isRun = true, darkTheme).marker,
+            track = progressTrackColor(darkTheme),
+            check = progressCheckColor(darkTheme),
+        )
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         AppTopBar(title = stringResource(R.string.progress_title))
@@ -110,14 +152,16 @@ fun ProgressContent(
                 walk = stringResource(R.string.segment_walk),
                 min = stringResource(R.string.minutes_short),
                 sec = stringResource(R.string.seconds_short),
-                statusCount = stringResource(R.string.progress_ring_count),
+                statusCount = stringResource(R.string.progress_status_count),
                 statusPassed = stringResource(R.string.progress_status_passed),
+                none = stringResource(R.string.progress_no_runs),
                 now = stringResource(R.string.progress_description_now),
                 passed = stringResource(R.string.progress_description_passed),
                 last = stringResource(R.string.progress_description_last),
                 noRuns = stringResource(R.string.progress_description_no_runs),
                 count = stringResource(R.string.progress_description_count),
             )
+            val segments = remember(progress) { lineSegments(progress) }
             // Промежуток между строками задаёт колонка, а не строки: линия рисуется на высоту
             // строки и в промежутке прерывается
             Column(
@@ -125,7 +169,12 @@ fun ProgressContent(
                     .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = ScrollContentBottomPadding),
+                    .padding(
+                        start = ListHorizontalPadding,
+                        top = ListTopPadding,
+                        end = ListHorizontalPadding,
+                        bottom = ScrollContentBottomPadding,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(WeekGap),
             ) {
                 progress.forEachIndexed { index, week ->
@@ -139,8 +188,8 @@ fun ProgressContent(
                     WeekRow(
                         week = week,
                         text = text,
-                        lineAboveFilled = progress.getOrNull(index - 1)?.lineToNextFilled,
-                        lineBelowFilled = if (index < progress.lastIndex) week.lineToNextFilled else null,
+                        segments = segments[index],
+                        colors = colors,
                     )
                 }
             }
@@ -149,23 +198,27 @@ fun ProgressContent(
 }
 
 /**
- * Строка ленты: колонка узла и карточка. [lineAboveFilled] и [lineBelowFilled] — цвет отрезков
- * линии выше и ниже узла, null у первой недели сверху и у последней снизу. Строка читается
- * TalkBack одной фразой [ProgressRowText.description], узел, линия и деления без семантики.
+ * Строка ленты: колонка узла и карточка. [segments] — цвет отрезков линии выше и ниже узла.
+ * Строка читается TalkBack одной фразой [ProgressRowText.description], узел, линия и деления
+ * без семантики.
  */
 @Composable
 private fun WeekRow(
     week: WeekProgress,
     text: ProgressRowText,
-    lineAboveFilled: Boolean?,
-    lineBelowFilled: Boolean?,
+    segments: LineSegments,
+    colors: TimelineColors,
 ) {
-    val current = week.mark == WeekMark.CURRENT
+    val current = week.current
     val titleStyle = if (current) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall
-    // Центр узла на середине строки заголовка: lineHeight в sp растёт с системным шрифтом
-    val titleLineHeight = with(LocalDensity.current) { titleStyle.lineHeight.toDp() }
+    val chipStyle = MaterialTheme.typography.labelMedium
+    // Центр узла на середине строки заголовка: lineHeight в sp растёт с системным шрифтом.
+    // Заголовок в одну строку, у «Сейчас» строка с плашкой высотой не меньше её текста
+    val density = LocalDensity.current
+    val titleLineHeight = with(density) { titleStyle.lineHeight.toDp() }
     val nodeCenter = if (current) {
-        CurrentCardTopPadding + max(titleLineHeight, NowChipHeight) / 2
+        val chipHeight = max(NowChipHeight, with(density) { chipStyle.lineHeight.toDp() })
+        CurrentCardTopPadding + max(titleLineHeight, chipHeight) / 2
     } else {
         PlainCardVerticalPadding + titleLineHeight / 2
     }
@@ -177,9 +230,9 @@ private fun WeekRow(
             .clearAndSetSemantics { contentDescription = text.description },
         horizontalArrangement = Arrangement.spacedBy(NodeGap),
     ) {
-        NodeColumn(week, nodeCenter, lineAboveFilled, lineBelowFilled)
+        NodeColumn(week, nodeCenter, segments, colors)
         if (current) {
-            CurrentWeekCard(week, text, titleStyle, Modifier.weight(1f))
+            CurrentWeekCard(week, text, titleStyle, chipStyle, colors, Modifier.weight(1f))
         } else {
             PlainWeekCard(week, text, titleStyle, Modifier.weight(1f))
         }
@@ -190,13 +243,10 @@ private fun WeekRow(
 private fun NodeColumn(
     week: WeekProgress,
     nodeCenter: Dp,
-    lineAboveFilled: Boolean?,
-    lineBelowFilled: Boolean?,
+    segments: LineSegments,
+    colors: TimelineColors,
 ) {
-    val darkTheme = LocalDarkTheme.current
-    val marker = segmentColors(isRun = true, darkTheme).marker
-    val track = progressTrackColor(darkTheme)
-    fun lineColor(filled: Boolean) = if (filled) marker else track
+    fun lineColor(filled: Boolean) = if (filled) colors.marker else colors.track
 
     Box(
         modifier = Modifier
@@ -206,68 +256,62 @@ private fun NodeColumn(
                 val x = size.width / 2
                 val centerY = nodeCenter.toPx()
                 val stroke = LineWidth.toPx()
-                lineAboveFilled?.let {
+                segments.aboveFilled?.let {
                     drawLine(lineColor(it), Offset(x, 0f), Offset(x, centerY), stroke)
                 }
-                lineBelowFilled?.let {
+                segments.belowFilled?.let {
                     drawLine(lineColor(it), Offset(x, centerY), Offset(x, size.height), stroke)
                 }
             },
         contentAlignment = Alignment.TopCenter,
     ) {
-        val nodeSize = when (week.mark) {
-            WeekMark.PASSED, WeekMark.SKIPPED -> FilledNodeSize + NodeBackgroundRing * 2
-            WeekMark.CURRENT -> CurrentNodeSize
-            WeekMark.AHEAD -> AheadNodeSize
-        }
-        Box(Modifier.padding(top = (nodeCenter - nodeSize / 2).coerceAtLeast(0.dp))) {
-            WeekNode(week, marker, track)
+        Box(Modifier.padding(top = (nodeCenter - nodeSize(week.mark) / 2).coerceAtLeast(0.dp))) {
+            WeekNode(week, colors)
         }
     }
 }
 
 /** Узел недели по [WeekMark]. Фон узла цвета фона окна закрывает линию под ним. */
 @Composable
-private fun WeekNode(week: WeekProgress, marker: Color, track: Color) {
-    val darkTheme = LocalDarkTheme.current
+private fun WeekNode(week: WeekProgress, colors: TimelineColors) {
     val background = MaterialTheme.colorScheme.background
-    val check = progressCheckColor(darkTheme)
+    val mark = week.mark
 
-    when (week.mark) {
+    when (mark) {
         WeekMark.PASSED, WeekMark.SKIPPED -> Box(
             modifier = Modifier
-                .size(FilledNodeSize + NodeBackgroundRing * 2)
+                .size(nodeSize(mark))
                 .background(background, CircleShape)
                 .padding(NodeBackgroundRing)
-                .background(marker, CircleShape),
+                .background(colors.marker, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (week.mark == WeekMark.PASSED) {
+            if (mark == WeekMark.PASSED) {
                 Icon(
                     imageVector = Icons.Outlined.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = check,
+                    modifier = Modifier.size(CheckIconSize),
+                    tint = colors.check,
                 )
             } else {
                 // Прочерк пропущенной недели: минуса в material-icons-core нет
-                Canvas(Modifier.size(12.dp)) {
+                Canvas(Modifier.size(DashCanvasSize)) {
                     drawLine(
-                        color = check,
-                        start = Offset(size.width * 0.25f, size.height / 2),
-                        end = Offset(size.width * 0.75f, size.height / 2),
-                        strokeWidth = 1.6.dp.toPx(),
+                        color = colors.check,
+                        start = Offset(size.width * DASH_START_FRACTION, size.height / 2),
+                        end = Offset(size.width * DASH_END_FRACTION, size.height / 2),
+                        strokeWidth = DashStroke.toPx(),
                         cap = StrokeCap.Round,
                     )
                 }
             }
         }
-        WeekMark.CURRENT -> CurrentNode(week.completedRuns, marker, track, background)
+        WeekMark.CURRENT -> CurrentNode(week.completedRuns, colors.marker, colors.track, background)
         WeekMark.AHEAD -> Box(
             modifier = Modifier
-                .size(AheadNodeSize)
+                .size(nodeSize(mark))
                 .background(background, CircleShape)
-                .border(AheadNodeStroke, if (week.completedRuns > 0) marker else track, CircleShape),
+                .border(AheadNodeStroke, if (week.completedRuns > 0) colors.marker else colors.track, CircleShape),
         )
     }
 }
@@ -278,7 +322,7 @@ private fun WeekNode(week: WeekProgress, marker: Color, track: Color) {
  */
 @Composable
 private fun CurrentNode(completedRuns: Int, marker: Color, track: Color, background: Color) {
-    Canvas(Modifier.size(CurrentNodeSize)) {
+    Canvas(Modifier.size(nodeSize(WeekMark.CURRENT))) {
         drawCircle(background)
         val strokePx = CurrentRingStroke.toPx()
         val diameter = CurrentRingDiameter.toPx()
@@ -305,11 +349,11 @@ private fun CurrentWeekCard(
     week: WeekProgress,
     text: ProgressRowText,
     titleStyle: TextStyle,
+    chipStyle: TextStyle,
+    colors: TimelineColors,
     modifier: Modifier,
 ) {
-    val darkTheme = LocalDarkTheme.current
-    val marker = segmentColors(isRun = true, darkTheme).marker
-    val track = progressTrackColor(darkTheme)
+    val status = checkNotNull(text.status) { "строка состояния есть у текущей недели" }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
@@ -319,30 +363,32 @@ private fun CurrentWeekCard(
                 start = CardHorizontalPadding,
                 top = CurrentCardTopPadding,
                 end = CardHorizontalPadding,
-                bottom = 16.dp,
+                bottom = CurrentCardBottomPadding,
             ),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(CurrentCardSpacing),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(TitleChipSpacing),
         ) {
             Text(
                 text = text.title,
                 style = titleStyle,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             Box(
                 modifier = Modifier
-                    .height(NowChipHeight)
+                    .heightIn(min = NowChipHeight)
                     .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = NowChipHorizontalPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = stringResource(R.string.progress_now),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = chipStyle,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     maxLines = 1,
                     softWrap = false,
@@ -354,19 +400,19 @@ private fun CurrentWeekCard(
             style = MaterialTheme.typography.bodyMedium.merge(TabularNumbers),
             color = muted,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(PipSpacing)) {
             for (part in 0 until RUNS_TO_PASS_WEEK) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(PipHeight)
-                        .background(if (part < week.completedRuns) marker else track, CircleShape),
+                        .background(if (part < week.completedRuns) colors.marker else colors.track, CircleShape),
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(StatusDateSpacing)) {
             Text(
-                text = text.status.orEmpty(),
+                text = status,
                 style = MaterialTheme.typography.bodyMedium.merge(TabularNumbers),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -404,16 +450,18 @@ private fun PlainWeekCard(
             .background(MaterialTheme.colorScheme.surfaceContainer, PlainCardShape)
             .padding(horizontal = CardHorizontalPadding, vertical = PlainCardVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(PlainCardSpacing),
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(PlainCardLineSpacing),
         ) {
             Text(
                 text = text.title,
                 style = titleStyle,
-                color = if (week.mark == WeekMark.PASSED) onSurface else muted,
+                color = if (week.passed) onSurface else muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = text.details,
@@ -425,10 +473,10 @@ private fun PlainWeekCard(
         }
         Column(
             horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(PlainCardLineSpacing),
         ) {
             Text(
-                text = if (hasRuns) text.runs else stringResource(R.string.progress_no_runs),
+                text = text.runs,
                 style = MaterialTheme.typography.titleSmall.merge(TabularNumbers),
                 color = if (hasRuns) onSurface else muted,
                 maxLines = 1,
