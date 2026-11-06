@@ -47,6 +47,8 @@ sdk.dir=/путь/к/Android/Sdk
 
 Готовый APK появится в `app/build/outputs/apk/debug/app-debug.apk`.
 
+На GitHub каждый push в `master` и каждый PR проверяет CI (`.github/workflows/ci.yml`): `./gradlew test lintDebug assembleDebug` на JDK 17. Debug-APK и отчёты тестов и lint лежат в артефактах прогона во вкладке Actions. Dependabot (`.github/dependabot.yml`) раз в неделю открывает PR с обновлениями Gradle-зависимостей и версий GitHub Actions; `androidx.core` из них исключён, причина в разделе «Неочевидное» `CLAUDE.md`. Зелёный CI не подтверждает звук, вибрацию и работу при выключенном экране: после обновления зависимостей их проверяют на телефоне.
+
 ## Запуск в эмуляторе
 
 ```bash

@@ -1,0 +1,34 @@
+# Еженедельные PR с обновлениями, CI проверяет каждый. Зелёный CI не подтверждает звук,
+# вибрацию, свайп и работу при выключенном экране: после обновления их проверяют на телефоне
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Закреплена намеренно: на её поведение ServiceCompat опирается предупреждение
+      # lint InlinedApi (см. CLAUDE.md), обновлять только вручную с повторной проверкой
+      - dependency-name: androidx.core:core
+    groups:
+      # Версия KSP привязана к версии Kotlin, обновляются только вместе
+      kotlin:
+        patterns:
+          - org.jetbrains.kotlin.*
+          - com.google.devtools.ksp*
+      androidx:
+        patterns:
+          - androidx.*
+      android-gradle-plugin:
+        patterns:
+          - com.android.*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
