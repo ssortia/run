@@ -1,6 +1,6 @@
 # RunTimer
 
-Обзор, структура и установка описаны в `README.md`, сценарии в `USER_STORIES.md`. Дизайн-макет экранов: https://claude.ai/artifact/WKnsAn8dCvkNbCqtUVcdik, прототипы иконки приложения: https://claude.ai/artifact/PBGGxgEGYZKHq1BBvPQRpx (читаются инструментом Artifact, `action: "read"`).
+Обзор и быстрый старт в `README.md`, подробности в `docs/`: устройство и поведение в `docs/how-it-works.md`, файлы проекта в `docs/architecture.md`, сборка, CI и установка в `docs/building.md`, ограничения в `docs/limitations.md`, статус в `docs/status.md`; сценарии в `USER_STORIES.md`. Дизайн-макет экранов: https://claude.ai/artifact/WKnsAn8dCvkNbCqtUVcdik, прототипы иконки приложения: https://claude.ai/artifact/PBGGxgEGYZKHq1BBvPQRpx (читаются инструментом Artifact, `action: "read"`).
 
 ## Команды
 
