@@ -9,12 +9,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -23,15 +28,14 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -60,6 +65,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavBackStackEntry
@@ -157,8 +163,8 @@ fun WorkoutScreen(
             .onSizeChanged { sheet.heightPx = it.height.toFloat() },
     ) {
         // Отступы сверху и по бокам поглощаются общим Box, а не Column: тогда «Старт» встанет по
-        // центру панели, а не экрана, и при боковой системной панели. NavigationBar не добавит
-        // боковые второй раз, а снизу системную панель он учитывает сам, и его фон уходит под
+        // центру панели, а не экрана, и при боковой системной панели. Нижняя панель не добавит
+        // боковые второй раз, а снизу системную панель она учитывает сама, и её фон уходит под
         // жестовую полосу. Клавиатуры в приложении нет, отдельный учёт ime не нужен. Под
         // развёрнутым слоем тренировки вкладки скрыты от TalkBack
         Box(
@@ -250,7 +256,7 @@ fun WorkoutScreen(
                     onCenterClick = onCenterClick,
                 )
             }
-            // Поверх панели, а не внутри NavigationBar: Surface панели обрезает содержимое по
+            // Поверх панели, а не внутри неё: Surface панели обрезает содержимое по
             // своей форме, и выступающая часть не рисовалась бы и не нажималась. Для TalkBack
             // кнопку заменяет заместитель в центральном слоте панели
             CenterFab(
@@ -350,18 +356,26 @@ private fun NavHostController.navigateToTab(route: String) {
     }
 }
 
-// Высота NavigationBar без системной панели. Повторяет внутреннее значение M3 (NavigationBarHeight),
-// которое наружу не открыто: по нему центральная кнопка выступает над панелью на CenterFabOverlap
-private val BottomBarHeight = 80.dp
+// Высота нижней панели без системной панели: ниже NavigationBar M3 (80 dp), как в макете. По ней
+// центральная кнопка выступает над панелью на CenterFabOverlap
+private val BottomBarHeight = 66.dp
+// Индикатор выбранной вкладки, значок и подпись уменьшены под низкую панель, как в макете
+private val TabIndicatorWidth = 60.dp
+private val TabIndicatorHeight = 30.dp
+private val TabIconSize = 24.dp
+private val TabIndicatorTopPadding = 9.dp
+private val TabLabelGap = 3.dp
+private val TabLabelSize = 12.sp
+private val TabLabelLineHeight = 16.sp
 // Отступ крайних вкладок от краёв экрана. Симметричный, поэтому центральный слот остаётся под кнопкой
 private val BottomBarEdgePadding = 16.dp
-// Заливка 64 dp и кольцо цвета фона по 4 dp с каждой стороны: BorderStroke рисуется внутри границ
-private val CenterFabSize = 72.dp
+// Заливка 56 dp и кольцо цвета фона по 4 dp с каждой стороны: BorderStroke рисуется внутри границ
+private val CenterFabSize = 64.dp
 private val CenterFabRing = 4.dp
-private val CenterFabIconSize = 36.dp
+private val CenterFabIconSize = 32.dp
 private val CenterFabElevation = 6.dp
-// Сильно скруглённый квадрат, но не круг: круг дал бы радиус CenterFabSize / 2 (36 dp)
-private val CenterFabCorner = 28.dp
+// Сильно скруглённый квадрат, но не круг: круг дал бы радиус CenterFabSize / 2 (32 dp)
+private val CenterFabCorner = 25.dp
 
 /**
  * На сколько центральная кнопка выступает над нижней панелью: на треть высоты, две трети кнопки лежат на
@@ -403,44 +417,96 @@ private fun BottomBar(
     centerEnabled: Boolean,
     onCenterClick: () -> Unit,
 ) {
-    // Индикатор M3 по умолчанию в светлой теме почти не виден, поэтому выбранную вкладку
-    // выделяет цвет primary у иконки и подписи
-    val itemColors = NavigationBarItemDefaults.colors(
-        selectedIconColor = MaterialTheme.colorScheme.primary,
-        selectedTextColor = MaterialTheme.colorScheme.primary,
-    )
     val centerLabel = stringResource(centerButtonLabelRes(centerMode))
     val startSlot = startSlotIndex()
-    NavigationBar {
-        // Отступы внутри ряда, а не modifier панели: фон панели остаётся во всю ширину экрана
-        Spacer(Modifier.width(BottomBarEdgePadding))
-        BottomTab.entries.forEachIndexed { index, tab ->
-            if (index == startSlot) {
-                // clickable сам даёт роль, onClick и disabled() при недоступной кнопке
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(BottomBarHeight)
-                        .clickable(
-                            interactionSource = null,
-                            indication = null,
-                            enabled = centerEnabled,
-                            role = Role.Button,
-                            onClick = onCenterClick,
-                        )
-                        .semantics { contentDescription = centerLabel },
+    // Своя панель вместо NavigationBar: его высота 80 dp задана внутри M3 и не уменьшается.
+    // Цвет, тон и отступ системной панели как у NavigationBar. Surface M3 сам ставит
+    // isTraversalGroup, поэтому заместитель кнопки внутри группы, как и прежде
+    Surface(
+        color = NavigationBarDefaults.containerColor,
+        tonalElevation = NavigationBarDefaults.Elevation,
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(NavigationBarDefaults.windowInsets)
+                .height(BottomBarHeight)
+                .selectableGroup(),
+        ) {
+            // Отступы внутри ряда, а не modifier панели: фон панели остаётся во всю ширину экрана
+            Spacer(Modifier.width(BottomBarEdgePadding))
+            BottomTab.entries.forEachIndexed { index, tab ->
+                if (index == startSlot) {
+                    // clickable сам даёт роль, onClick и disabled() при недоступной кнопке
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(BottomBarHeight)
+                            .clickable(
+                                interactionSource = null,
+                                indication = null,
+                                enabled = centerEnabled,
+                                role = Role.Button,
+                                onClick = onCenterClick,
+                            )
+                            .semantics { contentDescription = centerLabel },
+                    )
+                }
+                BottomBarItem(
+                    tab = tab,
+                    selected = tab == current,
+                    onClick = { onTabClick(tab) },
                 )
             }
-            NavigationBarItem(
-                selected = tab == current,
-                onClick = { onTabClick(tab) },
-                icon = { Icon(painter = tabIcon(tab), contentDescription = null) },
-                // В одну строку: перенос сделал бы панель выше BottomBarHeight, и кнопка закрыла бы подписи
-                label = { Text(stringResource(tab.labelRes), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                colors = itemColors,
+            Spacer(Modifier.width(BottomBarEdgePadding))
+        }
+    }
+}
+
+/**
+ * Вкладка нижней панели. Индикатор M3 по умолчанию (secondaryContainer) в светлой теме почти не
+ * виден, поэтому выбранную вкладку выделяет ещё и цвет primary у значка и подписи.
+ */
+@Composable
+private fun RowScope.BottomBarItem(tab: BottomTab, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val contentColor = if (selected) colors.primary else colors.onSurfaceVariant
+    Column(
+        Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .padding(top = TabIndicatorTopPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(TabLabelGap),
+    ) {
+        Box(
+            Modifier
+                .size(TabIndicatorWidth, TabIndicatorHeight)
+                .background(
+                    if (selected) colors.secondaryContainer else Color.Transparent,
+                    RoundedCornerShape(TabIndicatorHeight / 2),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = tabIcon(tab),
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(TabIconSize),
             )
         }
-        Spacer(Modifier.width(BottomBarEdgePadding))
+        // В одну строку: перенос не влез бы в BottomBarHeight, и кнопка закрыла бы подписи
+        Text(
+            stringResource(tab.labelRes),
+            color = contentColor,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontSize = TabLabelSize,
+                lineHeight = TabLabelLineHeight,
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
