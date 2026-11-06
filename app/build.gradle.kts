@@ -43,7 +43,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     // Версия закреплена: на её поведение ServiceCompat опирается предупреждение InlinedApi в CLAUDE.md
     implementation("androidx.core:core:1.13.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
