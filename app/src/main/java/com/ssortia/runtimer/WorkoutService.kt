@@ -30,7 +30,8 @@ import kotlinx.coroutines.launch
  * поэтому после [onDestroy] цикл уже не может подать сигнал или обновить уведомление.
  *
  * Завершение одно на все пути: «Стоп» вызывает stopService(), в том числе во время отсчёта,
- * финал вызывает stopSelf(), ресурсы освобождает только [onDestroy]. Единственное исключение:
+ * финал вызывает stopSelf(), ресурсы (цикл, Beeper, Buzzer, беззвучную дорожку [SilentTrack],
+ * wake lock, уведомление) освобождает только [onDestroy]. Единственное исключение:
  * на паузе wake lock снимается временно и берётся заново при продолжении.
  *
  * Команды паузы приходят обычными интентами через startService() и безопасны при повторе.
@@ -43,6 +44,10 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     // null, если вибрация выключена в настройках
     private var buzzer: Buzzer? = null
+    // Тишина всю тренировку, включая отсчёт и паузу, при любой громкости сигналов и вибрации:
+    // без звука прошивка OPPO/realme завершает процесс через 5 минут после блокировки экрана.
+    // handlePauseAction её не трогает, освобождает только onDestroy
+    private var silentTrack: SilentTrack? = null
 
     // Звук сигналов включён: при нулевой громкости Beeper не создаётся, и предупреждения о звуке не нужны
     private var soundOn = true
@@ -136,6 +141,7 @@ class WorkoutService : Service() {
         saveRun()
         beeper?.release()
         buzzer?.release()
+        silentTrack?.release()
         if (wakeLock.isHeld) wakeLock.release()
         // Шаг цикла из очереди мог вернуть уведомление уже после того, как stopService() его снял
         notificationManager.cancel(NOTIFICATION_ID)
@@ -171,6 +177,7 @@ class WorkoutService : Service() {
         // ради неслышного сигнала. Так же без Buzzer при выключенной вибрации
         if (soundOn) beeper = Beeper(audioManager, resources, volume, duckMusic)
         if (settings.loadVibration()) buzzer = Buzzer(getSystemService(Vibrator::class.java))
+        silentTrack = SilentTrack().also { it.start() }
         job = scope.launch { runLoop(workout, delayMs) }
     }
 
