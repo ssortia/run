@@ -2,10 +2,10 @@
 
 ## Требования
 
-- Для сборки: JDK 17 и Android SDK (`platforms;android-35`, `build-tools;34.0.0`, `platform-tools` для `adb`), лицензии принимаются командой `sdkmanager --licenses`. Android Studio не обязательна. Gradle 8.11.1 скачивается через Gradle Wrapper, для первой сборки нужен интернет.
+- Для сборки: JDK 17 и Android SDK (`platforms;android-37.0`, `build-tools;36.0.0`, `platform-tools` для `adb`), лицензии принимаются командой `sdkmanager --licenses`. Android Studio не обязательна. Gradle 9.8.2 скачивается через Gradle Wrapper, для первой сборки нужен интернет.
 - Для запуска: телефон с Android 8.0 (API 26) или новее.
 
-Версии инструментов: Android Gradle Plugin 8.7.3, Kotlin 2.0.21, KSP 2.0.21-1.0.28, Room 2.6.1, Navigation Compose 2.8.5, Compose BOM 2024.12.01, `compileSdk` и `targetSdk` 35.
+Версии инструментов: Android Gradle Plugin 9.5.1 со встроенной поддержкой Kotlin (плагин `org.jetbrains.kotlin.android` не подключается, `jvmTarget` задаётся блоком `kotlin { compilerOptions }`), Kotlin 2.4.21, KSP 2.3.13, Room 2.8.5, Navigation Compose 2.10.2, Compose BOM 2026.09.00, coroutines 1.11.0, `androidx.core` 1.18.0, `compileSdk` 37 (его требует Navigation Compose 2.10), `targetSdk` 35.
 
 ## Сборка
 
