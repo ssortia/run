@@ -6,39 +6,50 @@ import android.media.AudioTrack
 import android.util.Log
 
 /**
- * Непрерывно проигрывает тишину, пока идёт тренировка. Прошивки OPPO и realme через 5 минут
- * после блокировки экрана завершают процесс даже с сервисом переднего плана (`o-kill`
- * в `dumpsys activity exit-info`), но не трогают процесс, который сам выводит звук.
+ * Непрерывно проигрывает тишину, пока идёт тренировка. Прошивки Oplus (realme, OPPO, OnePlus)
+ * через 5 минут после блокировки экрана завершают процесс даже с сервисом переднего плана
+ * (`o-kill` в `dumpsys activity exit-info`), но не трогают процесс, который сам выводит звук.
  *
  * Дорожка статическая и зациклена через [AudioTrack.setLoopPoints], поэтому отдельный поток
- * для записи не нужен. Аудиофокус не берётся: другие плееры дорожку не замечают.
+ * для записи не нужен. Аудиофокус не берётся, поэтому другие плееры не встают на паузу.
  * Если дорожку не удалось создать или запустить, тренировка идёт без неё.
+ *
+ * Запуск и остановка намеренно пишутся в журнал уровнем info: это единственный след дорожки
+ * без звука. Запись о запуске значит лишь, что `play()` вызван, а играет ли дорожка,
+ * показывает `adb shell dumpsys audio` (playback configurations).
  */
 class SilentTrack {
     private val track: AudioTrack? = createTrack()
+    private var started = false
 
     fun start() {
         val track = track ?: return
         try {
             track.play()
-            Log.i(TAG, "Беззвучная дорожка запущена: usage=${ATTRIBUTES.usage}, playState=${track.playState}")
         } catch (e: IllegalStateException) {
             Log.w(TAG, "Беззвучная дорожка не запущена", e)
+            return
+        }
+        started = true
+        if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
+            Log.i(TAG, "Беззвучная дорожка запущена")
+        } else {
+            Log.w(TAG, "Беззвучная дорожка не запущена: playState=${track.playState}")
         }
     }
 
-    // AudioTrack.release() безопасен при повторе, своего флага не нужно
+    /** Безопасен при повторе: [AudioTrack.release] сам это допускает. */
     fun release() {
         val track = track ?: return
         track.release()
-        Log.i(TAG, "Беззвучная дорожка остановлена")
+        if (started) Log.i(TAG, "Беззвучная дорожка остановлена")
+        started = false
     }
 
     private fun createTrack(): AudioTrack? {
-        val samples = ShortArray(SAMPLE_RATE_HZ) // 1 с нулей
-        var track: AudioTrack? = null
-        try {
-            track = AudioTrack.Builder()
+        val samples = ShortArray(LOOP_SAMPLES)
+        val track = try {
+            AudioTrack.Builder()
                 .setAudioAttributes(ATTRIBUTES)
                 .setAudioFormat(
                     AudioFormat.Builder()
@@ -50,29 +61,35 @@ class SilentTrack {
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .setBufferSizeInBytes(samples.size * Short.SIZE_BYTES)
                 .build()
-            // write() и setLoopPoints() о сбое сообщают кодом возврата, а не исключением
-            val written = track.write(samples, 0, samples.size)
-            if (written != samples.size) {
-                Log.w(TAG, "Беззвучная дорожка не создана: записано $written из ${samples.size}")
-            } else {
-                // Без петли дорожка проиграла бы 1 с и замолчала
-                val looped = track.setLoopPoints(0, samples.size, LOOP_FOREVER)
-                if (looped == AudioTrack.SUCCESS) return track
-                Log.w(TAG, "Беззвучная дорожка не создана: setLoopPoints вернул $looped")
-            }
         } catch (e: RuntimeException) {
             // Builder бросает разные исключения, а без дорожки тренировка всё равно идёт
             Log.w(TAG, "Беззвучная дорожка не создана", e)
+            return null
         }
-        track?.release()
-        return null
+        // write() и setLoopPoints() о сбое сообщают кодом возврата, а не исключением
+        val written = track.write(samples, 0, samples.size)
+        if (written != samples.size) {
+            Log.w(TAG, "Беззвучная дорожка не создана: записано $written из ${samples.size}")
+            track.release()
+            return null
+        }
+        // Без петли дорожка проиграла бы буфер один раз и замолчала
+        val looped = track.setLoopPoints(0, samples.size, LOOP_FOREVER)
+        if (looped != AudioTrack.SUCCESS) {
+            Log.w(TAG, "Беззвучная дорожка не создана: setLoopPoints вернул $looped")
+            track.release()
+            return null
+        }
+        return track
     }
 
-    // Атрибуты в companion object по той же причине, что у Beeper: поле экземпляра
-    // было бы ещё null при создании дорожки в инициализаторе track
+    // Атрибуты в companion object, как у Beeper: поле экземпляра, объявленное ниже track,
+    // было бы ещё null, когда инициализатор track вызывает createTrack()
     private companion object {
         const val TAG = "SilentTrack"
         const val LOOP_FOREVER = -1
+        // 1 с нулей: длина петли не важна, лишь бы буфер был небольшим
+        const val LOOP_SAMPLES = SAMPLE_RATE_HZ
 
         val ATTRIBUTES: AudioAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)

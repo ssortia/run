@@ -44,9 +44,7 @@ class WorkoutService : Service() {
     private var beeper: Beeper? = null
     // null, если вибрация выключена в настройках
     private var buzzer: Buzzer? = null
-    // Тишина всю тренировку, включая отсчёт и паузу, при любой громкости сигналов и вибрации:
-    // без звука прошивка OPPO/realme завершает процесс через 5 минут после блокировки экрана.
-    // handlePauseAction её не трогает, освобождает только onDestroy
+    // При любой громкости и вибрации, на паузе не трогается: см. SilentTrack
     private var silentTrack: SilentTrack? = null
 
     // Звук сигналов включён: при нулевой громкости Beeper не создаётся, и предупреждения о звуке не нужны
