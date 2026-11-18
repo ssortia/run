@@ -103,7 +103,7 @@ class ProgressRowTextTest {
     fun `параметры и дата прежние`() {
         val row = row(week = 5, completedRuns = 3, lastCompletedAtMs = ms("2026-10-20T07:30:00Z"))
 
-        assertEquals("Бег 7:00 · Шаг 1:30 · ×3", row.details)
+        assertEquals("Бег 7:00 · Шаг 2:00 · ×3", row.details)
         assertEquals("3 раз", row.runs)
         assertEquals("20 октября", row.date)
         assertEquals("Бег 30:00 · ×1", row(week = 10, completedRuns = 4, lastCompletedAtMs = 0L).details)
@@ -174,7 +174,7 @@ class ProgressRowTextTest {
     fun `описание недели впереди с пробежками`() {
         val row = row(week = 6, completedRuns = 2, lastCompletedAtMs = ms("2026-10-29T07:30:00Z"))
 
-        assertEquals("Неделя 6, Бег 8:00 · Шаг 1:30 · ×3, пробежек 2 из 4, последняя 29 октября", row.description)
+        assertEquals("Неделя 6, Бег 8:00 · Шаг 2:00 · ×3, пробежек 2 из 4, последняя 29 октября", row.description)
         assertEquals("2 раз", row.runs)
     }
 
@@ -182,7 +182,7 @@ class ProgressRowTextTest {
     fun `описание пройденной не текущей недели ровно с четырьмя пробежками`() {
         val row = row(week = 5, completedRuns = 4, lastCompletedAtMs = ms("2026-10-20T07:30:00Z"))
 
-        assertEquals("Неделя 5, Бег 7:00 · Шаг 1:30 · ×3, пройдена, 4 раз, последняя 20 октября", row.description)
+        assertEquals("Неделя 5, Бег 7:00 · Шаг 2:00 · ×3, пройдена, 4 раз, последняя 20 октября", row.description)
         assertNull(row.status)
     }
 

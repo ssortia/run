@@ -36,7 +36,7 @@ class WorkoutSummaryTest {
 
     @Test
     fun `шаг с секундами`() {
-        assertEquals("5 отр. · бег 21 мин · шаг 3 мин", summary(week(5))?.text)
+        assertEquals("5 отр. · бег 21 мин · шаг 3 мин", summary(Workout(runSec = 420, walkSec = 90, rounds = 3)))
         assertEquals("5 отр. · бег 3 мин · шаг 1:30", summary(Workout(runSec = 60, walkSec = 45, rounds = 3)))
     }
 

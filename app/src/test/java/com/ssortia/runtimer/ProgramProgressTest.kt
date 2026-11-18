@@ -28,10 +28,10 @@ class ProgramProgressTest {
         2 to Triple(120, 120, 6),
         3 to Triple(180, 120, 5),
         4 to Triple(270, 120, 4),
-        5 to Triple(420, 90, 3),
-        6 to Triple(480, 90, 3),
-        7 to Triple(780, 60, 2),
-        8 to Triple(840, 60, 2),
+        5 to Triple(420, 120, 3),
+        6 to Triple(480, 120, 3),
+        7 to Triple(780, 120, 2),
+        8 to Triple(840, 120, 2),
         9 to Triple(900, 60, 2),
         10 to Triple(1800, 0, 1),
     )
@@ -128,9 +128,19 @@ class ProgramProgressTest {
     }
 
     @Test
-    fun `шаг 90 секунд совпадает с неделями 5 и 6`() {
+    fun `пробежки по прежним параметрам недель 5–8 засчитываются своей неделе`() {
         assertEquals(5, presetWeekOf(record(runSec = 420, walkSec = 90, rounds = 3)))
         assertEquals(6, presetWeekOf(record(runSec = 480, walkSec = 90, rounds = 3)))
+        assertEquals(7, presetWeekOf(record(runSec = 780, walkSec = 60, rounds = 2)))
+        assertEquals(8, presetWeekOf(record(runSec = 840, walkSec = 60, rounds = 2)))
+    }
+
+    @Test
+    fun `прежние и новые пробежки недели считаются вместе`() {
+        val runs = List(2) { record(runSec = 420, walkSec = 90, rounds = 3, startedAtMs = 100L + it) } +
+            List(2) { weekRecord(5, startedAtMs = 200L + it) }
+
+        assertTrue(programProgress(runs).week(5).passed)
     }
 
     @Test

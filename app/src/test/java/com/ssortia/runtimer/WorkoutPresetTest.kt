@@ -32,8 +32,8 @@ class WorkoutPresetTest {
     fun `итоговая длительность недель совпадает с программой`() {
         // Секунды вписаны числами из таблицы US-13 в USER_STORIES.md, а не вычислены из WORKOUT_PRESETS
         val expectedSec = listOf(
-            19 * 60, 22 * 60, 23 * 60, 24 * 60, 24 * 60,
-            27 * 60, 27 * 60, 29 * 60, 31 * 60, 30 * 60,
+            19 * 60, 22 * 60, 23 * 60, 24 * 60, 25 * 60,
+            28 * 60, 28 * 60, 30 * 60, 31 * 60, 30 * 60,
         )
 
         assertEquals(
@@ -65,6 +65,27 @@ class WorkoutPresetTest {
             assertTrue("$a -> $b", b.runSec * b.rounds >= a.runSec * a.rounds)
             assertTrue("$a -> $b", b.runSec > a.runSec)
         }
+    }
+
+    @Test
+    fun `бег за тренировку растёт не больше чем на 5 минут, а после второй недели не больше чем на 3`() {
+        val runMin = WORKOUT_PRESETS.map { it.settings.toWorkout().let { w -> w.runSec * w.rounds / 60 } }
+        assertEquals(listOf(7, 12, 15, 18, 21, 24, 26, 28, 30, 30), runMin)
+        runMin.zipWithNext().drop(1).forEach { (a, b) -> assertTrue("$a -> $b", b - a <= 3) }
+    }
+
+    @Test
+    fun `шаг не убывает до недели 9 и сокращается не больше одного раза`() {
+        val walks = WORKOUT_PRESETS.filter { it.settings.rounds > 1 }.map { it.settings.toWorkout().walkSec }
+        assertEquals(1, walks.zipWithNext().count { (a, b) -> b < a })
+        walks.zipWithNext().forEach { (a, b) -> assertTrue("$a -> $b", b <= a) }
+    }
+
+    @Test
+    fun `тройки недель не повторяются, в том числе с прежней программой`() {
+        val current = WORKOUT_PRESETS.map { it.settings.toWorkout() }
+        val all = current + PREVIOUS_PRESET_WORKOUTS.map { it.second }
+        assertEquals(all.size, all.toSet().size)
     }
 
     @Test
