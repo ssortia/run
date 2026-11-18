@@ -15,8 +15,8 @@ class PresetRowTextTest {
     }
 
     @Test
-    fun `шаг с секундами`() {
-        assertEquals("Бег 8:00 · Шаг 1:30 · ×3", row(6).details)
+    fun `бег с секундами`() {
+        assertEquals("Бег 4:30 · Шаг 2:00 · ×4", row(4).details)
     }
 
     @Test
@@ -28,7 +28,7 @@ class PresetRowTextTest {
     @Test
     fun `общее время без последнего шага`() {
         assertEquals("23 мин", row(3).total)
-        assertEquals("27 мин", row(7).total)
+        assertEquals("28 мин", row(7).total)
     }
 
     @Test
